@@ -46,6 +46,7 @@ import { chatModels, type ChatModel } from '@/lib/ai/models';
 import { eq } from 'drizzle-orm';
 import { message } from '@/lib/db/schema';
 import { db } from '@/lib/db/index';
+import { cookies } from 'next/headers';
 
 const providerMap = {
   openai,
@@ -113,6 +114,15 @@ export function getStreamContext() {
 }
 
 export async function POST(request: Request) {
+  // Получаем модель из cookie вместо URL
+  const cookieStore = await cookies();
+  const modelFromCookie = cookieStore.get('chat-model')?.value;
+  console.log('Cookie in API:', modelFromCookie);
+  const selectedChatModel = modelFromCookie || 'gpt-4o-mini-2024-07-18';
+
+  console.log('Using model from cookie:', modelFromCookie);
+  console.log('Final selected model:', selectedChatModel);
+
   console.log('=== POST /api/chat called ===');
 
   try {
@@ -141,9 +151,6 @@ export async function POST(request: Request) {
     }
 
     // Получаем модель из URL параметров или используем дефолтную
-    const url = new URL(request.url);
-    const modelFromUrl = url.searchParams.get('model');
-    const selectedChatModel = modelFromUrl || 'gpt-4o-mini-2024-07-18';
     const selectedVisibilityType = 'private';
 
     console.log('Using model:', selectedChatModel);

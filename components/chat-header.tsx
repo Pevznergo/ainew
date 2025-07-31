@@ -18,6 +18,8 @@ import { signOut, useSession } from 'next-auth/react';
 import { guestRegex } from '@/lib/constants';
 
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
+import { useState } from 'react';
+import { generateUUID } from '@/lib/utils';
 
 function PureChatHeader({
   chatId,
@@ -44,6 +46,16 @@ function PureChatHeader({
     session.user &&
     session.user.type === 'regular' &&
     session.user.subscription_active === false;
+
+  // Добавить селектор модели
+  const [selectedModel, setSelectedModel] = useState(selectedModelId);
+
+  const handleModelChange = (newModel: string) => {
+    setSelectedModel(newModel);
+    // Создать новый чат с новой моделью
+    const newChatId = generateUUID();
+    router.push(`/chat/${newChatId}?model=${newModel}`);
+  };
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -83,7 +95,7 @@ function PureChatHeader({
       {!isReadonly && (
         <ModelSelector
           session={session}
-          selectedModelId={selectedModelId}
+          selectedModelId={selectedModel}
           className="order-1 md:order-2"
         />
       )}

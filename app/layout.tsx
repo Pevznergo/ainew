@@ -6,6 +6,7 @@ import Script from 'next/script';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
+import { ModelProvider } from '@/contexts/model-context';
 
 export const metadata = {
   title: 'Чат | AI Chatbot',
@@ -149,7 +150,9 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <Toaster position="top-center" />
-          <SessionProvider>{children}</SessionProvider>
+          <SessionProvider>
+            <ModelProvider>{children}</ModelProvider>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

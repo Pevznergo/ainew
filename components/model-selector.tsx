@@ -14,9 +14,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { models as chatModels } from '@/lib/ai/models';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
-import { cn } from '@/lib/utils';
+import { cn, generateUUID } from '@/lib/utils';
 
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
+import { useModel } from '@/contexts/model-context';
 
 export function ModelSelector({
   session,
@@ -26,9 +27,10 @@ export function ModelSelector({
   session: Session;
   selectedModelId: string;
 } & React.ComponentProps<typeof Button>) {
+  const { selectedModel, setSelectedModel } = useModel();
   const [open, setOpen] = useState(false);
   const [optimisticModelId, setOptimisticModelId] =
-    useOptimistic(selectedModelId);
+    useOptimistic(selectedModel);
 
   const userType = session.user.type;
   const { availableChatModelIds } = entitlementsByUserType[userType];
@@ -82,9 +84,14 @@ export function ModelSelector({
 
                 startTransition(() => {
                   setOptimisticModelId(id);
+                  setSelectedModel(id); // Обновляем контекст
                   saveChatModelAsCookie(id);
-                  // Перезагружаем страницу для применения новой модели
-                  window.location.reload();
+
+                  // Проверить cookie после сохранения
+                  console.log('Cookie after save:', document.cookie);
+
+                  // Только один способ перезагрузки
+                  window.location.replace('/');
                 });
               }}
             >

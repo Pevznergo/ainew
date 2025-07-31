@@ -26,6 +26,7 @@ import type {
   Attachment,
 } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { useRouter } from 'next/navigation';
 
 export function Chat({
   id,
@@ -51,6 +52,7 @@ export function Chat({
 
   const { mutate } = useSWRConfig();
   const { setDataStream } = useDataStream();
+  const router = useRouter();
 
   const [input, setInput] = useState<string>('');
   const [currentModel, setCurrentModel] = useState(initialChatModel);
@@ -59,6 +61,13 @@ export function Chat({
   useEffect(() => {
     setCurrentModel(initialChatModel);
   }, [initialChatModel]);
+
+  useEffect(() => {
+    if (currentModel !== initialChatModel) {
+      const newChatId = generateUUID();
+      router.push(`/chat/${newChatId}?model=${currentModel}`);
+    }
+  }, [currentModel, initialChatModel, router]);
 
   const { messages, setMessages, append, status, stop, reload } = useChat({
     id,
