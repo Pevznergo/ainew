@@ -311,6 +311,10 @@ export async function POST(request: Request) {
           });
           console.log('streamText completed, result:', result);
 
+          // УБРАТЬ сохранение отсюда - оно блокирует поток
+          // const assistantMessage = { ... };
+          // await saveMessages({ messages: [assistantMessage] });
+
           console.log('About to consume stream...');
           result.consumeStream();
           console.log('Stream consumed');

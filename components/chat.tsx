@@ -2,7 +2,7 @@
 
 import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -64,7 +64,25 @@ export function Chat({
     id,
     experimental_throttle: 100,
     generateId: generateUUID,
-    onFinish: () => {
+    onFinish: async (message) => {
+      console.log('Assistant message to save:', message);
+
+      try {
+        await fetch('/api/message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chatId: id,
+            message: message.message, // Передаем message.message
+          }),
+        });
+        console.log('Assistant message saved successfully');
+      } catch (error) {
+        console.error('Error saving assistant message:', error);
+      }
+
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
     onError: (error) => {
@@ -78,11 +96,15 @@ export function Chat({
     },
   });
 
+  const stableSetMessages = useCallback((messages) => {
+    setMessages(messages);
+  }, []);
+
   useEffect(() => {
     if (initialMessages.length > 0) {
-      setMessages(initialMessages);
+      stableSetMessages(initialMessages);
     }
-  }, [initialMessages, setMessages]);
+  }, [initialMessages, stableSetMessages]);
 
   const searchParams = useSearchParams();
   const query = searchParams.get('query');
