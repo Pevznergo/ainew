@@ -22,7 +22,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 export function AppSidebar({
   user,
   session,
-}: { user: User; session: Session }) {
+}: {
+  user: User;
+  session: Session | undefined;
+}) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
 

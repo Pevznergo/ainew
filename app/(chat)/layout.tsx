@@ -57,7 +57,7 @@ export default async function Layout({
       </Script>
       <DataStreamProvider>
         <SidebarProvider defaultOpen={!isCollapsed}>
-          <AppSidebar user={session?.user} />
+          {session && <AppSidebar user={session.user} session={session} />}
           <SidebarInset>{children}</SidebarInset>
         </SidebarProvider>
       </DataStreamProvider>
