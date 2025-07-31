@@ -1,0 +1,914 @@
+<?php
+session_start();
+$email = isset($_GET['email']) ? $_GET['email'] : '';
+?>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hey, Bro!! — Чат</title>
+  <link rel="stylesheet" href="./css/style.css" />
+  <style>
+    body {
+      background: #f6f7fb;
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .chatgpt-chat-container {
+      max-width: 1000px;
+      margin: 40px auto 0 auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      height: 80vh;
+      min-height: 500px;
+      overflow: hidden;
+      position: relative;
+    }
+    .chatgpt-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 24px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: #f6f7fb;
+    }
+    .chatgpt-message {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      max-width: 90%;
+      animation: fadeIn 0.3s;
+    }
+    .chatgpt-message.user {
+      flex-direction: row-reverse;
+      margin-left: auto;
+      justify-content: flex-end;
+    }
+    .chatgpt-message .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      color: #6366f1;
+      font-weight: bold;
+    }
+    .chatgpt-message.user .avatar {
+      background: #6366f1;
+      color: #fff;
+    }
+    .chatgpt-bubble {
+      padding: 14px 20px;
+      border-radius: 16px;
+      background: #fff;
+      color: #222;
+      font-size: 1.08rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      max-width: 420px;
+      word-break: break-word;
+      border: 1px solid #e5e7eb;
+    }
+    .chatgpt-message.user .chatgpt-bubble {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+    }
+    .chatgpt-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 24px;
+      background: #fff;
+      border-top: 1px solid #e5e7eb;
+      position: relative;
+    }
+    .icon-btn {
+      background: none;
+      border: none;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      transition: background 0.18s, box-shadow 0.18s;
+      outline: none;
+    }
+    .icon-btn svg {
+      display: block;
+      transition: stroke 0.18s;
+    }
+    .icon-btn:active {
+      background: #f3f4fa;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+      transform: scale(0.96);
+    }
+    .icon-btn:focus-visible {
+      box-shadow: 0 0 0 2px #6366f1;
+    }
+    .send-btn {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 22px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.18s;
+      display: flex;
+      align-items: center;
+    }
+    .send-btn:active {
+      background: #222;
+      transform: scale(0.97);
+    }
+    .chatgpt-input-row input[type="text"] {
+      flex: 1;
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: 1.5px solid #e5e7eb;
+      font-size: 1.08rem;
+      outline: none;
+      background: #f6f7fb;
+      color: #222;
+      transition: border 0.2s;
+    }
+    .icon-btn[data-tooltip]:hover::after,
+    .send-btn[data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      color: #fff;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0.95;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    }
+    .icon-btn[data-tooltip]:hover::before,
+    .send-btn[data-tooltip]:hover::before {
+      content: '';
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top: 6px solid #222;
+      z-index: 11;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    @media (max-width: 800px) {
+      .chatgpt-chat-container {
+        max-width: 99vw;
+        margin: 0;
+        border-radius: 0;
+        height: 100vh;
+      }
+      .chatgpt-messages {
+        padding: 16px 4vw 8px 4vw;
+      }
+      .chatgpt-input-row {
+        padding: 12px 4vw;
+      }
+    }
+    .chat-bottom-bar {
+      background: #fff;
+      padding: 24px 0 0 0;
+    }
+    .model-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-left: 24px;
+    }
+    .model-btn, .dropdown-btn {
+      background: #f3f4fa;
+      color: #222;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, border 0.2s;
+      font-weight: 500;
+    }
+    .model-btn.selected, .model-btn:focus, .dropdown-btn.selected, .dropdown-btn:focus {
+      background: #6366f1;
+      color: #fff;
+      border: 1.5px solid #6366f1;
+    }
+    .chat-header {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0;
+      width: 100%;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .chat-header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .chat-header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chat-header-logo-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f3f4fa;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.06);
+    }
+    .chat-header-title {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 1px;
+      color: #222;
+      text-shadow: 0 1px 0 #fff;
+    }
+    .chat-header-login {
+      position: absolute;
+      right: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #ff5c4d;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 28px;
+      font-weight: 600;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background 0.2s;
+      box-shadow: 0 2px 8px rgba(255,92,77,0.08);
+    }
+    .chat-header-login:hover {
+      background: #ff2d1a;
+    }
+    @media (max-width: 600px) {
+      .chat-header-inner {
+        height: 52px;
+      }
+      .chat-header-title {
+        font-size: 1.1rem;
+      }
+      .chat-header-login {
+        right: 8px;
+        padding: 8px 16px;
+        font-size: 15px;
+      }
+      .chat-header-logo-img {
+        width: 32px;
+        height: 32px;
+      }
+    }
+    .model-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    #model-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .model-btn {
+      background: #18181b;
+      color: #fff;
+      border: 1.5px solid #6366f1;
+      border-radius: 8px;
+      padding: 6px 18px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, border 0.2s;
+    }
+    .model-btn.selected {
+      background: #6366f1;
+      color: #fff;
+      border: 2px solid #6366f1;
+    }
+    .model-btn:not(.selected):hover {
+      background: #222;
+      color: #fff;
+    }
+    .model-dropdown-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      margin-left: 16px; /* Добавьте эту строку */
+    }
+    .dropdown-btn {
+      background: #fff;
+      color: #222;
+      border: 1.5px solid #6366f1;
+      border-radius: 8px;
+      padding: 6px 18px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-left: 8px; /* Добавьте эту строку */
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      top: 110%;
+      left: 0;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      z-index: 100;
+      min-width: 140px;
+      flex-direction: column;
+      border: 1.5px solid #e5e7eb;
+    }
+    .dropdown.open .dropdown-content {
+      display: flex;
+    }
+    .dropdown-content .model-btn {
+      border: none;
+      border-radius: 0;
+      background: none;
+      color: #222;
+      padding: 10px 18px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .dropdown-content .model-btn.selected {
+      background: #6366f1;
+      color: #fff;
+    }
+    .selected-model-btn {
+      background: #6366f1;
+      color: #fff;
+      border: 2px solid #6366f1;
+      border-radius: 8px;
+      padding: 6px 18px;
+      font-size: 1rem;
+      cursor: default;
+    }
+    .model-section-title {
+      font-weight: bold;
+      color: #666;
+      margin: 8px 0 4px 18px;
+      font-size: 0.65em;
+      background: #f8f9fa;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .model-btn {
+      background: none;
+      color: #222;
+      border: none;
+      border-radius: 0;
+      padding: 6px 18px;
+      text-align: left;
+      cursor: pointer;
+      width: 100%;
+      display: block;
+      transition: background 0.18s;
+      font-size: 0.95em;
+      line-height: 1.2;
+    }
+    .model-btn.selected, .model-btn:focus {
+      background: #6366f1;
+      color: #fff;
+    }
+    .model-btn:not(.selected):hover {
+      background: #f3f4fa;
+      color: #222;
+    }
+    .badge {
+      display: inline-block;
+      background: #000;
+      color: #fff;
+      font-size: 0.7em;
+      border-radius: 6px;
+      padding: 1px 6px;
+      margin-left: 8px;
+      font-weight: 600;
+    }
+    .selected-model-btn {
+      background: #6366f1;
+      color: #fff;
+      border: 2px solid #6366f1;
+      border-radius: 8px;
+      padding: 6px 18px;
+      font-size: 1rem;
+      cursor: default;
+      min-width: 120px;
+    }
+    .model-btn-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .model-btn-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .model-btn-title {
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+    }
+    .model-btn-desc {
+      font-size: 0.8em;
+      color: #aaa;
+      margin-top: 1px;
+    }
+    .model-btn-cost {
+      margin-left: 12px;
+      white-space: nowrap;
+      font-weight: 500;
+      font-size: 0.85em;
+    }
+    .model-select-panel {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 100;
+      min-width: 320px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      display: none;
+      flex-direction: column;
+      border: 1.5px solid #e5e7eb;
+      height: 350px;
+      overflow-y: auto;
+      padding: 10px 0;
+    }
+    .model-select-wrapper {
+      position: relative;
+      display: inline-block;
+      z-index: 1000;
+    }
+    .model-select-panel.open {
+      display: flex;
+    }
+
+    .model-select-panel::before {
+      content: '';
+      position: absolute;
+      left: 32px; /* подвинь по вкусу */
+      bottom: -10px;
+      border: 8px solid transparent;
+      border-top: 8px solid #fff;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
+    }
+    .sidebar-controls {
+      position: absolute;
+      left: 24px;
+      top: 12px;
+      display: flex;
+      gap: 10px;
+      z-index: 200;
+    }
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 290px;
+      height: 100vh;
+      background: #232323;
+      color: #fff;
+      box-shadow: 2px 0 16px rgba(0,0,0,0.12);
+      transform: translateX(-100%);
+      transition: transform 0.25s;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 18px 8px 18px;
+      font-size: 1.1em;
+      font-weight: 600;
+      border-bottom: 1px solid #333;
+    }
+    .chat-list {
+      list-style: none;
+      margin: 0;
+      padding: 0 0 0 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .chat-list li {
+      padding: 14px 22px;
+      cursor: pointer;
+      border-bottom: 1px solid #292929;
+      transition: background 0.15s;
+    }
+    .chat-list li:hover, .chat-list li.active {
+      background: #363636;
+    }
+    .sidebar-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(34,34,34,0.35);
+      z-index: 1100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 300px;
+      height: 100vh;
+      background: #fff;
+      color: #222; /* <--- добавьте эту строку */
+      box-shadow: 2px 0 16px rgba(0,0,0,0.12);
+      z-index: 1101;
+      transform: translateX(-100%);
+      transition: transform 0.3s;
+      padding: 32px 24px 24px 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sidebar-close {
+      background: none;
+      border: none;
+      font-size: 32px;
+      color: #6366f1;
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      cursor: pointer;
+    }
+
+    .sidebar nav {
+      margin-top: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .sidebar nav a {
+      color: #222;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .sidebar nav a:hover {
+      color: #6366f1;
+    }
+    .sidebar-label-today {
+      color: #888;
+      font-weight: 500;
+    }
+    .upgrade-btn {
+      background: #ff4d4f;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-weight: 700;
+      font-size: 16px;
+      margin-left: 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .upgrade-btn:hover {
+      background: #d9363e;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+    }
+
+    .profile-menu {
+      position: relative;
+      margin-left: 24px;
+    }
+    .profile-btn {
+      background: none;
+      border: none;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .profile-btn:hover {
+      background: #222;
+    }
+    .profile-dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 44px;
+      min-width: 240px;
+      background: #fff;
+      color: #222;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 0;
+      z-index: 2000;
+      font-size: 16px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+    }
+
+    .profile-email {
+      padding: 12px 24px 8px 24px;
+      font-size: 15px;
+      color: #888;
+      background: #fff;
+    }
+
+    .profile-divider {
+      height: 1px;
+      background: #e5e7eb;
+      margin: 0;
+    }
+
+    .profile-dropdown a {
+      display: block;
+      padding: 12px 24px 6px 24px;
+      color: #222;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background 0.18s, color 0.18s;
+      background: #fff;
+    }
+
+    .profile-dropdown a:hover {
+      background: #f3f4fa;
+      color: #6366f1;
+    }
+
+    .profile-note {
+      display: block;
+      font-size: 13px;
+      color: #888;
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    .profile-logout {
+      color: #ff4d4f !important;
+      font-weight: 500;
+      padding: 12px 24px;
+      background: #fff;
+    }
+
+    .profile-logout:hover {
+      background: #fbeaea;
+      color: #d9363e !important;
+    }
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 64px;
+    }
+
+    .header-left {
+      flex: 1;
+    }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 2;
+      gap: 24px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      font-weight: 700;
+      font-size: 24px;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .chat-header-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222; /* или #000 */
+    }
+
+    .upgrade-btn {
+      /* уже есть стили, просто убедитесь, что margin не мешает центровке */
+      margin-left: 24px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .auth-only {
+      display: flex;
+      align-items: center;
+    }
+
+    @media (max-width: 700px) {
+      .header-center {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .header-container {
+        flex-direction: column;
+        height: auto;
+        padding: 12px 8px;
+      }
+    }
+    .profile-btn img {
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .logo .chat-header-title {
+      color: #222;
+    }
+    .web-search-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .web-search-btn:hover {
+      background: #f3f4fa;
+    }
+
+    .web-search-btn.active {
+      background: #6366f1;
+      color: #fff;
+    }
+
+    .web-search-btn.active img {
+      filter: brightness(0) invert(1); /* Делает изображение белым при активации */
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <!-- Левая часть (можно оставить пустой или для меню) -->
+      <div class="header-left"></div>
+
+      <!-- Центр: логотип, текст и кнопка ПРО -->
+      <div class="header-center">
+        <a href="index.html" class="logo">
+          <img src="images/logo122.png" alt="Логотип Hey, Bro!" style="height:40px; margin-right:10px; vertical-align:middle;" />
+          <span class="chat-header-title">Hey, Bro!</span>
+        </a>
+        <div class="auth-only" id="authOnlyBlock">
+          <button class="upgrade-btn" onclick="window.location.href='upgrade.html'">Улучшить до ПРО</button>
+        </div>
+      </div>
+
+      <!-- Правая часть: профиль или Войти -->
+      <div class="header-right">
+        <div class="auth-only" id="authOnlyProfile">
+          <!-- Личный кабинет -->
+          <div class="profile-menu" id="profileMenu">
+            <button class="profile-btn" id="profileBtn">
+              <img src="images/profile.png" alt="Профиль" style="width:28px; height:28px; border-radius:50%; background:#fff; object-fit:cover;">
+              <img src="images/arrow.png" alt="Открыть меню" style="width:16px; height:16px; margin-left:6px; vertical-align:middle;">
+            </button>
+            <div class="profile-dropdown" id="profileDropdown">
+              <div class="profile-email"><?php echo htmlspecialchars($email); ?></div>
+              <div class="profile-divider"></div>
+              <a href="/billing.html">Профиль</a>
+              <a href="/billing.html">Купить брокоины</a>
+              <a href="mailto:bro@aporto.tech">Связаться с нами</a>
+              <a href="/referral.html">
+                Пригласить друга<br>
+                <span class="profile-note">Бонусы до 40000 рублей!</span>
+              </a>
+              <a href="#">
+                Скачать Hey,Bro<br>
+                <span class="profile-note">Для любой платформы</span>
+              </a>
+              <div class="profile-divider"></div>
+              <a href="/logout.php" class="profile-logout">Выйти</a>
+            </div>
+          </div>
+        </div>
+        <a href="login.html" class="chat-header-login" id="login-btn">Войти</a>
+      </div>
+    </div>
+  </header>
+  <div class="chatgpt-chat-container">
+    <div class="chatgpt-messages" id="chatgpt-messages">
+      <div class="chatgpt-message">
+        <div class="avatar"><img src="https://heybro.aporto.tech/images/logo122.png" alt="Bro" style="width:32px;height:32px;border-radius:50%;"></div>
+        <div class="chatgpt-bubble"><b>Эй, Бро!</b> Чем могу помочь?</div>
+      </div>
+    </div>
+    <div class="chat-bottom-bar">
+      <div class="model-dropdown-bar">
+        <div class="model-select-wrapper">
+          <button id="model-dropdown-btn" class="dropdown-btn">Модели &#9662;</button>
+          <div id="model-dropdown-list" class="model-select-panel"></div>
+        </div>
+        <button id="selected-model-btn" class="selected-model-btn"></button>
+      </div>
+      <form class="chatgpt-input-row" id="chatgpt-form" autocomplete="off">
+        <input type="text" id="chatgpt-user-input" placeholder="Ваш вопрос" required />
+        <button type="button" class="icon-btn" title="Добавить файл" data-tooltip="Добавить файл" id="attach-btn">
+          <svg width="24" height="24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.19 9.19a1 1 0 0 1-1.41-1.41l9.19-9.19"/></svg>
+          <input type="file" style="display:none;" id="file-input" />
+        </button>
+        <button type="button" class="icon-btn web-search-btn" title="Поиск в интернете" data-tooltip="Поиск в интернете">
+          <img src="images/globus.png" alt="Поиск в интернете" style="width: 24px; height: 24px;">
+        </button>
+        <button type="button" class="icon-btn" title="Диктовка" data-tooltip="Диктовка">
+          <svg width="24" height="24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
+        </button>
+        <button type="submit" class="send-btn" title="Отправить" data-tooltip="Отправить">
+          <svg width="24" height="24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+  <!-- Кнопки управления (гамбургер и новый чат) -->
+<div class="sidebar-controls" id="sidebar-controls" style="display:none;">
+  <button id="sidebar-toggle" class="icon-btn" title="Меню">
+    <!-- Иконка гамбургера -->
+    <svg width="28" height="28" viewBox="0 0 24 24"><rect y="4" width="24" height="3" rx="1.5"/><rect y="10.5" width="24" height="3" rx="1.5"/><rect y="17" width="24" height="3" rx="1.5"/></svg>
+  </button>
+  <button id="new-chat-btn" class="icon-btn" title="Новый чат">
+    <!-- Иконка плюс -->
+    <svg width="28" height="28" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke-width="2" stroke="#6366f1"/><line x1="5" y1="12" x2="19" y2="12" stroke-width="2" stroke="#6366f1"/></svg>
+  </button>
+                </div>
+
+<!-- Боковая панель -->
+<aside id="sidebar" class="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-label-today">Сегодня</span>
+    <button id="sidebar-close" class="icon-btn" title="Закрыть">
+      <svg width="24" height="24" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke="#6366f1"/><line x1="6" y1="18" x2="18" y2="6" stroke-width="2" stroke="#6366f1"/></svg>
+    </button>
+              </div>
+  <ul id="chat-list" class="chat-list">
+    <!-- Список чатов будет подгружаться сюда -->
+  </ul>
+</aside>
+<script src="js/script.js"></script>
+</body>
+</html>
