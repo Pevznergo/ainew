@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       },
       confirmation: {
         type: 'redirect',
-        return_url: `${process.env.NEXTAUTH_URL}/profile?payment=success`,
+        return_url: 'https://aporto.tech/profile?payment=success',
       },
       capture: true,
       description: 'Подписка Aporto PRO - 1 месяц',

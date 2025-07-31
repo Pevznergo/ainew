@@ -10,7 +10,7 @@ export default function ProfilePage() {
 
   // Список пакетов определяем до хуков!
   const packages = [
-    { label: '250 монет — 150 ₽', price: 150, coins: 250, pricePer: '0,60' },
+    { label: '250 монет — 150 ₽', price: 15, coins: 250, pricePer: '0,60' },
     { label: '800 монет — 300 ₽', price: 300, coins: 800, pricePer: '0,38' },
     { label: '1500 монет — 500 ₽', price: 500, coins: 1500, pricePer: '0,33' },
     {
@@ -41,18 +41,19 @@ export default function ProfilePage() {
   });
 
   const handleConsentChange = (type: keyof typeof consents) => {
-    setConsents(prev => ({
+    setConsents((prev) => ({
       ...prev,
-      [type]: !prev[type]
+      [type]: !prev[type],
     }));
   };
 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [isProcessingCoinsPayment, setIsProcessingCoinsPayment] = useState(false);
+  const [isProcessingCoinsPayment, setIsProcessingCoinsPayment] =
+    useState(false);
 
   const handleProUpgrade = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Проверяем, что все чекбоксы отмечены
     const allChecked = Object.values(consents).every(Boolean);
     if (!allChecked) {
@@ -87,10 +88,11 @@ export default function ProfilePage() {
       } else {
         throw new Error('Не получена ссылка для оплаты');
       }
-
     } catch (error) {
       console.error('Payment error:', error);
-      alert(`Ошибка при создании платежа: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
+      alert(
+        `Ошибка при создании платежа: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+      );
     } finally {
       setIsProcessingPayment(false);
     }
@@ -106,12 +108,12 @@ export default function ProfilePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           packageData: {
             coins: selected.coins,
             price: selected.price,
-            label: selected.label
-          }
+            label: selected.label,
+          },
         }),
       });
 
@@ -130,10 +132,11 @@ export default function ProfilePage() {
       } else {
         throw new Error('Не получена ссылка для оплаты');
       }
-
     } catch (error) {
       console.error('Coins payment error:', error);
-      alert(`Ошибка при создании платежа: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`);
+      alert(
+        `Ошибка при создании платежа: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+      );
     } finally {
       setIsProcessingCoinsPayment(false);
     }
@@ -357,9 +360,24 @@ export default function ProfilePage() {
                 >
                   {isProcessingCoinsPayment ? (
                     <>
-                      <svg className="animate-spin size-5" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin size-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </svg>
                       Обработка...
                     </>
@@ -391,9 +409,11 @@ export default function ProfilePage() {
             >
               &times;
             </button>
-            
-            <h3 className="text-2xl font-bold mb-6 text-white">Приобрести подписку ПРО</h3>
-            
+
+            <h3 className="text-2xl font-bold mb-6 text-white">
+              Приобрести подписку ПРО
+            </h3>
+
             <form onSubmit={handleProUpgrade} className="space-y-4">
               {/* Согласие с офертой */}
               <label className="flex items-start gap-3 cursor-pointer group">
@@ -404,20 +424,38 @@ export default function ProfilePage() {
                     onChange={() => handleConsentChange('offer')}
                     className="sr-only"
                   />
-                  <div className={`size-5 border-2 rounded transition ${
-                    consents.offer 
-                      ? 'bg-indigo-600 border-indigo-600' 
-                      : 'border-neutral-600 group-hover:border-indigo-400'
-                  }`}>
+                  <div
+                    className={`size-5 border-2 rounded transition ${
+                      consents.offer
+                        ? 'bg-indigo-600 border-indigo-600'
+                        : 'border-neutral-600 group-hover:border-indigo-400'
+                    }`}
+                  >
                     {consents.offer && (
-                      <svg className="size-3 text-white m-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <svg
+                        className="size-3 text-white m-0.5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>
                 </div>
                 <span className="text-neutral-200 text-sm leading-relaxed">
-                  Соглашаюсь с <Link href="/tos-subscription" target="_blank" className="text-indigo-400 underline hover:text-indigo-300">договором оферты</Link>.
+                  Соглашаюсь с{' '}
+                  <Link
+                    href="/tos-subscription"
+                    target="_blank"
+                    className="text-indigo-400 underline hover:text-indigo-300"
+                  >
+                    договором оферты
+                  </Link>
+                  .
                 </span>
               </label>
 
@@ -430,14 +468,24 @@ export default function ProfilePage() {
                     onChange={() => handleConsentChange('personal')}
                     className="sr-only"
                   />
-                  <div className={`size-5 border-2 rounded transition ${
-                    consents.personal 
-                      ? 'bg-indigo-600 border-indigo-600' 
-                      : 'border-neutral-600 group-hover:border-indigo-400'
-                  }`}>
+                  <div
+                    className={`size-5 border-2 rounded transition ${
+                      consents.personal
+                        ? 'bg-indigo-600 border-indigo-600'
+                        : 'border-neutral-600 group-hover:border-indigo-400'
+                    }`}
+                  >
                     {consents.personal && (
-                      <svg className="size-3 text-white m-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <svg
+                        className="size-3 text-white m-0.5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>
@@ -456,20 +504,32 @@ export default function ProfilePage() {
                     onChange={() => handleConsentChange('recurring')}
                     className="sr-only"
                   />
-                  <div className={`size-5 border-2 rounded transition ${
-                    consents.recurring 
-                      ? 'bg-indigo-600 border-indigo-600' 
-                      : 'border-neutral-600 group-hover:border-indigo-400'
-                  }`}>
+                  <div
+                    className={`size-5 border-2 rounded transition ${
+                      consents.recurring
+                        ? 'bg-indigo-600 border-indigo-600'
+                        : 'border-neutral-600 group-hover:border-indigo-400'
+                    }`}
+                  >
                     {consents.recurring && (
-                      <svg className="size-3 text-white m-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <svg
+                        className="size-3 text-white m-0.5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>
                 </div>
                 <span className="text-neutral-200 text-sm leading-relaxed">
-                  Соглашаюсь с рекуррентными платежами. Первое списание — 199 руб. в день подписки и далее 199 руб. согласно тарифу раз в месяц.
+                  Соглашаюсь с рекуррентными платежами. Первое списание — 199
+                  руб. в день подписки и далее 199 руб. согласно тарифу раз в
+                  месяц.
                 </span>
               </label>
 
@@ -482,26 +542,47 @@ export default function ProfilePage() {
                     onChange={() => handleConsentChange('privacy')}
                     className="sr-only"
                   />
-                  <div className={`size-5 border-2 rounded transition ${
-                    consents.privacy 
-                      ? 'bg-indigo-600 border-indigo-600' 
-                      : 'border-neutral-600 group-hover:border-indigo-400'
-                  }`}>
+                  <div
+                    className={`size-5 border-2 rounded transition ${
+                      consents.privacy
+                        ? 'bg-indigo-600 border-indigo-600'
+                        : 'border-neutral-600 group-hover:border-indigo-400'
+                    }`}
+                  >
                     {consents.privacy && (
-                      <svg className="size-3 text-white m-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <svg
+                        className="size-3 text-white m-0.5"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>
                 </div>
                 <span className="text-neutral-200 text-sm leading-relaxed">
-                  Подтверждаю, что ознакомился и соглашаюсь с <Link href="/privacy" target="_blank" className="text-indigo-400 underline hover:text-indigo-300">политикой конфиденциальности</Link>, и не являюсь получателем регулярных денежных выплат, предусмотренных Указами Президента РФ.
+                  Подтверждаю, что ознакомился и соглашаюсь с{' '}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="text-indigo-400 underline hover:text-indigo-300"
+                  >
+                    политикой конфиденциальности
+                  </Link>
+                  , и не являюсь получателем регулярных денежных выплат,
+                  предусмотренных Указами Президента РФ.
                 </span>
               </label>
 
               <button
                 type="submit"
-                disabled={!Object.values(consents).every(Boolean) || isProcessingPayment}
+                disabled={
+                  !Object.values(consents).every(Boolean) || isProcessingPayment
+                }
                 className={`w-full py-3 px-6 rounded-lg font-bold text-lg transition mt-6 flex items-center justify-center gap-2 ${
                   Object.values(consents).every(Boolean) && !isProcessingPayment
                     ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
@@ -510,9 +591,24 @@ export default function ProfilePage() {
               >
                 {isProcessingPayment ? (
                   <>
-                    <svg className="animate-spin size-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin size-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
                     Создание платежа...
                   </>
