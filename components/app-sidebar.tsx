@@ -19,7 +19,10 @@ import {
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
-export function AppSidebar({ user, session }: { user: User; session: Session }) {
+export function AppSidebar({
+  user,
+  session,
+}: { user: User; session: Session }) {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
 
@@ -66,8 +69,5 @@ export function AppSidebar({ user, session }: { user: User; session: Session }) 
         {user && <SidebarUserNav session={{ user } as Session} />}
       </SidebarFooter>
     </Sidebar>
-  );
-}
-
   );
 }
