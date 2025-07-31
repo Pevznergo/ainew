@@ -116,40 +116,38 @@ export async function POST(request: Request) {
   console.log('=== POST /api/chat called ===');
 
   try {
-    const { messages, model: modelFromClient } = await request.json();
-    console.log('Request messages:', messages);
-    console.log('Request model:', modelFromClient);
+    const body = await request.json();
+    console.log('Request body:', body);
 
-    // Получаем модель из URL параметров
-    const url = new URL(request.url);
-    const modelFromUrl = url.searchParams.get('model');
-    const selectedChatModel =
-      modelFromUrl || modelFromClient || 'gpt-4o-mini-2024-07-18';
-    console.log('Using model:', selectedChatModel);
+    // useChat отправляет { messages, id }
+    const { messages, id } = body;
 
-    // Остальная логика остается той же...
-    const {
-      id,
-      message: userMessage,
-      selectedVisibilityType,
-    } = {
-      id: generateUUID(),
-      message: messages?.at(-1),
-      selectedVisibilityType: 'private',
-    };
-
-    if (!id || !userMessage || !selectedChatModel || !selectedVisibilityType) {
-      console.log('ERROR: Missing required fields:', {
-        id,
-        message,
-        selectedChatModel,
-        selectedVisibilityType,
-      });
-      return new ChatSDKError('bad_request:api').toResponse();
+    if (!messages || !Array.isArray(messages)) {
+      console.error('Invalid messages format:', messages);
+      return new Response(
+        JSON.stringify({ error: 'Invalid messages format' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
+      );
     }
 
-    // Type assertion after validation
-    const validatedMessage = userMessage as ChatMessage;
+    // Получаем последнее сообщение пользователя
+    const userMessage = messages[messages.length - 1];
+    if (!userMessage || userMessage.role !== 'user') {
+      console.error('No user message found:', userMessage);
+      return new Response(JSON.stringify({ error: 'No user message found' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Получаем модель из URL параметров или используем дефолтную
+    const url = new URL(request.url);
+    const modelFromUrl = url.searchParams.get('model');
+    const selectedChatModel = modelFromUrl || 'gpt-4o-mini-2024-07-18';
+    const selectedVisibilityType = 'private';
+
+    console.log('Using model:', selectedChatModel);
+    console.log('User message:', userMessage);
 
     console.log('About to call auth()...');
     const session = await auth();
@@ -160,28 +158,7 @@ export async function POST(request: Request) {
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const userType: UserType = session.user.type;
-
-    console.log('Step: after getMessageCountByUserId');
-    const messageCount = await getMessageCountByUserId({
-      id: session.user.id,
-      differenceInHours: 24,
-    });
-
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
-      return new ChatSDKError('rate_limit:chat').toResponse();
-    }
-
-    // Проверка: если гость и не gpt-4o-mini-2024-07-18
-    if (
-      userType === 'guest' &&
-      selectedChatModel !== 'gpt-4o-mini-2024-07-18'
-    ) {
-      return new ChatSDKError('rate_guest:chat').toResponse();
-    }
-
-    // --- Новый блок: Проверка баланса и списание стоимости ---
-    // Получаем модель из массива и пользователя из БД
+    // Проверка баланса
     const [chatModel, user] = await Promise.all([
       Promise.resolve(chatModels.find((m) => m.id === selectedChatModel)),
       getUserById(session.user.id),
@@ -211,25 +188,16 @@ export async function POST(request: Request) {
     // Списываем стоимость модели с баланса пользователя
     await decrementUserBalance(session.user.id, cost);
     console.log('Balance decremented successfully');
-    // --- Конец нового блока ---
 
-    console.log('Step: after getChatById');
+    // Получаем или создаем чат
     const chat = await getChatById({ id });
-
     if (!chat) {
       console.log('Chat not found, creating new chat with id:', id);
       const title = await generateTitleFromUserMessage({
-        message: validatedMessage,
+        message: userMessage,
       });
 
       console.log('Generated title:', title);
-      console.log('Saving chat with data:', {
-        id,
-        userId: session.user.id,
-        title,
-        visibility: selectedVisibilityType,
-      });
-
       try {
         await saveChat({
           id,
@@ -238,28 +206,8 @@ export async function POST(request: Request) {
           visibility: selectedVisibilityType,
         });
         console.log('Chat saved successfully');
-
-        // Проверяем, что чат действительно создался
-        const verifyChat = await getChatById({ id });
-        if (!verifyChat) {
-          console.error('Chat was not saved properly, retrying...');
-          // Повторная попытка через небольшую задержку
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          const retryChat = await getChatById({ id });
-          if (!retryChat) {
-            console.error('Chat still not found after retry');
-            return new ChatSDKError('bad_request:api').toResponse();
-          }
-          console.log('Chat found after retry:', retryChat);
-        } else {
-          console.log('Chat verified after save:', verifyChat);
-        }
       } catch (error) {
         console.error('Error saving chat:', error);
-        console.error('Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-        });
         return new ChatSDKError('bad_request:api').toResponse();
       }
     } else {
@@ -269,26 +217,12 @@ export async function POST(request: Request) {
       console.log('Found existing chat:', chat);
     }
 
-    // Проверяем, что чат существует перед сохранением сообщений
-    const finalChat = await getChatById({ id });
-    if (!finalChat) {
-      console.error('Chat not found before saving messages, id:', id);
-      return new ChatSDKError('bad_request:api').toResponse();
-    }
-
-    console.log('Final chat check passed:', finalChat);
-
-    // Убираем проверку создания чата - просто продолжаем
-    console.log('Step: after getMessagesByChatId');
+    // Получаем сообщения из БД и добавляем новое
     const messagesFromDb = await getMessagesByChatId({ id });
-    const uiMessages = [
-      ...convertToUIMessages(messagesFromDb),
-      validatedMessage,
-    ];
+    const uiMessages = [...convertToUIMessages(messagesFromDb), userMessage];
 
     const { longitude, latitude, city, country } = geolocation(request);
-
-    const requestHints: RequestHints = {
+    const requestHints = {
       longitude,
       latitude,
       city,
@@ -304,9 +238,7 @@ export async function POST(request: Request) {
         .where(eq(message.id, userMessage.id))
         .limit(1);
 
-      if (existingMessage.length > 0) {
-        console.log('Message already exists, skipping save');
-      } else {
+      if (existingMessage.length === 0) {
         await saveMessages({
           messages: [
             {
@@ -336,13 +268,14 @@ export async function POST(request: Request) {
           ],
         });
         console.log('Messages saved successfully');
+      } else {
+        console.log('Message already exists, skipping save');
       }
     } catch (error) {
       console.error('Error saving messages:', error);
-      // Не возвращаем ошибку, если сообщение уже существует
-      if (error instanceof Error && error.message.includes('duplicate key')) {
-        console.log('Message already exists, continuing...');
-      } else {
+      if (
+        !(error instanceof Error && error.message.includes('duplicate key'))
+      ) {
         return new ChatSDKError('bad_request:api').toResponse();
       }
     }
@@ -368,11 +301,9 @@ export async function POST(request: Request) {
           });
 
           console.log('About to call LLM with model:', selectedChatModel);
-          console.log('selectedChatModel value:', selectedChatModel);
           const model = getProviderByModelId(selectedChatModel);
           console.log('Model object:', model);
-          console.log('Model type:', typeof model);
-          console.log('Model constructor:', model?.constructor?.name);
+
           const result = await streamText({
             model: model as any,
             system: systemPrompt({ selectedChatModel, requestHints }),
@@ -391,19 +322,13 @@ export async function POST(request: Request) {
             }),
           );
           console.log('Message stream merged');
-
-          // Убираем finishReason и сохраняем сообщение позже
         } catch (error) {
           console.error('Error in execute function:', error);
-          console.error('Error details:', {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined,
-          });
           throw error;
         }
       },
       onError: (error) => {
-        console.error('Ошибка в createUIMessageStream:', error);
+        console.error('Stream error:', error);
         return 'Oops, an error occurred!';
       },
     });

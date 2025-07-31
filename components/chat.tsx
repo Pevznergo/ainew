@@ -68,6 +68,7 @@ export function Chat({
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
     onError: (error) => {
+      console.error('Chat error:', error);
       if (error instanceof ChatSDKError) {
         toast({
           type: 'error',

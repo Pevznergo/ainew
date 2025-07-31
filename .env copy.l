@@ -4,7 +4,7 @@ AUTH_SECRET=c9fb1ce68572a60b9a18474d5d802e91
 # Get your xAI API Key here for chat and image models: https://console.x.ai/
 XAI_API_KEY=xai-6XZlXpXAs0gpgVDqzoiH4kve0HOsFE7OStMA9xv1nhPvfTL1M8ul5Scw0ItRUUK5cZCkET598cipOJrj
 
-OPENAI_API_KEY=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
+OPENAI_API_KEY=k-proj-IPYFkurd59XhutSTg3LLSirxVcmdinwdSNkdLs5guBhCXd69FMLnFeaFtqpiGW06GkgokcNPpOT3BlbkFJ9RLuf0XP5kqUK_p1_papUUETsJCkQTsE2_XbAb97xSZ6OSSpWlThO31KNJTvgNdIDPwRzOP7MA
 
 # Anthropic
 ANTHROPIC_API_KEY=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
@@ -18,6 +18,7 @@ DEEPSEEK_API_KEY=sk-fd4ea6ad2f7a448e971efa2c107a26d6
 # Instructions to create a Vercel Blob Store here: https://vercel.com/docs/storage/vercel-blob
 BLOB_READ_WRITE_TOKEN=vercel_blob_rw_Pi576we7hB3SZJRK_JdaFIfROXkGB01KRwKy8xL0kVGOy2X
 
+# Instructions to create a PostgreSQL database here: https://vercel.com/docs/storage/vercel-postgres/quickstart
 POSTGRES_URL=postgresql://neondb_owner:npg_3r6tywzYPcKl@ep-noisy-math-adtsvtro-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require
 
 SUPABASE_URL=https://zhavpwkhkpazestjqcdm.supabase.co

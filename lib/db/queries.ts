@@ -157,6 +157,13 @@ export async function getChatsByUserId({
   endingBefore: string | null;
 }) {
   try {
+    console.log('getChatsByUserId called with:', {
+      id,
+      limit,
+      startingAfter,
+      endingBefore,
+    });
+
     const extendedLimit = limit + 1;
 
     const query = (whereCondition?: SQL<any>) =>
@@ -208,6 +215,7 @@ export async function getChatsByUserId({
       hasMore,
     };
   } catch (error) {
+    console.error('getChatsByUserId error:', error);
     throw new ChatSDKError('bad_request:database');
   }
 }
