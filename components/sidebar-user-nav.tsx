@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect, useOptimistic, startTransition } from 'react';
 import { ChevronUp } from 'lucide-react';
 import Image from 'next/image';
-import type { User } from 'next-auth';
+import type { Session } from 'next-auth';
 import { signOut, useSession } from 'next-auth/react';
 import { useTheme } from 'next-themes';
+import { useUser } from '@/contexts/user-context';
 
 import {
   DropdownMenu,
@@ -23,10 +25,26 @@ import { toast } from './toast';
 import { LoaderIcon } from './icons';
 import { guestRegex } from '@/lib/constants';
 
-export function SidebarUserNav({ user }: { user: User }) {
+export function SidebarUserNav({ session }: { session: Session }) {
   const router = useRouter();
   const { data, status } = useSession();
   const { setTheme, resolvedTheme } = useTheme();
+  const { user, setUser } = useUser();
+
+  // Оптимистичное обновление пользователя
+  const [optimisticUser, setOptimisticUser] = useOptimistic(data?.user);
+
+  // Обновлять контекст при изменении data из useSession
+  useEffect(() => {
+    if (data?.user) {
+      setUser(data.user);
+      startTransition(() => {
+        setOptimisticUser(data.user);
+      });
+    }
+  }, [data?.user, setUser, setOptimisticUser]);
+
+  const currentUser = optimisticUser || user;
 
   const isGuest = guestRegex.test(data?.user?.email ?? '');
   const isRegular = data?.user?.type === 'regular';
@@ -54,14 +72,14 @@ export function SidebarUserNav({ user }: { user: User }) {
                 className="data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10"
               >
                 <Image
-                  src={`https://avatar.vercel.sh/${user.email}`}
-                  alt={user.email ?? 'User Avatar'}
+                  src={`https://avatar.vercel.sh/${currentUser?.email || 'default'}`}
+                  alt={currentUser?.email ?? 'User Avatar'}
                   width={24}
                   height={24}
                   className="rounded-full"
                 />
                 <span data-testid="user-email" className="truncate">
-                  {isGuest ? 'Войти' : user?.email}
+                  {isGuest ? 'Войти' : currentUser?.email}
                 </span>
                 <ChevronUp className="ml-auto" />
               </SidebarMenuButton>
@@ -75,7 +93,9 @@ export function SidebarUserNav({ user }: { user: User }) {
             <DropdownMenuItem
               data-testid="user-nav-item-theme"
               className="cursor-pointer"
-              onSelect={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              onSelect={() =>
+                setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
+              }
             >
               {`${resolvedTheme === 'light' ? 'Темная' : 'Светлая'} тема`}
             </DropdownMenuItem>
@@ -119,7 +139,9 @@ export function SidebarUserNav({ user }: { user: User }) {
                   onSelect={() => router.push('/invite')}
                 >
                   <span>Пригласить друга</span>
-                  <span className="text-xs text-muted-foreground">Бонусы до 40000 рублей!</span>
+                  <span className="text-xs text-muted-foreground">
+                    Бонусы до 40000 рублей!
+                  </span>
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
