@@ -18,10 +18,12 @@ import { isTestEnvironment } from '../constants';
 
 export const myProvider = isTestEnvironment;
 
-// Убедитесь, что API ключ загружается правильно
-export const openaiProvider = openai({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
+// Providers - API keys are automatically loaded from environment
+export const openaiProvider = openai;
+export const anthropicProvider = anthropic;
+export const googleProvider = google;
+export const deepseekProvider = deepseek;
+export const xaiProvider = xai;
 
 export function getProviderByModelId(modelId: string) {
   if (modelId.startsWith('gpt-')) return openai;
