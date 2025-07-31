@@ -102,7 +102,7 @@ function PureChatHeader({
 
       <div className="ml-auto">
         <div style={{ width: '250px' }}>
-          {session.user && <SidebarUserNav user={session.user} />}
+          {session.user && <SidebarUserNav session={session} />}
         </div>
       </div>
     </header>
