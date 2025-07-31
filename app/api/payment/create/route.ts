@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     // Создаем платеж в YooKassa
     const payment = await checkout.createPayment({
       amount: {
-        value: '10.00',
+        value: '199.00',
         currency: 'RUB',
       },
       confirmation: {

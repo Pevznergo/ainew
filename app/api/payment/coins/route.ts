@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Валидация пакета
     const validPackages = [
-      { label: '250 монет — 150 ₽', price: 15, coins: 250, pricePer: '0,60' },
+      { label: '250 монет — 150 ₽', price: 150, coins: 250, pricePer: '0,60' },
       { label: '800 монет — 300 ₽', price: 300, coins: 800, pricePer: '0,38' },
       {
         label: '1500 монет — 500 ₽',
