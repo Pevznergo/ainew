@@ -4,7 +4,6 @@ import { guestRegex, isDevelopmentEnvironment } from './lib/constants';
 
 export async function middleware(request: NextRequest) {
   console.log('Middleware path:', request.nextUrl.pathname);
-  console.log('Headers:', request.headers.get('cookie'));
   const { pathname } = request.nextUrl;
 
   /*
@@ -19,18 +18,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Проверяем существующий токен
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
     secureCookie: !isDevelopmentEnvironment,
   });
 
+  // Если нет токена, создаем гостя только при первом посещении
   if (!token) {
-    const redirectUrl = encodeURIComponent(request.url);
+    // Проверяем, есть ли уже гость в cookies
+    const hasGuestSession =
+      request.cookies.get('next-auth.session-token') ||
+      request.cookies.get('__Secure-next-auth.session-token');
 
-    return NextResponse.redirect(
-      new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url),
-    );
+    if (!hasGuestSession) {
+      const redirectUrl = encodeURIComponent(request.url);
+      return NextResponse.redirect(
+        new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url),
+      );
+    }
   }
 
   const isGuest = guestRegex.test(token?.email ?? '');
