@@ -72,7 +72,11 @@ export function SidebarUserNav({ session }: { session: Session }) {
                 className="data-[state=open]:bg-sidebar-accent bg-background data-[state=open]:text-sidebar-accent-foreground h-10"
               >
                 <Image
-                  src={`https://avatar.vercel.sh/${currentUser?.email || 'default'}`}
+                  src={
+                    currentUser?.email
+                      ? `https://avatar.vercel.sh/${currentUser.email}`
+                      : '/images/profile.png'
+                  }
                   alt={currentUser?.email ?? 'User Avatar'}
                   width={24}
                   height={24}

@@ -46,9 +46,47 @@ export default function Page() {
     }
   }, [state.status, handleSuccess]);
 
-  const handleSubmit = (formData: FormData) => {
-    setEmail(formData.get('email') as string);
-    formAction(formData);
+  const handleSubmit = async (formData: FormData) => {
+    // Получаем данные из формы
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    // Получаем реферальный код из localStorage
+    const referralCode = localStorage.getItem('referralCode');
+
+    console.log('Submitting registration with:', { email, referralCode });
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          referralCode,
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Registration response:', data);
+
+      if (data.success) {
+        // Очищаем реферальный код из localStorage
+        localStorage.removeItem('referralCode');
+        handleSuccess();
+      } else {
+        toast({
+          type: 'error',
+          description: data.error || 'Registration failed',
+        });
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast({
+        type: 'error',
+        description: 'Registration failed',
+      });
+    }
   };
 
   return (

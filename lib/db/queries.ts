@@ -54,8 +54,38 @@ export async function createUser(email: string, password: string) {
   const hashedPassword = generateHashedPassword(password);
 
   try {
-    return await db.insert(user).values({ email, password: hashedPassword });
+    // Проверяем, существует ли пользователь с таким email
+    const existingUser = await db
+      .select()
+      .from(user)
+      .where(eq(user.email, email))
+      .limit(1);
+
+    if (existingUser.length > 0) {
+      throw new Error('User with this email already exists');
+    }
+
+    const result = await db
+      .insert(user)
+      .values({
+        email,
+        password: hashedPassword,
+      })
+      .returning({
+        id: user.id,
+        email: user.email,
+      });
+
+    console.log('User created successfully:', result);
+    return result;
   } catch (error) {
+    console.error('Error creating user:', error);
+    if (
+      error instanceof Error &&
+      error.message === 'User with this email already exists'
+    ) {
+      throw error;
+    }
     throw new ChatSDKError('bad_request:database');
   }
 }
@@ -609,7 +639,6 @@ export async function generateReferralCode(): Promise<string> {
       return code;
     }
   }
-
   throw new Error('Failed to generate unique referral code');
 }
 

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 const typewriterTexts = [
   'Найди информацию',
@@ -85,6 +86,17 @@ export default function MainPage() {
   // Promo banner
   const [showPromo, setShowPromo] = useState(true);
 
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const referralCode = searchParams.get('ref');
+
+    if (referralCode) {
+      console.log('Saving referral code:', referralCode);
+      localStorage.setItem('referralCode', referralCode);
+    }
+  }, [searchParams]);
+
   return (
     <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
       {/* Header */}
@@ -158,13 +170,13 @@ export default function MainPage() {
         {showPromo && (
           <Link
             href="/invite"
-            className="fixed bottom-6 right-6 z-50 bg-[#18181b] shadow-xl rounded-2xl flex items-center gap-4 px-6 py-4 border border-indigo-900 max-w-xs cursor-pointer transition hover:shadow-2xl hover:border-indigo-500"
+            className="fixed top-6 right-6 z-50 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-2xl rounded-2xl flex items-center gap-4 px-6 py-4 border-2 border-purple-400 max-w-xs cursor-pointer transition-all duration-300 hover:shadow-3xl hover:scale-105 hover:border-purple-300"
             style={{ textDecoration: 'none' }}
             tabIndex={0}
-            aria-label="Промо: бонус до 40 000 ₽ при регистрации сегодня"
+            aria-label="Промо: бонус до 40 000 ₽ при регистрации сегодня"
           >
             <button
-              className="absolute top-2 right-2 text-2xl text-neutral-500 hover:text-red-500 z-10"
+              className="absolute top-2 right-2 text-2xl text-white hover:text-red-300 z-10 transition-colors"
               aria-label="Закрыть"
               type="button"
               tabIndex={-1}
@@ -179,15 +191,15 @@ export default function MainPage() {
             <Image
               src="/images/gift100.png"
               alt="Подарок"
-              width={32}
-              height={32}
-              style={{ minWidth: 32, minHeight: 32 }}
+              width={40}
+              height={40}
+              style={{ minWidth: 40, minHeight: 40 }}
             />
             <div>
               <div className="font-bold text-base text-white">
-                Бонус до 40 000 ₽ при регистрации сегодня
+                Бонус до 40 000 ₽ при регистрации сегодня
               </div>
-              <div className="text-xs mt-1 text-indigo-400 underline">
+              <div className="text-xs mt-1 text-purple-200 underline">
                 Условия акции
               </div>
             </div>
