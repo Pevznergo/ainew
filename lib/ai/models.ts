@@ -49,13 +49,13 @@ export const chatModels: ChatModel[] = [
     description: 'Размышляющая модель от OpenAI. Лучшая для кодирования',
   },
   {
-    id: 'Claude Sonnet 4',
+    id: 'claude-sonnet-4-20250514',
     name: 'Claude Sonnet 4 (100 монет/запрос)',
     cost: 100, // Added cost field
     description: 'Рассуждающая модель от Anthropic',
   },
   {
-    id: 'Claude 3.7 Sonnet',
+    id: 'claude-3-7-sonnet-20250219',
     name: 'Claude 3.7 Sonnet (100 монет/запрос)',
     cost: 100, // Added cost field
     description: 'Размышляющая модель от Anthropic',
@@ -79,13 +79,13 @@ export const chatModels: ChatModel[] = [
     description: 'Сверхбыстрая модель от Google',
   },
   {
-    id: 'Grok 3',
+    id: 'grok-3',
     name: 'Grok 3 (20 монет/запрос)',
     cost: 20, // Added cost field
     description: 'Быстрая модель от xAI',
   },
   {
-    id: 'Grok 3 Mini',
+    id: 'grok-3-mini',
     name: 'Grok 3 Mini (10 монет/запрос)',
     cost: 10, // Added cost field
     description: 'Быстрая модель от xAI',

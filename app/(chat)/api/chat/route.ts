@@ -47,14 +47,10 @@ import { eq } from 'drizzle-orm';
 import { message } from '@/lib/db/schema';
 import { db } from '@/lib/db/index';
 import { cookies } from 'next/headers';
-
-const providerMap = {
-  openai,
-  anthropic,
-  google,
-  deepseek,
-  xai,
-};
+import { guestRegex } from '@/lib/constants';
+import { getGuestMessageCount } from '@/lib/db/queries';
+import type { User } from '@/lib/db/schema';
+import { checkUserEntitlements } from '@/lib/ai/entitlements';
 
 function getProviderByModelId(modelId: string) {
   if (modelId.startsWith('gpt-4o-mini-2024-07-18')) return openai(modelId);
@@ -63,13 +59,14 @@ function getProviderByModelId(modelId: string) {
   if (modelId.startsWith('o3-mini-2025-01-31')) return openai(modelId);
   if (modelId.startsWith('o1-mini-2024-09-12')) return openai(modelId);
   if (modelId.startsWith('o4-mini-2025-04-16')) return openai(modelId);
-  if (modelId.startsWith('Claude Sonnet 4')) return anthropic(modelId);
-  if (modelId.startsWith('Claude 3.7 Sonnet')) return anthropic(modelId);
+  if (modelId.startsWith('claude-sonnet-4-20250514')) return anthropic(modelId);
+  if (modelId.startsWith('claude-3-7-sonnet-20250219'))
+    return anthropic(modelId);
   if (modelId.startsWith('gemini-2.5-pro')) return google(modelId);
   if (modelId.startsWith('gemini-2.5-flash')) return google(modelId);
   if (modelId.startsWith('gemini-2.5-flash-lite')) return google(modelId);
-  if (modelId.startsWith('Grok 3')) return xai(modelId);
-  if (modelId.startsWith('Grok 3 Mini')) return xai(modelId);
+  if (modelId.startsWith('grok-3')) return xai(modelId);
+  if (modelId.startsWith('grok-3-mini')) return xai(modelId);
   throw new Error(`Unknown provider for modelId: ${modelId}`);
 }
 
@@ -159,42 +156,61 @@ export async function POST(request: Request) {
     console.log('About to call auth()...');
     const session = await auth();
     console.log('Auth result:', session);
+    console.log('Session user:', session?.user);
+    console.log('User email:', session?.user?.email);
+    console.log(
+      'Guest regex test:',
+      session?.user ? guestRegex.test(session.user.email) : false,
+    );
 
     if (!session?.user) {
       console.log('ERROR: No session or user');
-      return new ChatSDKError('unauthorized:chat').toResponse();
-    }
-
-    // Проверка баланса
-    const [chatModel, user] = await Promise.all([
-      Promise.resolve(chatModels.find((m) => m.id === selectedChatModel)),
-      getUserById(session.user.id),
-    ]);
-
-    if (!chatModel) {
-      console.error('Model not found for id:', selectedChatModel);
       return new Response(
         JSON.stringify({
-          error: 'Model not found',
-          details: `Model with id ${selectedChatModel} not found`,
+          error: 'Unauthorized',
+          message: 'User not found',
         }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        },
       );
     }
 
-    const cost = chatModel.cost;
-    const balance = user.balance;
-
-    console.log('Model cost:', cost, 'User balance:', balance);
-
-    if (cost > balance) {
-      console.log('Insufficient balance for model:', selectedChatModel);
-      return new ChatSDKError('rate_regular:chat').toResponse();
+    // Проверяем права пользователя
+    const user = await getUserById(session.user.id);
+    if (!user) {
+      return new Response(
+        JSON.stringify({
+          error: 'User not found',
+          message: 'User data not found',
+        }),
+        {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
     }
 
-    // Списываем стоимость модели с баланса пользователя
-    await decrementUserBalance(session.user.id, cost);
-    console.log('Balance decremented successfully');
+    const isGuest = guestRegex.test(user.email);
+
+    if (isGuest) {
+      const guestMessageCount = await getGuestMessageCount(user.id);
+      const maxGuestMessages = 3;
+
+      if (guestMessageCount >= maxGuestMessages) {
+        return new Response(
+          JSON.stringify({
+            error: 'Guest message limit exceeded',
+            message:
+              'Достигнут лимит сообщений для гостевого пользователя. Пожалуйста, зарегистрируйтесь для продолжения.',
+          }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+    } else {
+      await checkUserEntitlements(user, selectedChatModel);
+    }
 
     // Получаем или создаем чат
     const chat = await getChatById({ id });
@@ -215,11 +231,29 @@ export async function POST(request: Request) {
         console.log('Chat saved successfully');
       } catch (error) {
         console.error('Error saving chat:', error);
-        return new ChatSDKError('bad_request:api').toResponse();
+        return new Response(
+          JSON.stringify({
+            error: 'Bad request',
+            message: 'Invalid request data',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
       }
     } else {
       if (chat.userId !== session.user.id) {
-        return new ChatSDKError('forbidden:chat').toResponse();
+        return new Response(
+          JSON.stringify({
+            error: 'Forbidden',
+            message: 'You do not have permission to access this chat',
+          }),
+          {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
       }
       console.log('Found existing chat:', chat);
     }
@@ -283,7 +317,16 @@ export async function POST(request: Request) {
       if (
         !(error instanceof Error && error.message.includes('duplicate key'))
       ) {
-        return new ChatSDKError('bad_request:api').toResponse();
+        return new Response(
+          JSON.stringify({
+            error: 'Bad request',
+            message: 'Invalid request data',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
       }
     }
 
@@ -366,19 +409,36 @@ export async function POST(request: Request) {
       error instanceof Error ? error.stack : 'No stack',
     );
 
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-    return new Response(
-      JSON.stringify({
-        error: 'Internal server error',
-        details: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
-      }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    if (error.message.includes('лимит сообщений')) {
+      return new Response(
+        JSON.stringify({
+          error: 'Guest message limit exceeded',
+          message: error.message,
+        }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    if (error.message.includes('Недостаточно монет')) {
+      return new Response(
+        JSON.stringify({
+          error: 'Insufficient balance',
+          message: error.message,
+        }),
+        {
+          status: 402,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
 
@@ -387,19 +447,46 @@ export async function DELETE(request: Request) {
   const id = searchParams.get('id');
 
   if (!id) {
-    return new ChatSDKError('bad_request:api').toResponse();
+    return new Response(
+      JSON.stringify({
+        error: 'Bad request',
+        message: 'Invalid request data',
+      }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   }
 
   const session = await auth();
 
   if (!session?.user) {
-    return new ChatSDKError('unauthorized:chat').toResponse();
+    return new Response(
+      JSON.stringify({
+        error: 'Unauthorized',
+        message: 'User not found',
+      }),
+      {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   }
 
   const chat = await getChatById({ id });
 
   if (chat.userId !== session.user.id) {
-    return new ChatSDKError('forbidden:chat').toResponse();
+    return new Response(
+      JSON.stringify({
+        error: 'Forbidden',
+        message: 'You do not have permission to access this chat',
+      }),
+      {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      },
+    );
   }
 
   const deletedChat = await deleteChatById({ id });

@@ -730,3 +730,19 @@ export async function payReferralBonus(referredUserId: string): Promise<void> {
     console.error('Failed to pay referral bonus:', error);
   }
 }
+
+export async function getGuestMessageCount(userId: string): Promise<number> {
+  console.log('getGuestMessageCount called with userId:', userId);
+
+  const result = await db
+    .select({ messageCount: count(message.id) })
+    .from(message)
+    .innerJoin(chat, eq(message.chatId, chat.id))
+    .where(eq(chat.userId, userId));
+
+  console.log('getGuestMessageCount result:', result);
+  const messageCount = result[0]?.messageCount || 0;
+  console.log('Final count:', messageCount);
+
+  return messageCount;
+}

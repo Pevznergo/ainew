@@ -73,6 +73,29 @@ export function Chat({
     id,
     experimental_throttle: 100,
     generateId: generateUUID,
+    onError: (error) => {
+      console.error('Chat error:', error);
+
+      if (error.message.includes('Guest message limit exceeded')) {
+        toast({
+          type: 'error',
+          description:
+            'Достигнут лимит сообщений для гостевого пользователя. Пожалуйста, зарегистрируйтесь.',
+        });
+      } else if (error.message.includes('Недостаточно монет')) {
+        toast({
+          type: 'error',
+          description:
+            'Недостаточно монет для отправки сообщения. Пополните баланс.',
+        });
+      } else {
+        toast({
+          type: 'error',
+          description:
+            error.message || 'Произошла ошибка при отправке сообщения',
+        });
+      }
+    },
     onFinish: async (message) => {
       console.log('Assistant message to save:', message);
 
@@ -93,15 +116,6 @@ export function Chat({
       }
 
       mutate(unstable_serialize(getChatHistoryPaginationKey));
-    },
-    onError: (error) => {
-      console.error('Chat error:', error);
-      if (error instanceof ChatSDKError) {
-        toast({
-          type: 'error',
-          description: error.message,
-        });
-      }
     },
   });
 

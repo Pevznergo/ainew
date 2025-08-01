@@ -19,13 +19,14 @@ function getProviderByModelId(modelId: string) {
   if (modelId.startsWith('o3-mini-2025-01-31')) return openai(modelId);
   if (modelId.startsWith('o1-mini-2024-09-12')) return openai(modelId);
   if (modelId.startsWith('o4-mini-2025-04-16')) return openai(modelId);
-  if (modelId.startsWith('Claude Sonnet 4')) return anthropic(modelId);
-  if (modelId.startsWith('Claude 3.7 Sonnet')) return anthropic(modelId);
+  if (modelId.startsWith('claude-sonnet-4-20250514')) return anthropic(modelId);
+  if (modelId.startsWith('claude-3-7-sonnet-20250219'))
+    return anthropic(modelId);
   if (modelId.startsWith('gemini-2.5-pro')) return google(modelId);
   if (modelId.startsWith('gemini-2.5-flash')) return google(modelId);
   if (modelId.startsWith('gemini-2.5-flash-lite')) return google(modelId);
-  if (modelId.startsWith('Grok 3')) return xai(modelId);
-  if (modelId.startsWith('Grok 3 Mini')) return xai(modelId);
+  if (modelId.startsWith('grok-3')) return xai(modelId);
+  if (modelId.startsWith('grok-3-mini')) return xai(modelId);
   throw new Error(`Unknown provider for modelId: ${modelId}`);
 }
 
