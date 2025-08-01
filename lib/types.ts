@@ -45,9 +45,20 @@ export interface Attachment {
   contentType: string;
 }
 
+export function sendGTMEvent(
+  eventName: string,
+  parameters: Record<string, any> = {},
+) {
+  if (typeof window !== 'undefined' && window.dataLayer) {
+    window.dataLayer.push({
+      event: eventName,
+      ...parameters,
+    });
+  }
+}
+
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
-    dataLayer?: any[];
+    dataLayer: any[];
   }
 }

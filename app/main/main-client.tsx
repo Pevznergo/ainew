@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { sendGTMEvent } from '@/lib/gtm';
 
 const typewriterTexts = [
   'Найди информацию',
@@ -113,14 +114,11 @@ export default function MainPageClient() {
               href="/"
               className="modern-btn-cta"
               onClick={() => {
-                // GTM dataLayer событие
-                if (typeof window !== 'undefined' && window.dataLayer) {
-                  window.dataLayer.push({
-                    event: 'click_open_chat',
-                    event_category: 'engagement',
-                    event_label: 'main_page_cta',
-                  });
-                }
+                sendGTMEvent('click_open_chat', {
+                  event_category: 'engagement',
+                  event_label: 'header_cta',
+                  location: 'header',
+                });
               }}
             >
               Открыть чат
@@ -159,6 +157,13 @@ export default function MainPageClient() {
               <Link
                 href="/"
                 className="modern-btn-cta text-lg px-8 py-4 rounded-2xl shadow-lg"
+                onClick={() => {
+                  sendGTMEvent('click_open_chat', {
+                    event_category: 'engagement',
+                    event_label: 'hero_cta',
+                    location: 'hero_section',
+                  });
+                }}
               >
                 Открыть чат
               </Link>
@@ -174,6 +179,14 @@ export default function MainPageClient() {
             style={{ textDecoration: 'none' }}
             tabIndex={0}
             aria-label="Промо: бонус до 40 000 ₽ при регистрации сегодня"
+            onClick={() => {
+              sendGTMEvent('click_promo_banner', {
+                event_category: 'engagement',
+                event_label: 'promo_banner',
+                promo_type: 'registration_bonus',
+                bonus_amount: '40000',
+              });
+            }}
           >
             <button
               className="absolute top-2 right-2 text-2xl text-white hover:text-red-300 z-10 transition-colors"
@@ -309,6 +322,14 @@ export default function MainPageClient() {
                 className="modern-btn-outline mt-4 text-center py-4"
                 target="_blank"
                 rel="noopener"
+                onClick={() => {
+                  sendGTMEvent('click_plan_cta', {
+                    event_category: 'engagement',
+                    event_label: 'basic_plan',
+                    plan_type: 'basic',
+                    location: 'pricing_section',
+                  });
+                }}
               >
                 Попробовать сейчас
               </Link>
@@ -362,6 +383,14 @@ export default function MainPageClient() {
                 className="modern-btn-cta-alt mt-4 text-center py-4"
                 target="_blank"
                 rel="noopener"
+                onClick={() => {
+                  sendGTMEvent('click_plan_cta', {
+                    event_category: 'engagement',
+                    event_label: 'pro_plan',
+                    plan_type: 'pro',
+                    location: 'pricing_section',
+                  });
+                }}
               >
                 Оформить подписку
               </Link>

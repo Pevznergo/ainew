@@ -24,3 +24,15 @@ export const gtmEvent = (
     });
   }
 };
+
+export function sendGTMEvent(
+  eventName: string,
+  parameters: Record<string, any> = {},
+) {
+  if (typeof window !== 'undefined' && window.dataLayer) {
+    window.dataLayer.push({
+      event: eventName,
+      ...parameters,
+    });
+  }
+}

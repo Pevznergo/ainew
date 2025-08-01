@@ -111,6 +111,12 @@ export function getStreamContext() {
 }
 
 export async function POST(request: Request) {
+  console.log('=== POST /api/chat called ===');
+  console.log(
+    'Request headers:',
+    Object.fromEntries(request.headers.entries()),
+  );
+
   // Получаем модель из cookie вместо URL
   const cookieStore = await cookies();
   const modelFromCookie = cookieStore.get('chat-model')?.value;
@@ -384,10 +390,6 @@ export async function POST(request: Request) {
           });
           console.log('streamText completed, result:', result);
 
-          // УБРАТЬ сохранение отсюда - оно блокирует поток
-          // const assistantMessage = { ... };
-          // await saveMessages({ messages: [assistantMessage] });
-
           console.log('About to consume stream...');
           result.consumeStream();
           console.log('Stream consumed');
@@ -401,11 +403,21 @@ export async function POST(request: Request) {
           console.log('Message stream merged');
         } catch (error) {
           console.error('Error in execute function:', error);
+          console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          });
           throw error;
         }
       },
       onError: (error) => {
         console.error('Stream error:', error);
+        console.error('Stream error details:', {
+          name: error instanceof Error ? error.name : 'Unknown',
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : 'No stack',
+        });
         return 'Oops, an error occurred!';
       },
     });

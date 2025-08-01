@@ -27,9 +27,9 @@ export const xaiProvider = xai;
 
 export function getProviderByModelId(modelId: string) {
   if (modelId.startsWith('gpt-')) return openai;
-  if (modelId.startsWith('Claude')) return anthropic;
-  if (modelId.startsWith('Gemini')) return google;
-  if (modelId.startsWith('DeepSeek')) return deepseek;
-  if (modelId.startsWith('Grok')) return xai;
+  if (modelId.startsWith('claude-')) return anthropic;
+  if (modelId.startsWith('gemini-')) return google;
+  if (modelId.startsWith('deepseek-')) return deepseek;
+  if (modelId.startsWith('grok-')) return xai;
   throw new Error(`Unknown provider for modelId: ${modelId}`);
 }
