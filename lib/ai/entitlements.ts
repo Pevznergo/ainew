@@ -3,6 +3,7 @@ import type { ChatModel } from './models';
 import { chatModels } from './models';
 import type { User } from '@/lib/db/schema';
 import { guestRegex } from '@/lib/constants';
+import { decrementUserBalance } from '@/lib/db/server-queries';
 
 interface Entitlements {
   maxMessagesPerDay: number;
@@ -61,19 +62,17 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    */
 };
 export async function checkUserEntitlements(user: User, modelId: string) {
-  // Проверяем, является ли пользователь гостем
-  const isGuest = guestRegex.test(user.email);
-
-  if (isGuest) {
-    // Для гостей не проверяем лимит здесь - это делается в API
-    // Лимит проверяется в app/(chat)/api/chat/route.ts
-    return true;
-  }
-
-  // Проверяем баланс для зарегистрированных пользователей
+  // Проверяем баланс для всех пользователей
   const chatModel = chatModels.find((m) => m.id === modelId);
   if (!chatModel) {
     throw new Error('Модель не найдена');
+  }
+
+  console.log('Model cost:', chatModel.cost, 'User balance:', user.balance);
+
+  // Если модель бесплатная, не проверяем баланс
+  if (chatModel.cost === 0) {
+    return true;
   }
 
   if (user.balance < chatModel.cost) {
@@ -81,6 +80,10 @@ export async function checkUserEntitlements(user: User, modelId: string) {
       `Недостаточно монет. Необходимо: ${chatModel.cost}, доступно: ${user.balance}`,
     );
   }
+
+  // Уменьшаем баланс пользователя только для платных моделей
+  await decrementUserBalance(user.id, chatModel.cost);
+  console.log('Balance decremented successfully');
 
   return true;
 }

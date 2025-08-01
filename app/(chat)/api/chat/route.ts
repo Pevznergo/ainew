@@ -198,6 +198,13 @@ export async function POST(request: Request) {
       const guestMessageCount = await getGuestMessageCount(user.id);
       const maxGuestMessages = 3;
 
+      console.log(
+        'Guest message count:',
+        guestMessageCount,
+        'Max:',
+        maxGuestMessages,
+      );
+
       if (guestMessageCount >= maxGuestMessages) {
         return new Response(
           JSON.stringify({
@@ -208,8 +215,24 @@ export async function POST(request: Request) {
           { status: 403, headers: { 'Content-Type': 'application/json' } },
         );
       }
-    } else {
+    }
+
+    // Проверяем баланс для всех пользователей
+    try {
       await checkUserEntitlements(user, selectedChatModel);
+      console.log('Entitlements check passed');
+    } catch (error) {
+      console.error('Entitlements check failed:', error);
+      return new Response(
+        JSON.stringify({
+          error: 'Insufficient balance',
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Недостаточно монет для отправки сообщения. Пополните баланс.',
+        }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } },
+      );
     }
 
     // Получаем или создаем чат
