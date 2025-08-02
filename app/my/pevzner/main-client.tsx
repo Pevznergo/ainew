@@ -52,12 +52,19 @@ const featuresData = [
 ];
 
 const models = [
-  'GPT-4o mini',
+  'GPT-4o Mini',
+  'GPT-4.1',
+  'GPT o3 2025',
+  'GPT o3-mini-high',
+  'GPT o1-mini',
+  'GPT o4-mini',
+  'Claude Sonnet 4',
+  'Claude 3.7 Sonnet',
+  'Gemini 2.5 PRO',
+  'Gemini 2.5 Flash',
   'Gemini 2.5 Flash Lite',
-  'Claude 3 Haiku',
-  'Mistral 7B',
-  'Llama 3.1',
-  'Code Llama',
+  'Grok 3',
+  'Grok 3 Mini',
 ];
 
 export default function MainPageClient() {
@@ -154,14 +161,14 @@ export default function MainPageClient() {
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Hero */}
         <section className="mb-20">
-          <div className="flex flex-col items-center justify-center text-center px-4 py-10 md:py-20 space-y-8">
+          <div className="flex flex-col items-center justify-center text-center px-4 py-6 md:py-12 space-y-8">
             {/* Фото блогера */}
-            <div className="relative mb-8">
+            <div className="relative mb-4">
               <Image
                 src="/demo/minaev.jpg"
                 alt="Сергей Минаев"
-                width={120}
-                height={120}
+                width={150}
+                height={150}
                 className="rounded-full object-cover border-4 border-indigo-500/30 shadow-2xl"
               />
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-500/20 to-transparent" />
@@ -183,11 +190,11 @@ export default function MainPageClient() {
                 История • Программирование • Контент • Анализ
                 <br />
                 <span className="block mt-2 text-xl sm:text-2xl">
-                  <span className="text-indigo-400 font-bold">GPT-4o mini</span>{' '}
-                  и{' '}
-                  <span className="text-indigo-400 font-bold">
-                    Gemini 2.5 Flash Lite
-                  </span>
+                  <span className="text-indigo-400 font-bold">GPT</span> ,{' '}
+                  <span className="text-indigo-400 font-bold">Claude</span> ,{' '}
+                  <span className="text-indigo-400 font-bold">Gemini</span> ,{' '}
+                  <span className="text-indigo-400 font-bold">Grok</span> ,{' '}
+                  <span className="text-indigo-400 font-bold">Mistral</span>
                 </span>
               </p>
             </div>
@@ -267,7 +274,7 @@ export default function MainPageClient() {
               вопросов до глубокого анализа.
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {models.map((model, index) => (
               <div
                 key={model}
