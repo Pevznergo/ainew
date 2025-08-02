@@ -3,7 +3,16 @@ import { getToken } from 'next-auth/jwt';
 import { guestRegex, isDevelopmentEnvironment } from './lib/constants';
 
 export async function middleware(request: NextRequest) {
-  console.log('Middleware path:', request.nextUrl.pathname);
+  console.log('=== Middleware Debug ===');
+  console.log('Path:', request.nextUrl.pathname);
+  console.log('User-Agent:', request.headers.get('user-agent'));
+  console.log('X-Forwarded-For:', request.headers.get('x-forwarded-for'));
+  console.log('X-Real-IP:', request.headers.get('x-real-ip'));
+  console.log('CF-Connecting-IP:', request.headers.get('cf-connecting-ip'));
+  console.log('X-Forwarded-Proto:', request.headers.get('x-forwarded-proto'));
+  console.log('Host:', request.headers.get('host'));
+  console.log('=======================');
+
   const { pathname } = request.nextUrl;
 
   /*

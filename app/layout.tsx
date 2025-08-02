@@ -61,10 +61,17 @@ export const metadata = {
     follow: true,
     nocache: false,
   },
-};
-
-export const viewport = {
-  maximumScale: 1, // Disable auto-zoom on mobile Safari
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+  },
 };
 
 const geist = Geist({
