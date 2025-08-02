@@ -10,7 +10,8 @@ export const SignOutForm = () => {
         'use server';
 
         await signOut({
-          redirectTo: '/',
+          redirect: true,
+          redirectTo: process.env.NEXTAUTH_URL || 'https://aporto.tech',
         });
       }}
     >

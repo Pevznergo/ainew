@@ -10,4 +10,8 @@ export const authConfig = {
     // while this file is also used in non-Node.js environments
   ],
   callbacks: {},
+  // Добавляем базовый URL для редиректов
+  basePath: process.env.NEXTAUTH_URL
+    ? new URL(process.env.NEXTAUTH_URL).pathname
+    : '',
 } satisfies NextAuthConfig;
