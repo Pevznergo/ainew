@@ -198,7 +198,7 @@ export default function NetLandingPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-[#18181b]/80 rounded-3xl p-8 border border-neutral-800 text-center">
-              <div className="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
+              <div className="bg-indigo-600 size-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
                 1
               </div>
               <h3 className="text-xl font-bold text-white mb-4">
@@ -210,7 +210,7 @@ export default function NetLandingPage() {
               </p>
             </div>
             <div className="bg-[#18181b]/80 rounded-3xl p-8 border border-neutral-800 text-center">
-              <div className="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
+              <div className="bg-indigo-600 size-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
                 2
               </div>
               <h3 className="text-xl font-bold text-white mb-4">
@@ -221,7 +221,7 @@ export default function NetLandingPage() {
               </p>
             </div>
             <div className="bg-[#18181b]/80 rounded-3xl p-8 border border-neutral-800 text-center">
-              <div className="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
+              <div className="bg-indigo-600 size-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
                 3
               </div>
               <h3 className="text-xl font-bold text-white mb-4">Зарабатывай</h3>
@@ -288,7 +288,7 @@ export default function NetLandingPage() {
                 className="bg-[#18181b]/80 rounded-2xl p-6 border border-neutral-800 hover:border-indigo-500/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="bg-indigo-600 w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                  <div className="bg-indigo-600 size-10 rounded-full flex items-center justify-center text-white text-sm font-bold">
                     {targetAudience.indexOf(audience) + 1}
                   </div>
                   <span className="text-white font-semibold">{audience}</span>

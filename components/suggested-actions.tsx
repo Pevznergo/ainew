@@ -65,7 +65,7 @@ function PureSuggestedActions({
                 parts: [{ type: 'text', text: suggestedAction.action }],
               });
             }}
-            className="text-left border rounded-xl px-3 sm:px-4 py-3 sm:py-3.5 text-xs sm:text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
+            className="text-left border rounded-xl p-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
           >
             <span className="font-medium truncate">
               {suggestedAction.title}

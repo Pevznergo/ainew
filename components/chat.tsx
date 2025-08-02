@@ -16,7 +16,7 @@ import { unstable_serialize } from 'swr/infinite';
 import { getChatHistoryPaginationKey } from './sidebar-history';
 import { toast } from './toast';
 import type { Session } from 'next-auth';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { ChatSDKError } from '@/lib/errors';
 import type { UIMessage } from 'ai';
@@ -26,7 +26,6 @@ import type {
   Attachment,
 } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
-import { useRouter } from 'next/navigation';
 
 export function Chat({
   id,
@@ -100,7 +99,7 @@ export function Chat({
       console.log('Assistant message to save:', message);
 
       try {
-        await fetch('/api/message', {
+        await fetchWithErrorHandlers('/api/chat/assistant', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -119,9 +118,12 @@ export function Chat({
     },
   });
 
-  const stableSetMessages = useCallback((messages) => {
-    setMessages(messages);
-  }, []);
+  const stableSetMessages = useCallback(
+    (messages) => {
+      setMessages(messages);
+    },
+    [setMessages],
+  );
 
   useEffect(() => {
     if (initialMessages.length > 0) {
@@ -159,7 +161,7 @@ export function Chat({
       <div className="flex flex-col min-w-0 h-screen md:h-dvh bg-background">
         <ChatHeader
           chatId={id}
-          selectedModelId={currentModel} // ← Передаем currentModel
+          selectedModelId={currentModel}
           selectedVisibilityType={initialVisibilityType}
           isReadonly={isReadonly}
           session={session}
@@ -169,8 +171,8 @@ export function Chat({
           chatId={id}
           status={status}
           votes={votes}
-          messages={messages as any} // Temporary fix
-          setMessages={setMessages as any} // Temporary fix
+          messages={messages as any}
+          setMessages={setMessages as any}
           reload={reload}
           isReadonly={isReadonly}
           isArtifactVisible={isArtifactVisible}
@@ -186,8 +188,8 @@ export function Chat({
               stop={stop}
               attachments={attachments}
               setAttachments={setAttachments}
-              messages={messages as any} // Temporary fix
-              setMessages={setMessages as any} // Temporary fix
+              messages={messages as any}
+              setMessages={setMessages as any}
               sendMessage={append}
               selectedVisibilityType={visibilityType}
             />
@@ -203,10 +205,10 @@ export function Chat({
         stop={stop}
         attachments={attachments}
         setAttachments={setAttachments}
-        append={append} // Changed from sendMessage
-        messages={messages as any} // Temporary fix
-        setMessages={setMessages as any} // Temporary fix
-        reload={reload} // Changed from regenerate
+        append={append}
+        messages={messages as any}
+        setMessages={setMessages as any}
+        reload={reload}
         votes={votes}
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}

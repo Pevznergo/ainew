@@ -18,6 +18,7 @@ import {
   saveMessages,
   getModelByName,
   getUserById,
+  getGuestMessageCount,
 } from '@/lib/db/queries';
 import { convertToUIMessages, generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
@@ -25,8 +26,11 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
-import { isProductionEnvironment } from '@/lib/constants';
-import { entitlementsByUserType } from '@/lib/ai/entitlements';
+import { isProductionEnvironment, guestRegex } from '@/lib/constants';
+import {
+  entitlementsByUserType,
+  checkUserEntitlements,
+} from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
@@ -47,10 +51,7 @@ import { eq } from 'drizzle-orm';
 import { message } from '@/lib/db/schema';
 import { db } from '@/lib/db/index';
 import { cookies } from 'next/headers';
-import { guestRegex } from '@/lib/constants';
-import { getGuestMessageCount } from '@/lib/db/queries';
 import type { User } from '@/lib/db/schema';
-import { checkUserEntitlements } from '@/lib/ai/entitlements';
 
 function getProviderByModelId(modelId: string) {
   if (modelId.startsWith('gpt-4o-mini-2024-07-18')) return openai(modelId);

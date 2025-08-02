@@ -1,8 +1,7 @@
 'use client';
 
-import { SWRConfig } from 'swr';
+import { SWRConfig, useSWRConfig } from 'swr';
 import { useEffect } from 'react';
-import { useSWRConfig } from 'swr';
 
 export function SWRProvider({ children }: { children: React.ReactNode }) {
   const { mutate } = useSWRConfig();

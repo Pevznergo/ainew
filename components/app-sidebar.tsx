@@ -1,7 +1,6 @@
 'use client';
 
-import type { User } from 'next-auth';
-import type { Session } from 'next-auth';
+import type { User, Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 
 import { PlusIcon } from '@/components/icons';

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { PlusIcon, VercelIcon, LoaderIcon } from './icons';
 import type { Session, User } from 'next-auth';
 import { useSidebar } from './ui/sidebar';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { type VisibilityType, VisibilitySelector } from './visibility-selector';
 import { toast } from './toast';
@@ -18,7 +18,6 @@ import { signOut, useSession } from 'next-auth/react';
 import { guestRegex } from '@/lib/constants';
 
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
-import { useState } from 'react';
 import { generateUUID } from '@/lib/utils';
 
 function PureChatHeader({

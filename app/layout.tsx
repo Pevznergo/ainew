@@ -1,5 +1,5 @@
 import { Toaster } from 'sonner';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import Script from 'next/script';
@@ -9,7 +9,8 @@ import { SessionProvider } from 'next-auth/react';
 import { ModelProvider } from '@/contexts/model-context';
 import { UserProvider } from '@/contexts/user-context';
 
-export const metadata = {
+export const metadata: Metadata = {
+  metadataBase: new URL('https://aporto.tech'),
   title: 'Чат | AI Chatbot',
   description:
     'Общение с искусственным интеллектом. Современный AI-чатбот для продуктивного диалога.',
@@ -32,7 +33,7 @@ export const metadata = {
     title: 'Чат | AI Chatbot',
     description:
       'Общение с искусственным интеллектом. Современный AI-чатбот для продуктивного диалога.',
-    url: 'https://your-domain.com/chat',
+    url: 'https://aporto.tech/chat',
     siteName: 'AI Chatbot',
     images: [
       {
@@ -53,7 +54,7 @@ export const metadata = {
     images: ['/twitter-image.png'],
     creator: '@your_twitter',
   },
-  authors: [{ name: 'AI Chatbot', url: 'https://your-domain.com' }],
+  authors: [{ name: 'AI Chatbot', url: 'https://aporto.tech' }],
   creator: 'AI Chatbot',
   publisher: 'AI Chatbot',
   robots: {
@@ -61,17 +62,18 @@ export const metadata = {
     follow: true,
     nocache: false,
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 const geist = Geist({
