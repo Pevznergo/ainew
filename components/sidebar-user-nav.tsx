@@ -170,10 +170,8 @@ export function SidebarUserNav({ session }: { session: Session }) {
                   if (isGuest) {
                     router.push('/login');
                   } else {
-                    // Используем window.location для правильного редиректа
                     signOut({
-                      redirect: true,
-                      callbackUrl: window.location.origin,
+                      redirectTo: '/',
                     });
                   }
                 }}

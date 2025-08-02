@@ -23,8 +23,7 @@ export async function middleware(request: NextRequest) {
     return new Response('pong', { status: 200 });
   }
 
-  // Пропускаем API маршруты
-  if (pathname.startsWith('/api/')) {
+  if (pathname.startsWith('/api/auth')) {
     return NextResponse.next();
   }
 
@@ -35,33 +34,22 @@ export async function middleware(request: NextRequest) {
     secureCookie: !isDevelopmentEnvironment,
   });
 
-  console.log('Token found:', !!token);
-  console.log('Token email:', token?.email);
-
   // Если нет токена, создаем гостя только при первом посещении
   if (!token) {
     // Проверяем, есть ли уже гость в cookies
     const hasGuestSession =
       request.cookies.get('next-auth.session-token') ||
-      request.cookies.get('__Secure-next-auth.session-token') ||
-      request.cookies.get('__Host-next-auth.session-token');
-
-    console.log('Has guest session:', !!hasGuestSession);
+      request.cookies.get('__Secure-next-auth.session-token');
 
     if (!hasGuestSession) {
-      console.log('Creating guest session...');
       const redirectUrl = encodeURIComponent(request.url);
-      const guestUrl = new URL(
-        `/api/auth/guest?redirectUrl=${redirectUrl}`,
-        request.url,
+      return NextResponse.redirect(
+        new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url),
       );
-      console.log('Redirecting to:', guestUrl.toString());
-      return NextResponse.redirect(guestUrl);
     }
   }
 
   const isGuest = guestRegex.test(token?.email ?? '');
-  console.log('Is guest:', isGuest);
 
   if (token && !isGuest && ['/login', '/register'].includes(pathname)) {
     return NextResponse.redirect(new URL('/', request.url));

@@ -48,50 +48,33 @@ export const {
     Credentials({
       credentials: {},
       async authorize({ email, password }: any) {
-        try {
-          const users = await getUser(email);
+        const users = await getUser(email);
 
-          if (users.length === 0) {
-            await compare(password, DUMMY_PASSWORD);
-            return null;
-          }
-
-          const [user] = users;
-
-          if (!user.password) {
-            await compare(password, DUMMY_PASSWORD);
-            return null;
-          }
-
-          const passwordsMatch = await compare(password, user.password);
-
-          if (!passwordsMatch) return null;
-
-          return { ...user, type: 'regular' };
-        } catch (error) {
-          console.error('Error in regular authorize:', error);
+        if (users.length === 0) {
+          await compare(password, DUMMY_PASSWORD);
           return null;
         }
+
+        const [user] = users;
+
+        if (!user.password) {
+          await compare(password, DUMMY_PASSWORD);
+          return null;
+        }
+
+        const passwordsMatch = await compare(password, user.password);
+
+        if (!passwordsMatch) return null;
+
+        return { ...user, type: 'regular' };
       },
     }),
     Credentials({
       id: 'guest',
       credentials: {},
       async authorize() {
-        try {
-          console.log('Creating guest user...');
-          const [guestUser] = await createGuestUser();
-          console.log('Guest user created:', guestUser.id);
-          return { ...guestUser, type: 'guest' };
-        } catch (error) {
-          console.error('Error creating guest user:', error);
-          // Возвращаем fallback гостевого пользователя
-          return {
-            id: `guest_${Date.now()}`,
-            email: `guest_${Date.now()}@aporto.tech`,
-            type: 'guest' as const,
-          };
-        }
+        const [guestUser] = await createGuestUser();
+        return { ...guestUser, type: 'guest' };
       },
     }),
   ],
@@ -117,7 +100,6 @@ export const {
             status?.subscription_active ?? false;
           session.user.balance = balance?.balance ?? 0;
         } catch (e) {
-          console.error('Error getting user data:', e);
           session.user.subscription_active = false;
           session.user.balance = 0;
         }
