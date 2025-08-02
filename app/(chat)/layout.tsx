@@ -58,7 +58,9 @@ export default async function Layout({
       <DataStreamProvider>
         <SidebarProvider defaultOpen={!isCollapsed}>
           {session && <AppSidebar user={session.user} session={session} />}
-          <SidebarInset>{children}</SidebarInset>
+          <SidebarInset className="h-screen md:h-dvh overflow-hidden">
+            {children}
+          </SidebarInset>
         </SidebarProvider>
       </DataStreamProvider>
     </>

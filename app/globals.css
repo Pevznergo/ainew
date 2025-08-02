@@ -20,6 +20,28 @@
     .text-balance {
         text-wrap: balance;
     }
+
+    /* Добавьте эти стили для лучшей поддержки мобильных устройств */
+    .h-screen-mobile {
+        height: 100vh;
+        height: 100dvh;
+    }
+
+    .min-h-screen-mobile {
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+}
+
+/* Исправление для мобильных браузеров */
+@media screen and (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .h-dvh {
+        height: 100vh !important;
+    }
 }
 
 @layer base {
@@ -238,4 +260,49 @@
     color: #fff;
     border-color: #7f5af0;
     background: #232946;
+}
+
+/* Дополнительные стили для мобильных устройств */
+@media screen and (max-width: 768px) {
+  /* Уменьшаем отступы в header */
+  header {
+    padding: 0.5rem 0.5rem !important;
+  }
+  
+  /* Уменьшаем размеры кнопок */
+  .modern-btn-cta,
+  .modern-btn-outline {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Улучшаем отображение suggestions */
+  .suggestion-popup {
+    max-width: calc(100vw - 2rem) !important;
+    right: 0.5rem !important;
+  }
+  
+  /* Улучшаем отображение suggested actions */
+  .suggested-actions {
+    padding: 0 0.5rem !important;
+  }
+  
+  /* Уменьшаем размеры текста в кнопках */
+  .suggested-action-button {
+    font-size: 0.75rem !important;
+    padding: 0.5rem !important;
+  }
+}
+
+/* Исправление для очень маленьких экранов */
+@media screen and (max-width: 480px) {
+  header {
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+  }
+  
+  .header-button {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
 }

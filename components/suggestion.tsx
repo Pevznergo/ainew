@@ -41,7 +41,7 @@ export const Suggestion = ({
       ) : (
         <motion.div
           key={suggestion.id}
-          className="absolute bg-background p-3 flex flex-col gap-3 rounded-2xl border text-sm w-56 shadow-xl z-50 -right-12 md:-right-16 font-sans"
+          className="absolute bg-background p-3 flex flex-col gap-3 rounded-2xl border text-sm w-48 sm:w-56 shadow-xl z-50 -right-8 sm:-right-12 md:-right-16 font-sans"
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: -20 }}
@@ -51,7 +51,7 @@ export const Suggestion = ({
           <div className="flex flex-row items-center justify-between">
             <div className="flex flex-row items-center gap-2">
               <div className="size-4 bg-muted-foreground/25 rounded-full" />
-              <div className="font-medium">Assistant</div>
+              <div className="font-medium text-xs sm:text-sm">Assistant</div>
             </div>
             <button
               type="button"
@@ -63,10 +63,10 @@ export const Suggestion = ({
               <CrossIcon size={12} />
             </button>
           </div>
-          <div>{suggestion.description}</div>
+          <div className="text-xs sm:text-sm">{suggestion.description}</div>
           <Button
             variant="outline"
-            className="w-fit py-1.5 px-3 rounded-full"
+            className="w-fit py-1 px-2 sm:py-1.5 sm:px-3 rounded-full text-xs"
             onClick={onApply}
           >
             Apply
