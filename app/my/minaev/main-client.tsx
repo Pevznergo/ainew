@@ -122,7 +122,7 @@ export default function MainPageClient() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Image
-                src="/demo/minaev.jpg"
+                src="/demo/minaev.png"
                 alt="Сергей Минаев"
                 width={48}
                 height={48}
@@ -165,7 +165,7 @@ export default function MainPageClient() {
             {/* Фото блогера */}
             <div className="relative mb-4">
               <Image
-                src="/demo/minaev.jpg"
+                src="/demo/minaev.png"
                 alt="Сергей Минаев"
                 width={150}
                 height={150}
