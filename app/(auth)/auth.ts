@@ -1,6 +1,8 @@
 import { compare } from 'bcrypt-ts';
 import NextAuth, { type DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
+import Google from 'next-auth/providers/google';
+import Yandex from 'next-auth/providers/yandex';
 import {
   createGuestUser,
   getUser,
@@ -45,6 +47,16 @@ export const {
 } = NextAuth({
   ...authConfig,
   providers: [
+    // OAuth провайдеры (добавляем в начало)
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
+    Yandex({
+      clientId: process.env.YANDEX_CLIENT_ID || '',
+      clientSecret: process.env.YANDEX_CLIENT_SECRET || '',
+    }),
+    // Существующие провайдеры
     Credentials({
       credentials: {},
       async authorize({ email, password }: any) {
@@ -82,7 +94,7 @@ export const {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
-        token.type = user.type;
+        token.type = user.type || 'regular'; // Устанавливаем тип для OAuth пользователей
       }
 
       return token;
@@ -105,6 +117,13 @@ export const {
         }
       }
       return session;
+    },
+    async signIn({ user, account }) {
+      // Устанавливаем тип 'regular' для OAuth пользователей
+      if (account?.provider === 'google' || account?.provider === 'yandex') {
+        user.type = 'regular';
+      }
+      return true;
     },
   },
 });
