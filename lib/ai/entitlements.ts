@@ -1,6 +1,6 @@
 import type { UserType } from '@/app/(auth)/auth';
-import type { ChatModel } from './models';
-import { chatModels } from './models';
+import type { ChatModel, ImageModel } from './models';
+import { chatModels, imageModels } from './models';
 import type { User } from '@/lib/db/schema';
 import { guestRegex } from '@/lib/constants';
 import { decrementUserBalance } from '@/lib/db/server-queries';
@@ -8,6 +8,7 @@ import { decrementUserBalance } from '@/lib/db/server-queries';
 interface Entitlements {
   maxMessagesPerDay: number;
   availableChatModelIds: Array<ChatModel['id']>;
+  availableImageModelIds: Array<ImageModel['id']>;
 }
 
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
@@ -31,6 +32,13 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
       'gemini-2.5-flash-lite',
       'grok-3',
       'grok-3-mini',
+      'x-ai/grok-4',
+    ],
+    availableImageModelIds: [
+      'gpt_image_2022-09-12',
+      'dalle3',
+      'flux_1.1_pro',
+      'midjourney',
     ],
   },
 
@@ -54,6 +62,13 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
       'gemini-2.5-flash-lite',
       'grok-3',
       'grok-3-mini',
+      'x-ai/grok-4',
+    ],
+    availableImageModelIds: [
+      'gpt_image_2022-09-12',
+      'dalle3',
+      'flux_1.1_pro',
+      'midjourney',
     ],
   },
 
@@ -61,28 +76,32 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    * TODO: For users with an account and a paid membership
    */
 };
+
 export async function checkUserEntitlements(user: User, modelId: string) {
-  // Проверяем баланс для всех пользователей
+  // Проверяем, является ли модель чат-моделью или моделью изображений
   const chatModel = chatModels.find((m) => m.id === modelId);
-  if (!chatModel) {
+  const imageModel = imageModels.find((m) => m.id === modelId);
+
+  if (!chatModel && !imageModel) {
     throw new Error('Модель не найдена');
   }
 
-  console.log('Model cost:', chatModel.cost, 'User balance:', user.balance);
+  const model = chatModel || imageModel;
+  console.log('Model cost:', model.cost, 'User balance:', user.balance);
 
   // Если модель бесплатная, не проверяем баланс
-  if (chatModel.cost === 0) {
+  if (model.cost === 0) {
     return true;
   }
 
-  if (user.balance < chatModel.cost) {
+  if (user.balance < model.cost) {
     throw new Error(
-      `Недостаточно монет. Необходимо: ${chatModel.cost}, доступно: ${user.balance}`,
+      `Недостаточно монет. Необходимо: ${model.cost}, доступно: ${user.balance}`,
     );
   }
 
   // Уменьшаем баланс пользователя только для платных моделей
-  await decrementUserBalance(user.id, chatModel.cost);
+  await decrementUserBalance(user.id, model.cost);
   console.log('Balance decremented successfully');
 
   return true;

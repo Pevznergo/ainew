@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { streamObject } from 'ai';
-import { getProviderByModelId } from '@/lib/ai/providers';
+import { getArtifactModel } from '@/lib/ai/providers';
 import { codePrompt, updateDocumentPrompt } from '@/lib/ai/prompts';
 import { createDocumentHandler } from '@/lib/artifacts/server';
 
@@ -10,9 +10,7 @@ export const codeDocumentHandler = createDocumentHandler<'code'>({
     let draftContent = '';
 
     const { fullStream } = streamObject({
-      model: getProviderByModelId('artifact-model').languageModel(
-        'artifact-model',
-      ) as any,
+      model: getArtifactModel('artifact-model') as any,
       system: codePrompt,
       prompt: title,
       schema: z.object({
@@ -44,9 +42,7 @@ export const codeDocumentHandler = createDocumentHandler<'code'>({
     let draftContent = '';
 
     const { fullStream } = streamObject({
-      model: getProviderByModelId('artifact-model').languageModel(
-        'artifact-model',
-      ) as any,
+      model: getArtifactModel('artifact-model') as any,
       system: updateDocumentPrompt(document.content, 'code'),
       prompt: description,
       schema: z.object({

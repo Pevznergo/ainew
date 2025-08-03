@@ -52,6 +52,7 @@ import { message } from '@/lib/db/schema';
 import { db } from '@/lib/db/index';
 import { cookies } from 'next/headers';
 import type { User } from '@/lib/db/schema';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 function getProviderByModelId(modelId: string) {
   if (modelId.startsWith('gpt-4o-mini-2024-07-18')) return openai(modelId);
@@ -68,6 +69,14 @@ function getProviderByModelId(modelId: string) {
   if (modelId.startsWith('gemini-2.5-flash-lite')) return google(modelId);
   if (modelId.startsWith('grok-3')) return xai(modelId);
   if (modelId.startsWith('grok-3-mini')) return xai(modelId);
+  if (modelId.startsWith('x-ai/')) return openrouterProvider.chat(modelId);
+
+  // Для моделей изображений
+  if (modelId === 'gpt_image_2022-09-12' || modelId === 'dalle3')
+    return openai(modelId);
+  if (modelId === 'flux_1.1_pro') return openrouterProvider.chat(modelId);
+  if (modelId === 'midjourney') return openrouterProvider.chat(modelId);
+
   throw new Error(`Unknown provider for modelId: ${modelId}`);
 }
 
@@ -110,6 +119,10 @@ export function getStreamContext() {
 
   return globalStreamContext;
 }
+
+export const openrouterProvider = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY || '',
+});
 
 export async function POST(request: Request) {
   console.log('=== POST /api/chat called ===');

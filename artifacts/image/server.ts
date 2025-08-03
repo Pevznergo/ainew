@@ -1,7 +1,7 @@
 import { myProvider } from '@/lib/ai/providers';
 import { createDocumentHandler } from '@/lib/artifacts/server';
 import { experimental_generateImage } from 'ai';
-import { getProviderByModelId } from '@/lib/ai/providers';
+import { getImageModel } from '@/lib/ai/providers';
 
 export const imageDocumentHandler = createDocumentHandler<'image'>({
   kind: 'image',
@@ -9,9 +9,7 @@ export const imageDocumentHandler = createDocumentHandler<'image'>({
     let draftContent = '';
 
     const { image } = await experimental_generateImage({
-      model: getProviderByModelId('small-model').imageModel(
-        'small-model',
-      ) as any,
+      model: getImageModel('small-model') as any,
       prompt: title,
       n: 1,
     });
@@ -29,9 +27,7 @@ export const imageDocumentHandler = createDocumentHandler<'image'>({
     let draftContent = '';
 
     const { image } = await experimental_generateImage({
-      model: getProviderByModelId('small-model').imageModel(
-        'small-model',
-      ) as any,
+      model: getImageModel('small-model') as any,
       prompt: description,
       n: 1,
     });

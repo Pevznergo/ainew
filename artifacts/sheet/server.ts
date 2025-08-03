@@ -1,8 +1,8 @@
-import { getProviderByModelId } from '@/lib/ai/providers';
+import { z } from 'zod';
+import { streamObject } from 'ai';
+import { getArtifactModel } from '@/lib/ai/providers';
 import { sheetPrompt, updateDocumentPrompt } from '@/lib/ai/prompts';
 import { createDocumentHandler } from '@/lib/artifacts/server';
-import { streamObject } from 'ai';
-import { z } from 'zod';
 
 export const sheetDocumentHandler = createDocumentHandler<'sheet'>({
   kind: 'sheet',
@@ -10,13 +10,11 @@ export const sheetDocumentHandler = createDocumentHandler<'sheet'>({
     let draftContent = '';
 
     const { fullStream } = streamObject({
-      model: getProviderByModelId('artifact-model').languageModel(
-        'artifact-model',
-      ) as any,
+      model: getArtifactModel('artifact-model') as any,
       system: sheetPrompt,
       prompt: title,
       schema: z.object({
-        csv: z.string().describe('CSV data'),
+        sheet: z.string(),
       }),
     });
 
@@ -25,23 +23,18 @@ export const sheetDocumentHandler = createDocumentHandler<'sheet'>({
 
       if (type === 'object') {
         const { object } = delta;
-        const { csv } = object;
+        const { sheet } = object;
 
-        if (csv) {
+        if (sheet) {
           dataStream.write({
             type: 'data-sheetDelta',
-            data: csv,
+            data: sheet ?? '',
           });
 
-          draftContent = csv;
+          draftContent = sheet;
         }
       }
     }
-
-    dataStream.write({
-      type: 'data-sheetDelta',
-      data: draftContent,
-    });
 
     return draftContent;
   },
@@ -49,13 +42,11 @@ export const sheetDocumentHandler = createDocumentHandler<'sheet'>({
     let draftContent = '';
 
     const { fullStream } = streamObject({
-      model: getProviderByModelId('artifact-model').languageModel(
-        'artifact-model',
-      ) as any,
+      model: getArtifactModel('artifact-model') as any,
       system: updateDocumentPrompt(document.content, 'sheet'),
       prompt: description,
       schema: z.object({
-        csv: z.string(),
+        sheet: z.string(),
       }),
     });
 
@@ -64,15 +55,15 @@ export const sheetDocumentHandler = createDocumentHandler<'sheet'>({
 
       if (type === 'object') {
         const { object } = delta;
-        const { csv } = object;
+        const { sheet } = object;
 
-        if (csv) {
+        if (sheet) {
           dataStream.write({
             type: 'data-sheetDelta',
-            data: csv,
+            data: sheet ?? '',
           });
 
-          draftContent = csv;
+          draftContent = sheet;
         }
       }
     }

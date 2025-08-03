@@ -1,5 +1,5 @@
 import { smoothStream, streamText } from 'ai';
-import { getProviderByModelId } from '@/lib/ai/providers';
+import { getArtifactModel } from '@/lib/ai/providers';
 import { createDocumentHandler } from '@/lib/artifacts/server';
 import { updateDocumentPrompt } from '@/lib/ai/prompts';
 
@@ -9,9 +9,7 @@ export const textDocumentHandler = createDocumentHandler<'text'>({
     let draftContent = '';
 
     const { fullStream } = streamText({
-      model: getProviderByModelId('artifact-model').languageModel(
-        'artifact-model',
-      ) as any,
+      model: getArtifactModel('artifact-model') as any,
       system:
         'Write about the given topic. Markdown is supported. Use headings wherever appropriate.',
       experimental_transform: smoothStream({ chunking: 'word' }),
@@ -39,9 +37,7 @@ export const textDocumentHandler = createDocumentHandler<'text'>({
     let draftContent = '';
 
     const { fullStream } = streamText({
-      model: getProviderByModelId('artifact-model').languageModel(
-        'artifact-model',
-      ) as any,
+      model: getArtifactModel('artifact-model') as any,
       system: updateDocumentPrompt(document.content, 'text'),
       experimental_transform: smoothStream({ chunking: 'word' }),
       prompt: description,

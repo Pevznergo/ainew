@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { auth } from '../(auth)/auth';
 import Script from 'next/script';
 import { DataStreamProvider } from '@/components/data-stream-provider';
+import { ModelProvider } from '@/contexts/model-context';
 import { getUserSubscriptionStatus } from '@/lib/db/queries';
 import { ChatHeader } from '@/components/chat-header';
 
@@ -17,6 +18,7 @@ export default async function Layout({
 }) {
   const [session, cookieStore] = await Promise.all([auth(), cookies()]);
   const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
+  const chatModelFromCookie = cookieStore.get('chat-model');
 
   const userId = session?.user?.id;
 
@@ -56,12 +58,14 @@ export default async function Layout({
         `}
       </Script>
       <DataStreamProvider>
-        <SidebarProvider defaultOpen={!isCollapsed}>
-          {session && <AppSidebar user={session.user} session={session} />}
-          <SidebarInset className="h-screen md:h-dvh overflow-hidden">
-            {children}
-          </SidebarInset>
-        </SidebarProvider>
+        <ModelProvider initialModel={chatModelFromCookie?.value}>
+          <SidebarProvider defaultOpen={!isCollapsed}>
+            {session && <AppSidebar user={session.user} session={session} />}
+            <SidebarInset className="h-screen md:h-dvh overflow-hidden">
+              {children}
+            </SidebarInset>
+          </SidebarProvider>
+        </ModelProvider>
       </DataStreamProvider>
     </>
   );

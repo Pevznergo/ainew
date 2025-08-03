@@ -99,7 +99,7 @@ export function Chat({
       console.log('Assistant message to save:', message);
 
       try {
-        await fetchWithErrorHandlers('/api/chat/assistant', {
+        await fetchWithErrorHandlers('/api/message', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -127,9 +127,15 @@ export function Chat({
 
   useEffect(() => {
     if (initialMessages.length > 0) {
-      stableSetMessages(initialMessages);
+      // Проверяем, что сообщения действительно изменились
+      const currentMessageIds = messages.map((m) => m.id).join(',');
+      const initialMessageIds = initialMessages.map((m) => m.id).join(',');
+
+      if (currentMessageIds !== initialMessageIds) {
+        stableSetMessages(initialMessages);
+      }
     }
-  }, [initialMessages, stableSetMessages]);
+  }, [initialMessages, stableSetMessages, messages]);
 
   const searchParams = useSearchParams();
   const query = searchParams.get('query');

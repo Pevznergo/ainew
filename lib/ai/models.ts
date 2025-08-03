@@ -7,6 +7,13 @@ export interface ChatModel {
   cost: number; // Added cost field
 }
 
+export interface ImageModel {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+}
+
 export const chatModels: ChatModel[] = [
   {
     id: 'gpt-4o-mini-2024-07-18',
@@ -90,6 +97,43 @@ export const chatModels: ChatModel[] = [
     cost: 10, // Added cost field
     description: 'Быстрая модель от xAI',
   },
+  {
+    id: 'x-ai/grok-4',
+    name: 'Grok 4 (50 монет/запрос)',
+    cost: 50,
+    description: 'Новейшая модель от xAI через OpenRouter',
+  },
+];
+
+export const imageModels: ImageModel[] = [
+  {
+    id: 'gpt_image_2022-09-12',
+    name: 'GPT Image 1',
+    description:
+      'Умная модель, которая быстро и точно создает картинки по вашему описанию, особенно хорошо рисует надписи и мелкие детали.',
+    cost: 50,
+  },
+  {
+    id: 'dalle3',
+    name: 'Midjourney',
+    description:
+      'Мощная модель от OpenAI. Отличается точной интерпретацией текстовых запросов и способна генерировать как фотореалистичные, так и стилизованные изображения.',
+    cost: 50,
+  },
+  {
+    id: 'flux_1.1_pro',
+    name: 'Flux-1.1 Pro',
+    description:
+      'Профессиональная модель. Фотореалистичность, точность воспроизведения текстур и сложных композиций',
+    cost: 50,
+  },
+  {
+    id: 'midjourney',
+    name: 'Midjourney',
+    description:
+      'Высококачественная модель. Известна своим уникальным художественным стилем, создавая атмосферные и детализированные образы.',
+    cost: 100,
+  },
 ];
 
 export { chatModels as models };
@@ -98,6 +142,14 @@ export function getModelById(id: string): ChatModel {
   const model = chatModels.find((model) => model.id === id);
   if (!model) {
     throw new Error(`Model with id ${id} not found`);
+  }
+  return model;
+}
+
+export function getImageModelById(id: string): ImageModel {
+  const model = imageModels.find((model) => model.id === id);
+  if (!model) {
+    throw new Error(`Image model with id ${id} not found`);
   }
   return model;
 }
