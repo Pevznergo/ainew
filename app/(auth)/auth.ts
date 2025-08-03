@@ -8,10 +8,12 @@ import {
   getUser,
   getUserBalance,
   getUserSubscriptionStatus,
+  createUser,
 } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
 import type { DefaultJWT } from 'next-auth/jwt';
+import { generateUUID } from '@/lib/utils';
 
 export type UserType = 'guest' | 'regular';
 
@@ -99,7 +101,7 @@ export const {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id as string;
-        token.type = user.type || 'regular'; // Устанавливаем тип для OAuth пользователей
+        token.type = user.type || 'regular';
       }
 
       return token;
@@ -123,10 +125,32 @@ export const {
       }
       return session;
     },
-    async signIn({ user, account }) {
-      // Устанавливаем тип 'regular' для OAuth пользователей
+    async signIn({ user, account, profile }) {
+      // Если пользователь авторизовался через OAuth
       if (account?.provider === 'google' || account?.provider === 'yandex') {
-        user.type = 'regular';
+        try {
+          // Проверяем, существует ли пользователь
+          const existingUsers = await getUser(user.email || '');
+
+          if (existingUsers.length === 0) {
+            // Создаем нового пользователя
+            const [newUser] = await createUser(
+              user.email || '',
+              generateUUID(), // Генерируем случайный пароль
+            );
+
+            // Обновляем user.id на созданный ID
+            user.id = newUser.id;
+          } else {
+            // Пользователь уже существует
+            user.id = existingUsers[0].id;
+          }
+
+          user.type = 'regular';
+        } catch (error) {
+          console.error('Error creating OAuth user:', error);
+          return false;
+        }
       }
       return true;
     },

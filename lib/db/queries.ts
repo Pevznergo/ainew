@@ -797,3 +797,40 @@ export async function createDemo(data: {
 
   return result[0];
 }
+
+export async function createOAuthUser(userData: {
+  email: string;
+  name?: string;
+  type?: string;
+  subscription_active?: boolean;
+  balance?: number;
+}) {
+  try {
+    // Проверяем, существует ли пользователь с таким email
+    const existingUsers = await db
+      .select()
+      .from(user)
+      .where(eq(user.email, userData.email))
+      .limit(1);
+
+    if (existingUsers.length > 0) {
+      // Пользователь уже существует, возвращаем его
+      return existingUsers[0];
+    }
+
+    // Создаем нового пользователя
+    const result = await db
+      .insert(user)
+      .values({
+        email: userData.email,
+        password: generateHashedPassword(generateUUID()), // Генерируем случайный пароль
+      })
+      .returning();
+
+    console.log('OAuth user created successfully:', result);
+    return result[0];
+  } catch (error) {
+    console.error('Error creating OAuth user:', error);
+    throw new ChatSDKError('bad_request:database');
+  }
+}
