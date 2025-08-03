@@ -105,7 +105,7 @@ function ModelSelectorComponent({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="min-w-[300px] max-h-96 overflow-y-auto"
+        className="min-w-[300px] max-w-[calc(100vw-2rem)] max-h-96 overflow-y-auto"
       >
         {/* Переключатель вкладок */}
         <div className="flex border-b border-border p-2 gap-1">
@@ -155,16 +155,16 @@ function ModelSelectorComponent({
               >
                 <button
                   type="button"
-                  className="gap-4 group/item flex flex-row justify-between items-center w-full"
+                  className="gap-4 group/item flex flex-row justify-between items-start w-full p-2"
                 >
-                  <div className="flex flex-col gap-1 items-start">
-                    <div>{chatModel.name}</div>
-                    <div className="text-xs text-muted-foreground">
+                  <div className="flex flex-col gap-1 items-start flex-1 min-w-0 pr-2">
+                    <div className="font-medium text-sm">{chatModel.name}</div>
+                    <div className="text-xs text-muted-foreground break-words leading-relaxed hyphens-auto">
                       {chatModel.description}
                     </div>
                   </div>
 
-                  <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
+                  <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100 flex-shrink-0 ml-2">
                     <CheckCircleFillIcon />
                   </div>
                 </button>
@@ -192,16 +192,16 @@ function ModelSelectorComponent({
               >
                 <button
                   type="button"
-                  className="gap-4 group/item flex flex-row justify-between items-center w-full"
+                  className="gap-4 group/item flex flex-row justify-between items-start w-full p-2"
                 >
-                  <div className="flex flex-col gap-1 items-start">
-                    <div>{imageModel.name}</div>
-                    <div className="text-xs text-muted-foreground">
+                  <div className="flex flex-col gap-1 items-start flex-1 min-w-0 pr-2">
+                    <div className="font-medium text-sm">{imageModel.name}</div>
+                    <div className="text-xs text-muted-foreground break-words leading-relaxed hyphens-auto">
                       {imageModel.description}
                     </div>
                   </div>
 
-                  <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
+                  <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100 flex-shrink-0 ml-2">
                     <CheckCircleFillIcon />
                   </div>
                 </button>
