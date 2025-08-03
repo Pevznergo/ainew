@@ -27,6 +27,7 @@ import {
   type DBMessage,
   type Chat,
   stream,
+  demo, // Add this import
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -774,4 +775,25 @@ export async function getGuestMessageCount(userId: string): Promise<number> {
   console.log('Final count:', messageCount);
 
   return messageCount;
+}
+
+export async function getDemoByName(name: string) {
+  const result = await db
+    .select()
+    .from(demo)
+    .where(eq(demo.name, name))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+export async function createDemo(data: {
+  name: string;
+  logo_name: string;
+  logo_url?: string;
+  background_color?: string;
+}) {
+  const result = await db.insert(demo).values(data).returning();
+
+  return result[0];
 }

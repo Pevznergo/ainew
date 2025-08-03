@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { sendGTMEvent } from '@/lib/gtm';
+import { useDemo } from '@/hooks/use-demo';
 
 const typewriterTexts = [
   'Расскажи про историческое событие',
@@ -104,6 +105,7 @@ export default function MainPageClient() {
   const [showPromo, setShowPromo] = useState(true);
 
   const searchParams = useSearchParams();
+  const demoData = useDemo();
 
   useEffect(() => {
     const referralCode = searchParams.get('ref');
@@ -483,7 +485,7 @@ export default function MainPageClient() {
           </a>
         </nav>
         <div className="text-center text-neutral-500 text-sm">
-          © 2025 Сергей Минаев
+          © 2025 {demoData?.logo_name || 'Сергей Минаев'}
         </div>
       </footer>
     </div>

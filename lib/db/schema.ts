@@ -158,3 +158,16 @@ export const referrals = pgTable('referrals', {
 });
 
 export type Referral = InferSelectModel<typeof referrals>;
+
+export const demo = pgTable('Demo', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => generateUUID()),
+  name: text('name').notNull().unique(),
+  logo_name: text('logo_name').notNull(),
+  logo_url: text('logo_url'),
+  background_color: text('background_color'),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+});
+
+export type Demo = InferSelectModel<typeof demo>;
