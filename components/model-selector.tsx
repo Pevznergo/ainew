@@ -149,7 +149,7 @@ function ModelSelectorComponent({
                   startTransition(() => {
                     setSelectedModel(id);
                     saveChatModelAsCookie(id);
-                    window.location.replace('/');
+                    router.push('/');
                   });
                 }}
               >
@@ -186,7 +186,7 @@ function ModelSelectorComponent({
                   startTransition(() => {
                     setSelectedModel(id);
                     saveChatModelAsCookie(id);
-                    window.location.replace('/');
+                    router.push('/');
                   });
                 }}
               >

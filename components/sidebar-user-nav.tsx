@@ -31,23 +31,18 @@ export function SidebarUserNav({ session }: { session: Session }) {
   const { setTheme, resolvedTheme } = useTheme();
   const { user, setUser } = useUser();
 
-  // Оптимистичное обновление пользователя
-  const [optimisticUser, setOptimisticUser] = useOptimistic(data?.user);
-
   // Обновлять контекст при изменении data из useSession
   useEffect(() => {
     if (data?.user) {
       setUser(data.user);
-      startTransition(() => {
-        setOptimisticUser(data.user);
-      });
     }
-  }, [data?.user, setUser, setOptimisticUser]);
+  }, [data?.user, setUser]);
 
-  const currentUser = optimisticUser || user;
+  // Используем данные из session prop для отображения
+  const currentUser = session.user || data?.user;
 
-  const isGuest = guestRegex.test(data?.user?.email ?? '');
-  const isRegular = data?.user?.type === 'regular';
+  const isGuest = guestRegex.test(currentUser?.email ?? '');
+  const isRegular = currentUser?.type === 'regular';
 
   return (
     <SidebarMenu>
