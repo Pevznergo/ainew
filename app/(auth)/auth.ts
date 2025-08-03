@@ -55,6 +55,11 @@ export const {
     Yandex({
       clientId: process.env.YANDEX_CLIENT_ID || '',
       clientSecret: process.env.YANDEX_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          scope: 'login:email login:info',
+        },
+      },
     }),
     // Существующие провайдеры
     Credentials({
