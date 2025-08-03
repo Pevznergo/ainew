@@ -277,7 +277,7 @@ export default function MainPageClient() {
               Получи максимум с PRO-подпиской
             </h2>
             <p className="text-xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">
-              Подпишись на ПРО и получай 1000 брокоинов в месяц всего за 199
+              Подпишись на ПРО и получай 1000 токенов в месяц всего за 199
               рублей
             </p>
           </div>
@@ -310,7 +310,7 @@ export default function MainPageClient() {
                     </span>
                     GPT-4 mini, Gemini 2 Flash
                   </li>
-                  <li className="text-base">1000 брокоинов ежемесячно</li>
+                  <li className="text-base">1000 токенов ежемесячно</li>
                   <li className="text-base">Приоритетная поддержка</li>
                   <li className="text-base">Запросы на новые функции</li>
                   <li className="text-base">Бесплатные консультации</li>
@@ -370,7 +370,7 @@ export default function MainPageClient() {
                     <span className="size-6 bg-gradient-to-br from-green-400 to-indigo-500 rounded-full flex items-center justify-center text-black text-sm">
                       ★
                     </span>
-                    1000 брокоинов ежемесячно
+                    1000 токенов ежемесячно
                   </li>
                   <li className="text-base">Приоритетная поддержка</li>
                   <li className="text-base">Запросы на новые функции</li>

@@ -181,8 +181,8 @@ export default function InvitePage() {
                 Бонус за привлечение
               </h3>
               <p className="text-neutral-300 text-base">
-                Бонус 1000 монет (равный 200 рублям) начисляется после того, как
-                привлечённый пользователь оплатил подписку на любой тариф.
+                Бонус 1000 токенов (равный 200 рублям) начисляется после того,
+                как привлечённый пользователь оплатил подписку на любой тариф.
               </p>
             </div>
             <div className="bg-[#232946] rounded-xl p-6 shadow border border-neutral-800">
@@ -190,8 +190,8 @@ export default function InvitePage() {
                 Условия вывода
               </h3>
               <p className="text-neutral-300 text-base">
-                Вывод средств доступен при накоплении не менее 10 000 монет. Для
-                вывода необходимо написать на почту{' '}
+                Вывод средств доступен при накоплении не менее 10 000 токенов.
+                Для вывода необходимо написать на почту{' '}
                 <a
                   href="mailto:hey@aporto.tech"
                   className="underline text-indigo-400"
@@ -240,8 +240,8 @@ export default function InvitePage() {
             </div>
           </div>
           <div className="bg-yellow-100/10 border border-yellow-400/30 rounded-lg p-5 text-center text-yellow-300 text-base">
-            <strong>Важно:</strong> Все бонусы начисляются в валюте монет. Курс
-            обмена: 1 монета = 0.2 рубля. Компания оставляет за собой право
+            <strong>Важно:</strong> Все бонусы начисляются в валюте токенов.
+            Курс обмена: 1 токен = 0.2 рубля. Компания оставляет за собой право
             изменять условия программы, уведомив пользователей заранее.
           </div>
         </section>

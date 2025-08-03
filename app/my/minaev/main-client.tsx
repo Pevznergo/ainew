@@ -5,15 +5,17 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { sendGTMEvent } from '@/lib/gtm';
+import { useDemo } from '@/hooks/use-demo';
 
-const typewriterTexts = [
+// Fallback данные, если БД недоступна
+const defaultTypewriterTexts = [
   'Расскажи про историческое событие',
   'Напиши код на Python',
   'Создай презентацию',
   'Проверь исторический факт',
 ];
 
-const featuresData = [
+const defaultFeaturesData = [
   {
     title: 'Исторические исследования',
     h3: 'Глубокий анализ исторических событий и личностей',
@@ -65,6 +67,13 @@ const models = [
   'Gemini 2.5 Flash Lite',
   'Grok 3',
   'Grok 3 Mini',
+  'Grok 4',
+  'Grok 4 Mini',
+  'DALL-E 3',
+  'Midjourney',
+  'Flux-1.1 Pro',
+  'Stable Diffusion',
+  'Leonardo AI',
 ];
 
 export default function MainPageClient() {
@@ -73,6 +82,36 @@ export default function MainPageClient() {
   const [displayed, setDisplayed] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [charIndex, setCharIndex] = useState(0);
+
+  const searchParams = useSearchParams();
+  const demoData = useDemo();
+
+  // Typewriter с данными из БД
+  const typewriterTexts =
+    demoData?.typewriterText1 && demoData?.typewriterText2
+      ? [
+          demoData.typewriterText1,
+          demoData.typewriterText2,
+          demoData.typewriterText3 || 'Напиши код на Python',
+          demoData.typewriterText4 || 'Создай презентацию',
+        ]
+      : defaultTypewriterTexts;
+
+  // Features с данными из БД для первого элемента
+  const featuresData = [
+    {
+      title: demoData?.features1_title || 'Исторические исследования',
+      h3:
+        demoData?.features1_h3 ||
+        'Глубокий анализ исторических событий и личностей',
+      p:
+        demoData?.features1_p ||
+        'Задайте любой вопрос об истории, и мой ИИ найдет интересные факты, малоизвестные детали и поможет разобраться в сложных исторических событиях. От древних цивилизаций до современности.',
+      video: '/images/case1.mp4',
+      poster: '/images/case1.jpg',
+    },
+    ...defaultFeaturesData.slice(1), // Остальные features остаются как есть
+  ];
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -103,8 +142,6 @@ export default function MainPageClient() {
   // Promo banner
   const [showPromo, setShowPromo] = useState(true);
 
-  const searchParams = useSearchParams();
-
   useEffect(() => {
     const referralCode = searchParams.get('ref');
 
@@ -122,8 +159,8 @@ export default function MainPageClient() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Image
-                src="/demo/minaev.png"
-                alt="Сергей Минаев"
+                src={demoData?.logo_url || '/demo/minaev.png'}
+                alt={demoData?.logo_name || 'Сергей Минаев'}
                 width={48}
                 height={48}
                 className="rounded-full object-cover"
@@ -135,7 +172,7 @@ export default function MainPageClient() {
                 href="/"
                 className="flex items-center font-bold text-2xl text-white"
               >
-                Сергей Минаев
+                {demoData?.logo_name || 'Сергей Минаев'}
               </Link>
               <p className="text-neutral-400 text-sm">Историк • Блогер</p>
             </div>
@@ -165,8 +202,8 @@ export default function MainPageClient() {
             {/* Фото блогера */}
             <div className="relative mb-4">
               <Image
-                src="/demo/minaev.png"
-                alt="Сергей Минаев"
+                src={demoData?.logo_url || '/demo/minaev.png'}
+                alt={demoData?.logo_name || 'Сергей Минаев'}
                 width={150}
                 height={150}
                 className="rounded-full object-cover border-4 border-indigo-500/30 shadow-2xl"
@@ -175,7 +212,7 @@ export default function MainPageClient() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-indigo-400 mb-2 leading-tight drop-shadow-lg">
-              Мой ИИ-помощник
+              {demoData?.hero_title || 'Мой ИИ-помощник'}
             </h1>
             <div className="flex flex-col items-center space-y-4">
               <div className="flex items-center justify-center gap-2">
@@ -187,7 +224,8 @@ export default function MainPageClient() {
                 </span>
               </div>
               <p className="text-lg sm:text-xl md:text-2xl text-neutral-300 mt-2">
-                История • Программирование • Контент • Анализ
+                {demoData?.hero_subtitle ||
+                  'История • Программирование • Контент • Анализ'}
                 <br />
                 <span className="block mt-2 text-xl sm:text-2xl">
                   <span className="text-indigo-400 font-bold">GPT</span> ,{' '}
@@ -267,11 +305,11 @@ export default function MainPageClient() {
         <section className="mb-20 py-20">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Доступные модели
+              {demoData?.models_title || 'Доступные модели'}
             </h2>
             <p className="text-xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">
-              Используйте лучшие ИИ-модели для изучения истории. От простых
-              вопросов до глубокого анализа.
+              {demoData?.models_subtitle ||
+                'Используйте лучшие ИИ-модели для изучения истории. От простых вопросов до глубокого анализа.'}
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -295,10 +333,11 @@ export default function MainPageClient() {
         <section className="min-h-screen flex flex-col justify-center py-20">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Что умеет мой ИИ
+              {demoData?.features_title || 'Что умеет мой ИИ'}
             </h2>
             <p className="text-xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">
-              Универсальный помощник для изучения истории и решения любых задач
+              {demoData?.features_subtitle ||
+                'Универсальный помощник для изучения истории и решения любых задач'}
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-4 mb-16">
@@ -343,10 +382,11 @@ export default function MainPageClient() {
         <section className="min-h-screen flex flex-col justify-center py-20">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Выберите свой план
+              Получи максимум с PRO-подпиской
             </h2>
             <p className="text-xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">
-              Начните бесплатно или получите доступ ко всем возможностям
+              Подпишись на ПРО и получай 1000 токенов в месяц всего за 199
+              рублей
             </p>
           </div>
           <div className="flex flex-col lg:flex-row gap-12 justify-center max-w-6xl mx-auto px-4">
@@ -364,24 +404,50 @@ export default function MainPageClient() {
                     <span className="size-6 bg-gradient-to-br from-indigo-500 to-green-400 rounded-full flex items-center justify-center text-white text-sm">
                       ✓
                     </span>
-                    GPT-4o mini
+                    Чат с нейросетью
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-base">
                     <span className="size-6 bg-gradient-to-br from-indigo-500 to-green-400 rounded-full flex items-center justify-center text-white text-sm">
                       ✓
                     </span>
-                    Gemini 2.5 Flash Lite
+                    Цифровое видение
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-base">
                     <span className="size-6 bg-gradient-to-br from-indigo-500 to-green-400 rounded-full flex items-center justify-center text-white text-sm">
                       ✓
                     </span>
-                    100 запросов в день
+                    GPT-4 mini, Gemini 2 Flash
                   </li>
-                  <li className="text-base">Исторические исследования</li>
-                  <li className="text-base">Программирование и код</li>
-                  <li className="text-base">Создание контента</li>
-                  <li className="text-base">Анализ данных</li>
+                  <li className="flex items-center gap-3 font-semibold text-base">
+                    <span className="size-6 bg-gradient-to-br from-indigo-500 to-green-400 rounded-full flex items-center justify-center text-white text-sm">
+                      ✓
+                    </span>
+                    1000 токенов ежемесячно
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-base">
+                    <span className="size-6 bg-gradient-to-br from-indigo-500 to-green-400 rounded-full flex items-center justify-center text-white text-sm">
+                      ✓
+                    </span>
+                    Приоритетная поддержка
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-base">
+                    <span className="size-6 bg-gradient-to-br from-indigo-500 to-green-400 rounded-full flex items-center justify-center text-white text-sm">
+                      ✓
+                    </span>
+                    Запросы на новые функции
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-base">
+                    <span className="size-6 bg-gradient-to-br from-indigo-500 to-green-400 rounded-full flex items-center justify-center text-white text-sm">
+                      ✓
+                    </span>
+                    Бесплатные консультации
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-base">
+                    <span className="size-6 bg-gradient-to-br from-indigo-500 to-green-400 rounded-full flex items-center justify-center text-white text-sm">
+                      ✓
+                    </span>
+                    Отсутствие рекламы
+                  </li>
                 </ul>
               </div>
               <Link
@@ -396,7 +462,7 @@ export default function MainPageClient() {
                   });
                 }}
               >
-                Начать бесплатно
+                Попробовать сейчас
               </Link>
             </div>
             {/* PRO */}
@@ -409,38 +475,58 @@ export default function MainPageClient() {
               </div>
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <span className="font-bold text-xl">PRO-доступ</span>
-                  <span className="font-semibold text-lg">299₽ в месяц</span>
+                  <span className="font-bold text-xl">ПРО-аккаунт</span>
+                  <span className="font-semibold text-lg">199₽ в месяц</span>
                 </div>
                 <ul className="mb-8 space-y-3">
                   <li className="flex items-center gap-3 font-semibold text-base">
                     <span className="size-6 bg-gradient-to-br from-green-400 to-indigo-500 rounded-full flex items-center justify-center text-black text-sm">
                       ★
                     </span>
-                    Все модели ИИ
+                    Чат с нейросетью
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-base">
                     <span className="size-6 bg-gradient-to-br from-green-400 to-indigo-500 rounded-full flex items-center justify-center text-black text-sm">
                       ★
                     </span>
-                    Безлимитные запросы
+                    Цифровое видение
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-base">
                     <span className="size-6 bg-gradient-to-br from-green-400 to-indigo-500 rounded-full flex items-center justify-center text-black text-sm">
                       ★
                     </span>
-                    Глубокий анализ любых данных
+                    ChatGPT, Claude, DeepSeek, Grok, Gemini и др.
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-base">
                     <span className="size-6 bg-gradient-to-br from-green-400 to-indigo-500 rounded-full flex items-center justify-center text-black text-sm">
                       ★
                     </span>
-                    Работа с любыми документами
+                    1000 токенов ежемесячно
                   </li>
-                  <li className="text-base">Приоритетная поддержка</li>
-                  <li className="text-base">Доступ к новым функциям</li>
-                  <li className="text-base">Экспорт результатов</li>
-                  <li className="text-base">Без рекламы</li>
+                  <li className="flex items-center gap-3 font-semibold text-base">
+                    <span className="size-6 bg-gradient-to-br from-green-400 to-indigo-500 rounded-full flex items-center justify-center text-black text-sm">
+                      ★
+                    </span>
+                    Приоритетная поддержка
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-base">
+                    <span className="size-6 bg-gradient-to-br from-green-400 to-indigo-500 rounded-full flex items-center justify-center text-black text-sm">
+                      ★
+                    </span>
+                    Запросы на новые функции
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-base">
+                    <span className="size-6 bg-gradient-to-br from-green-400 to-indigo-500 rounded-full flex items-center justify-center text-black text-sm">
+                      ★
+                    </span>
+                    Бесплатные консультации
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-base">
+                    <span className="size-6 bg-gradient-to-br from-green-400 to-indigo-500 rounded-full flex items-center justify-center text-black text-sm">
+                      ★
+                    </span>
+                    Отсутствие рекламы
+                  </li>
                 </ul>
               </div>
               <Link
@@ -455,7 +541,7 @@ export default function MainPageClient() {
                   });
                 }}
               >
-                Получить PRO-доступ
+                Оформить подписку
               </Link>
             </div>
           </div>
@@ -483,7 +569,8 @@ export default function MainPageClient() {
           </a>
         </nav>
         <div className="text-center text-neutral-500 text-sm">
-          © 2025 Сергей Минаев
+          {' '}
+          {demoData?.footer_text || demoData?.logo_name || 'Сергей Минаев'}
         </div>
       </footer>
     </div>

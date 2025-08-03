@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
           .where(eq(user.id, userId));
 
         if (paymentType === 'coins_purchase') {
-          // Покупка монет
+          // Покупка токенов
           const coinsAmount = Number.parseInt(
             payment.metadata?.coins_amount || '0',
           );

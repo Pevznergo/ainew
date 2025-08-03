@@ -249,7 +249,7 @@ export async function POST(request: Request) {
           message:
             error instanceof Error
               ? error.message
-              : 'Недостаточно монет для отправки сообщения. Пополните баланс.',
+              : 'Недостаточно токенов для отправки сообщения. Пополните баланс.',
         }),
         { status: 403, headers: { 'Content-Type': 'application/json' } },
       );
@@ -471,7 +471,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (error.message.includes('Недостаточно монет')) {
+    if (error.message.includes('Недостаточно токенов')) {
       return new Response(
         JSON.stringify({
           error: 'Insufficient balance',

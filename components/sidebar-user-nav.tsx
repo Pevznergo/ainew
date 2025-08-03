@@ -111,13 +111,13 @@ export function SidebarUserNav({ session }: { session: Session }) {
                   Профиль
                 </DropdownMenuItem>
 
-                {/* Новый пункт: Купить монеты */}
+                {/* Новый пункт: Купить токены */}
                 <DropdownMenuItem
                   data-testid="user-nav-item-buy-coins"
                   className="cursor-pointer"
                   onSelect={() => router.push('/profile')}
                 >
-                  Купить монеты
+                  Купить токены
                 </DropdownMenuItem>
 
                 {/* Новый пункт: Связаться с нами */}

@@ -10,17 +10,22 @@ export default function ProfilePage() {
 
   // Список пакетов определяем до хуков!
   const packages = [
-    { label: '250 монет — 150 ₽', price: 150, coins: 250, pricePer: '0,60' },
-    { label: '800 монет — 300 ₽', price: 300, coins: 800, pricePer: '0,38' },
-    { label: '1500 монет — 500 ₽', price: 500, coins: 1500, pricePer: '0,33' },
+    { label: '250 токенов — 150 ₽', price: 150, coins: 250, pricePer: '0,60' },
+    { label: '800 токенов — 300 ₽', price: 300, coins: 800, pricePer: '0,38' },
     {
-      label: '4000 монет — 1500 ₽',
+      label: '1500 токенов — 500 ₽',
+      price: 500,
+      coins: 1500,
+      pricePer: '0,33',
+    },
+    {
+      label: '4000 токенов — 1500 ₽',
       price: 1500,
       coins: 4000,
       pricePer: '0,38',
     },
     {
-      label: '15000 монет — 3000 ₽',
+      label: '15000 токенов — 3000 ₽',
       price: 3000,
       coins: 15000,
       pricePer: '0,20',
@@ -102,7 +107,7 @@ export default function ProfilePage() {
     setIsProcessingCoinsPayment(true);
 
     try {
-      // Отправляем запрос на создание платежа за монеты
+      // Отправляем запрос на создание платежа за токены
       const response = await fetch('/api/payment/coins', {
         method: 'POST',
         headers: {
@@ -268,8 +273,8 @@ export default function ProfilePage() {
                 )}
               </div>
               <div className="text-neutral-400 text-base mt-2">
-                Подпишись на ПРО и получай <b>1000 монет</b> в месяц всего за{' '}
-                <b>199 рублей</b> (0.2 ₽ за 1 монету).
+                Подпишись на ПРО и получай <b>1000 токенов</b> в месяц всего за{' '}
+                <b>199 рублей</b> (0.2 ₽ за 1 токен).
               </div>
             </div>
           </section>
@@ -278,7 +283,7 @@ export default function ProfilePage() {
           <section className="bg-[#18181b]/90 rounded-3xl shadow-2xl p-10 flex flex-col md:flex-row items-center gap-10 border border-neutral-800 backdrop-blur-md">
             <div className="flex-1 flex flex-col gap-4">
               <div className="font-bold text-xl text-white mb-2">
-                Баланс монет
+                Баланс токенов
               </div>
               <div className="flex items-center gap-6 mb-4">
                 <span className="text-3xl font-extrabold text-indigo-400 bg-[#232946] rounded-xl px-7 py-3 border border-indigo-700 shadow">
@@ -286,7 +291,7 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div className="text-neutral-400 text-base mb-2">
-                Монеты тратятся на запросы к наиболее мощным моделям. Следи за
+                Токены тратятся на запросы к наиболее мощным моделям. Следи за
                 балансом, чтобы всегда иметь к ним доступ.
               </div>
               <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
@@ -303,7 +308,7 @@ export default function ProfilePage() {
                     <span className="truncate">
                       {selected.label}{' '}
                       <span className="text-neutral-400 text-xs">
-                        ({selected.pricePer} ₽/монета)
+                        ({selected.pricePer} ₽/токен)
                       </span>
                     </span>
                     <svg
@@ -341,7 +346,7 @@ export default function ProfilePage() {
                         >
                           <span>{pkg.label}</span>
                           <span className="text-xs text-neutral-400 ml-2">
-                            {pkg.pricePer} ₽/монета
+                            {pkg.pricePer} ₽/токен
                           </span>
                         </li>
                       ))}
@@ -389,7 +394,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
               <div className="text-lg text-neutral-300 text-center">
-                <b>Потратьте монеты</b> на доступ к GPT-4, Claude, DeepSeek,
+                <b>Потратьте Токены </b> на доступ к GPT-4, Claude, DeepSeek,
                 Grok и другим топовым моделям!
               </div>
             </div>

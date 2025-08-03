@@ -72,7 +72,7 @@ export function getMessageByErrorCode(errorCode: ErrorCode): string {
     case 'rate_guest:chat':
       return 'Войдите в свой аккаунт для доступа к этой модели.';
     case 'rate_regular:chat':
-      return 'Недостаточно брокоинов для доступа к этой модели. Пополните в личном кабинете.';
+      return 'Недостаточно токенов для доступа к этой модели. Пополните в личном кабинете.';
     case 'not_found:chat':
       return 'The requested chat was not found. Please check the chat ID and try again.';
     case 'forbidden:chat':

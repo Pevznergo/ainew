@@ -33,22 +33,32 @@ export async function POST(request: NextRequest) {
 
     // Валидация пакета
     const validPackages = [
-      { label: '250 монет — 150 ₽', price: 150, coins: 250, pricePer: '0,60' },
-      { label: '800 монет — 300 ₽', price: 300, coins: 800, pricePer: '0,38' },
       {
-        label: '1500 монет — 500 ₽',
+        label: '250 токенов — 150 ₽',
+        price: 150,
+        coins: 250,
+        pricePer: '0,60',
+      },
+      {
+        label: '800 токенов — 300 ₽',
+        price: 300,
+        coins: 800,
+        pricePer: '0,38',
+      },
+      {
+        label: '1500 токенов — 500 ₽',
         price: 500,
         coins: 1500,
         pricePer: '0,33',
       },
       {
-        label: '4000 монет — 1500 ₽',
+        label: '4000 токенов — 1500 ₽',
         price: 1500,
         coins: 4000,
         pricePer: '0,38',
       },
       {
-        label: '15000 монет — 3000 ₽',
+        label: '15000 токенов — 3000 ₽',
         price: 3000,
         coins: 15000,
         pricePer: '0,20',
@@ -78,7 +88,7 @@ export async function POST(request: NextRequest) {
         return_url: `${process.env.NEXTAUTH_URL}/profile?payment=coins_success`,
       },
       capture: true,
-      description: `Покупка ${selectedPackage.coins} монет Aporto`,
+      description: `Покупка ${selectedPackage.coins} токенов Aporto`,
       metadata: {
         user_id: session.user.id,
         payment_type: 'coins_purchase',
@@ -91,7 +101,7 @@ export async function POST(request: NextRequest) {
         },
         items: [
           {
-            description: `Монеты Aporto (${selectedPackage.coins} шт.)`,
+            description: `Токены Aporto (${selectedPackage.coins} шт.)`,
             quantity: '1.00',
             amount: {
               value: selectedPackage.price.toFixed(2),

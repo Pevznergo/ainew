@@ -731,7 +731,7 @@ export async function payReferralBonus(referredUserId: string): Promise<void> {
       .where(eq(user.id, referredUser.referred_by));
 
     if (referrer) {
-      // Начисляем 1000 монет рефереру
+      // Начисляем 1000 токенов рефереру
       await db
         .update(user)
         .set({ balance: (referrer.balance || 0) + 1000 } as any)
