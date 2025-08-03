@@ -99,25 +99,6 @@ export default function Page() {
             Войти через Google
           </Button>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => handleOAuthSignIn('yandex')}
-          >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-              <path
-                fill="currentColor"
-                d="M12.5 2C6.7 2 2 6.7 2 12.5S6.7 23 12.5 23 23 18.3 23 12.5 18.3 2 12.5 2zm0 19C7.8 21 4 17.2 4 12.5S7.8 4 12.5 4 21 7.8 21 12.5 17.2 21 12.5 21z"
-              />
-              <path
-                fill="currentColor"
-                d="M12.5 6c-3.6 0-6.5 2.9-6.5 6.5S8.9 19 12.5 19s6.5-2.9 6.5-6.5S16.1 6 12.5 6zm0 11c-2.5 0-4.5-2-4.5-4.5s2-4.5 4.5-4.5 4.5 2 4.5 4.5-2 4.5-4.5 4.5z"
-              />
-            </svg>
-            Войти через Яндекс
-          </Button>
-
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
