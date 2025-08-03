@@ -131,7 +131,7 @@ export default function MainPageClient() {
         {/* Hero */}
         <section className="mb-20">
           <div className="flex flex-col items-center justify-center text-center px-4 py-10 md:py-20 space-y-8">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-indigo-400 mb-2 leading-tight drop-shadow-lg">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-indigo-400 mb-2 leading-tight">
               Все лучшие Нейросети
               <br className="hidden md:inline" /> в одном месте
             </h1>

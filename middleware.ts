@@ -3,56 +3,67 @@ import { getToken } from 'next-auth/jwt';
 import { guestRegex, isDevelopmentEnvironment } from './lib/constants';
 
 export async function middleware(request: NextRequest) {
-  console.log('=== Middleware Debug ===');
-  console.log('Path:', request.nextUrl.pathname);
-  console.log('User-Agent:', request.headers.get('user-agent'));
-  console.log('X-Forwarded-For:', request.headers.get('x-forwarded-for'));
-  console.log('X-Real-IP:', request.headers.get('x-real-ip'));
-  console.log('CF-Connecting-IP:', request.headers.get('cf-connecting-ip'));
-  console.log('X-Forwarded-Proto:', request.headers.get('x-forwarded-proto'));
-  console.log('Host:', request.headers.get('host'));
-  console.log('=======================');
-
   const { pathname } = request.nextUrl;
 
-  /*
-   * Playwright starts the dev server and requires a 200 status to
-   * begin the tests, so this ensures that the tests can start
-   */
-  if (pathname.startsWith('/ping')) {
-    return new Response('pong', { status: 200 });
-  }
-
-  if (pathname.startsWith('/api/auth')) {
+  // Исключаем статические файлы и API
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname.startsWith('/ping')
+  ) {
     return NextResponse.next();
   }
 
-  // Проверяем существующий токен
+  // Определяем, является ли это мобильной сетью
+  const userAgent = request.headers.get('user-agent') || '';
+  const isMobileNetwork =
+    userAgent.includes('Mobile') ||
+    userAgent.includes('Android') ||
+    userAgent.includes('iPhone') ||
+    userAgent.includes('iPad');
+
+  // Проверяем существующий токен с учетом мобильных сетей
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
-    secureCookie: !isDevelopmentEnvironment,
+    secureCookie: !isDevelopmentEnvironment && !isMobileNetwork,
   });
 
-  // Если нет токена, создаем гостя только при первом посещении
-  if (!token) {
-    // Проверяем, есть ли уже гость в cookies
-    const hasGuestSession =
-      request.cookies.get('next-auth.session-token') ||
-      request.cookies.get('__Secure-next-auth.session-token');
+  // Если есть токен, пропускаем
+  if (token) {
+    const isGuest = guestRegex.test(token?.email ?? '');
 
-    if (!hasGuestSession) {
-      const redirectUrl = encodeURIComponent(request.url);
-      return NextResponse.redirect(
-        new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url),
-      );
+    // Редирект только если авторизованный пользователь пытается зайти на страницы авторизации
+    if (!isGuest && ['/login', '/register'].includes(pathname)) {
+      return NextResponse.redirect(new URL('/', request.url));
     }
+
+    return NextResponse.next();
   }
 
-  const isGuest = guestRegex.test(token?.email ?? '');
+  // Проверяем, есть ли уже гость в cookies (включая мобильные варианты)
+  const hasGuestSession =
+    request.cookies.get('next-auth.session-token') ||
+    request.cookies.get('__Secure-next-auth.session-token') ||
+    request.cookies.get('__Host-next-auth.session-token') ||
+    request.cookies.get('authjs.session-token');
 
-  if (token && !isGuest && ['/login', '/register'].includes(pathname)) {
-    return NextResponse.redirect(new URL('/', request.url));
+  // Создаем гостя только если нет сессии
+  if (!hasGuestSession) {
+    // Для главной страницы создаем гостя напрямую без редиректа
+    if (pathname === '/' || pathname === '/main') {
+      const response = NextResponse.redirect(
+        new URL('/api/auth/guest', request.url),
+      );
+      return response;
+    }
+
+    // Для других страниц используем редирект с callback
+    const redirectUrl = encodeURIComponent(request.url);
+    return NextResponse.redirect(
+      new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url),
+    );
   }
 
   return NextResponse.next();
@@ -60,7 +71,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Исключите API routes
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // Исключаем статические файлы и API
+    '/((?!_next/static|_next/image|favicon.ico|api).*)',
   ],
 };
