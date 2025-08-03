@@ -4,10 +4,64 @@ CREATE TABLE IF NOT EXISTS "Demo" (
   "logo_name" text NOT NULL,
   "logo_url" text,
   "background_color" text,
+  "typewriterText1" text,
+  "typewriterText2" text,
+  "typewriterText3" text,
+  "typewriterText4" text,
+  "hero_title" text,
+  "hero_subtitle" text,
+  "features_title" text,
+  "features_subtitle" text,
+  "features1_title" text,
+  "features1_h3" text,
+  "features1_p" text,
+  "models_title" text,
+  "models_subtitle" text,
+  "pricing_title" text,
+  "pricing_subtitle" text,
+  "footer_text" text,
   "created_at" timestamp NOT NULL DEFAULT now()
 );
 
--- Добавляем тестовые данные
-INSERT INTO "Demo" ("name", "logo_name", "logo_url") 
-VALUES ('pevzner', 'Сергей Минаев', '/demo/minaev.png')
-ON CONFLICT ("name") DO NOTHING;
+-- Добавляем тестовые данные для Сергея Минаева
+INSERT INTO "Demo" (
+  "name", 
+  "logo_name", 
+  "logo_url", 
+  "typewriterText1", 
+  "typewriterText2", 
+  "typewriterText3", 
+  "typewriterText4",
+  "hero_title",
+  "hero_subtitle",
+  "features_title",
+  "features_subtitle",
+  "features1_title",
+  "features1_h3",
+  "features1_p",
+  "models_title",
+  "models_subtitle",
+  "pricing_title",
+  "pricing_subtitle",
+  "footer_text"
+) VALUES (
+  'pevzner', 
+  'Сергей Минаев', 
+  '/demo/minaev.png', 
+  'Расскажи про историческое событие', 
+  'Проверь исторический факт',
+  'Напиши код на Python',
+  'Создай презентацию',
+  'Мой ИИ-помощник',
+  'История • Программирование • Контент • Анализ',
+  'Что умеет мой ИИ',
+  'Универсальный помощник для изучения истории и решения любых задач',
+  'Исторические исследования',
+  'Глубокий анализ исторических событий и личностей',
+  'Задайте любой вопрос об истории, и мой ИИ найдет интересные факты, малоизвестные детали и поможет разобраться в сложных исторических событиях. От древних цивилизаций до современности.',
+  'Доступные модели',
+  'Используйте лучшие ИИ-модели для изучения истории. От простых вопросов до глубокого анализа.',
+  'Выберите свой план',
+  'Начните бесплатно или получите доступ ко всем возможностям',
+  '© 2025 Сергей Минаев'
+) ON CONFLICT ("name") DO NOTHING;

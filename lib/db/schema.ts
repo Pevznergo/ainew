@@ -167,6 +167,35 @@ export const demo = pgTable('Demo', {
   logo_name: text('logo_name').notNull(),
   logo_url: text('logo_url'),
   background_color: text('background_color'),
+
+  // Typewriter тексты
+  typewriterText1: text('typewriterText1'),
+  typewriterText2: text('typewriterText2'),
+  typewriterText3: text('typewriterText3'),
+  typewriterText4: text('typewriterText4'),
+
+  // Hero секция
+  hero_title: text('hero_title'),
+  hero_subtitle: text('hero_subtitle'),
+
+  // Features секция (только для первого feature)
+  features_title: text('features_title'),
+  features_subtitle: text('features_subtitle'),
+  features1_title: text('features1_title'),
+  features1_h3: text('features1_h3'),
+  features1_p: text('features1_p'),
+
+  // Models секция
+  models_title: text('models_title'),
+  models_subtitle: text('models_subtitle'),
+
+  // Pricing секция
+  pricing_title: text('pricing_title'),
+  pricing_subtitle: text('pricing_subtitle'),
+
+  // Footer
+  footer_text: text('footer_text'),
+
   created_at: timestamp('created_at').notNull().defaultNow(),
 });
 

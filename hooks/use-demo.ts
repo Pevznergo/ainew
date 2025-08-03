@@ -11,17 +11,30 @@ export function useDemo() {
     logo_name: string;
     logo_url?: string;
     background_color?: string;
+    typewriterText1?: string;
+    typewriterText2?: string;
+    typewriterText3?: string;
+    typewriterText4?: string;
+    hero_title?: string;
+    hero_subtitle?: string;
+    features_title?: string;
+    features_subtitle?: string;
+    features1_title?: string;
+    features1_h3?: string;
+    features1_p?: string;
+    models_title?: string;
+    models_subtitle?: string;
+    pricing_title?: string;
+    pricing_subtitle?: string;
+    footer_text?: string;
   } | null>(null);
 
   useEffect(() => {
-    // Получаем имя из пути (например, /my/pevzner -> pevzner)
     const pathParts = pathname.split('/');
     const demoName = pathParts[pathParts.length - 1];
 
-    // Устанавливаем cookie
     Cookies.set('demo', demoName, { expires: 365 });
 
-    // Загружаем данные из БД
     const fetchDemoData = async () => {
       try {
         const response = await fetch(`/api/demo/${demoName}`);

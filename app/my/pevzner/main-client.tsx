@@ -7,14 +7,15 @@ import { useSearchParams } from 'next/navigation';
 import { sendGTMEvent } from '@/lib/gtm';
 import { useDemo } from '@/hooks/use-demo';
 
-const typewriterTexts = [
+// Fallback данные, если БД недоступна
+const defaultTypewriterTexts = [
   'Расскажи про историческое событие',
   'Напиши код на Python',
   'Создай презентацию',
   'Проверь исторический факт',
 ];
 
-const featuresData = [
+const defaultFeaturesData = [
   {
     title: 'Исторические исследования',
     h3: 'Глубокий анализ исторических событий и личностей',
@@ -75,6 +76,36 @@ export default function MainPageClient() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [charIndex, setCharIndex] = useState(0);
 
+  const searchParams = useSearchParams();
+  const demoData = useDemo();
+
+  // Typewriter с данными из БД
+  const typewriterTexts =
+    demoData?.typewriterText1 && demoData?.typewriterText2
+      ? [
+          demoData.typewriterText1,
+          demoData.typewriterText2,
+          demoData.typewriterText3 || 'Напиши код на Python',
+          demoData.typewriterText4 || 'Создай презентацию',
+        ]
+      : defaultTypewriterTexts;
+
+  // Features с данными из БД для первого элемента
+  const featuresData = [
+    {
+      title: demoData?.features1_title || 'Исторические исследования',
+      h3:
+        demoData?.features1_h3 ||
+        'Глубокий анализ исторических событий и личностей',
+      p:
+        demoData?.features1_p ||
+        'Задайте любой вопрос об истории, и мой ИИ найдет интересные факты, малоизвестные детали и поможет разобраться в сложных исторических событиях. От древних цивилизаций до современности.',
+      video: '/images/case1.mp4',
+      poster: '/images/case1.jpg',
+    },
+    ...defaultFeaturesData.slice(1), // Остальные features остаются как есть
+  ];
+
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     const current = typewriterTexts[typeIndex];
@@ -104,9 +135,6 @@ export default function MainPageClient() {
   // Promo banner
   const [showPromo, setShowPromo] = useState(true);
 
-  const searchParams = useSearchParams();
-  const demoData = useDemo();
-
   useEffect(() => {
     const referralCode = searchParams.get('ref');
 
@@ -124,8 +152,8 @@ export default function MainPageClient() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Image
-                src="/demo/minaev.png"
-                alt="Сергей Минаев"
+                src={demoData?.logo_url || '/demo/minaev.png'}
+                alt={demoData?.logo_name || 'Сергей Минаев'}
                 width={48}
                 height={48}
                 className="rounded-full object-cover"
@@ -137,7 +165,7 @@ export default function MainPageClient() {
                 href="/"
                 className="flex items-center font-bold text-2xl text-white"
               >
-                Сергей Минаев
+                {demoData?.logo_name || 'Сергей Минаев'}
               </Link>
               <p className="text-neutral-400 text-sm">Историк • Блогер</p>
             </div>
@@ -167,8 +195,8 @@ export default function MainPageClient() {
             {/* Фото блогера */}
             <div className="relative mb-4">
               <Image
-                src="/demo/minaev.png"
-                alt="Сергей Минаев"
+                src={demoData?.logo_url || '/demo/minaev.png'}
+                alt={demoData?.logo_name || 'Сергей Минаев'}
                 width={150}
                 height={150}
                 className="rounded-full object-cover border-4 border-indigo-500/30 shadow-2xl"
@@ -177,7 +205,7 @@ export default function MainPageClient() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-indigo-400 mb-2 leading-tight drop-shadow-lg">
-              Мой ИИ-помощник
+              {demoData?.hero_title || 'Мой ИИ-помощник'}
             </h1>
             <div className="flex flex-col items-center space-y-4">
               <div className="flex items-center justify-center gap-2">
@@ -189,7 +217,8 @@ export default function MainPageClient() {
                 </span>
               </div>
               <p className="text-lg sm:text-xl md:text-2xl text-neutral-300 mt-2">
-                История • Программирование • Контент • Анализ
+                {demoData?.hero_subtitle ||
+                  'История • Программирование • Контент • Анализ'}
                 <br />
                 <span className="block mt-2 text-xl sm:text-2xl">
                   <span className="text-indigo-400 font-bold">GPT</span> ,{' '}
@@ -269,11 +298,11 @@ export default function MainPageClient() {
         <section className="mb-20 py-20">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Доступные модели
+              {demoData?.models_title || 'Доступные модели'}
             </h2>
             <p className="text-xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">
-              Используйте лучшие ИИ-модели для изучения истории. От простых
-              вопросов до глубокого анализа.
+              {demoData?.models_subtitle ||
+                'Используйте лучшие ИИ-модели для изучения истории. От простых вопросов до глубокого анализа.'}
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -297,10 +326,11 @@ export default function MainPageClient() {
         <section className="min-h-screen flex flex-col justify-center py-20">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Что умеет мой ИИ
+              {demoData?.features_title || 'Что умеет мой ИИ'}
             </h2>
             <p className="text-xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">
-              Универсальный помощник для изучения истории и решения любых задач
+              {demoData?.features_subtitle ||
+                'Универсальный помощник для изучения истории и решения любых задач'}
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-4 mb-16">
@@ -345,10 +375,11 @@ export default function MainPageClient() {
         <section className="min-h-screen flex flex-col justify-center py-20">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Выберите свой план
+              {demoData?.pricing_title || 'Выберите свой план'}
             </h2>
             <p className="text-xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">
-              Начните бесплатно или получите доступ ко всем возможностям
+              {demoData?.pricing_subtitle ||
+                'Начните бесплатно или получите доступ ко всем возможностям'}
             </p>
           </div>
           <div className="flex flex-col lg:flex-row gap-12 justify-center max-w-6xl mx-auto px-4">
@@ -485,7 +516,8 @@ export default function MainPageClient() {
           </a>
         </nav>
         <div className="text-center text-neutral-500 text-sm">
-          © 2025 {demoData?.logo_name || 'Сергей Минаев'}
+          {' '}
+          {demoData?.footer_text || demoData?.logo_name || 'Сергей Минаев'}
         </div>
       </footer>
     </div>
