@@ -174,7 +174,6 @@ export default function MainPageClient() {
               >
                 {demoData?.logo_name || 'Сергей Минаев'}
               </Link>
-              <p className="text-neutral-400 text-sm">Историк • Блогер</p>
             </div>
           </div>
           <nav>
@@ -202,7 +201,7 @@ export default function MainPageClient() {
             {/* Фото блогера */}
             <div className="relative mb-4">
               <Image
-                src={demoData?.logo_url || '/demo/minaev.png'}
+                src={demoData?.logo_url || '/demo/minaev.jpg'}
                 alt={demoData?.logo_name || 'Сергей Минаев'}
                 width={150}
                 height={150}
