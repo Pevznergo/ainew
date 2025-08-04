@@ -173,15 +173,7 @@ export default function NetLandingPage() {
               </div>
             </div>
             <div className="flex justify-center">
-              <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-3xl p-8 border border-indigo-500/30">
-                <Image
-                  src="/images/logo.svg"
-                  alt="AI Chat Platform"
-                  width={300}
-                  height={300}
-                  className="rounded-2xl"
-                />
-              </div>
+              <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-3xl p-8 border border-indigo-500/30"></div>
             </div>
           </div>
         </section>

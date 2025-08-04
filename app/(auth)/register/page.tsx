@@ -165,7 +165,7 @@ export default function Page() {
             >
               Вход
             </Link>
-            {' вместо.'}
+            {' здесь.'}
           </p>
         </AuthForm>
       </div>

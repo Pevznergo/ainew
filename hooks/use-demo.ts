@@ -35,12 +35,31 @@ export function useDemo() {
 
     Cookies.set('demo', demoName, { expires: 365 });
 
+    // Добавляем кэширование в localStorage
+    const cachedData = localStorage.getItem(`demo_${demoName}`);
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        setDemoData(parsed);
+      } catch (error) {
+        console.error('Error parsing cached demo data:', error);
+      }
+    }
+
     const fetchDemoData = async () => {
       try {
-        const response = await fetch(`/api/demo/${demoName}`);
+        const response = await fetch(`/api/demo/${demoName}`, {
+          // Добавляем кэширование
+          headers: {
+            'Cache-Control': 'max-age=3600', // 1 час
+          },
+        });
+
         if (response.ok) {
           const data = await response.json();
           setDemoData(data);
+          // Кэшируем данные
+          localStorage.setItem(`demo_${demoName}`, JSON.stringify(data));
         }
       } catch (error) {
         console.error('Error fetching demo data:', error);
