@@ -5,6 +5,62 @@ import { useSession } from 'next-auth/react';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 
+// Компонент скелетона для загрузки
+function LoadingSkeleton() {
+  return (
+    <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
+      {/* Header skeleton */}
+      <header className="bg-[#18181b] shadow-sm border-b border-neutral-800">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-6">
+          <div className="w-20 h-6 bg-neutral-700 rounded animate-pulse" />
+          <div className="w-24 h-8 bg-neutral-700 rounded animate-pulse" />
+          <div className="w-16 h-10 bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </header>
+
+      <main className="flex-1 w-full flex flex-col items-center py-14 px-2">
+        <div className="w-full max-w-4xl space-y-10">
+          {/* Профиль пользователя skeleton */}
+          <section className="bg-[#18181b]/90 rounded-3xl shadow-2xl p-10 flex flex-col md:flex-row items-center gap-10 border border-neutral-800 backdrop-blur-md">
+            <div className="flex flex-col items-center md:items-start gap-4 min-w-[220px]">
+              <div className="w-28 h-28 bg-neutral-700 rounded-full animate-pulse" />
+              <div className="text-center md:text-left">
+                <div className="w-32 h-8 bg-neutral-700 rounded animate-pulse mb-2" />
+                <div className="w-40 h-6 bg-neutral-700 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="flex-1 flex flex-col gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="w-32 h-12 bg-neutral-700 rounded-xl animate-pulse" />
+                <div className="w-40 h-12 bg-neutral-700 rounded animate-pulse" />
+              </div>
+              <div className="w-full h-6 bg-neutral-700 rounded animate-pulse" />
+            </div>
+          </section>
+
+          {/* Баланс skeleton */}
+          <section className="bg-[#18181b]/90 rounded-3xl shadow-2xl p-10 flex flex-col md:flex-row items-center gap-10 border border-neutral-800 backdrop-blur-md">
+            <div className="flex-1 flex flex-col gap-4">
+              <div className="w-48 h-8 bg-neutral-700 rounded animate-pulse mb-2" />
+              <div className="flex items-center gap-6 mb-4">
+                <div className="w-32 h-16 bg-neutral-700 rounded-xl animate-pulse" />
+              </div>
+              <div className="w-full h-6 bg-neutral-700 rounded animate-pulse mb-2" />
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="w-80 h-12 bg-neutral-700 rounded-lg animate-pulse" />
+                <div className="w-48 h-12 bg-neutral-700 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="flex-1 flex flex-col items-center justify-center gap-4">
+              <div className="w-80 h-8 bg-neutral-700 rounded animate-pulse" />
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const { data: session, status } = useSession();
 
@@ -162,12 +218,9 @@ export default function ProfilePage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  // Показываем скелетон пока загружаемся
   if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-neutral-400">
-        Загрузка профиля...
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   if (!session) {

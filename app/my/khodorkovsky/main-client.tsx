@@ -76,6 +76,52 @@ const models = [
   'Leonardo AI',
 ];
 
+// Компонент скелетона для загрузки
+function LoadingSkeleton() {
+  return (
+    <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
+      {/* Header skeleton */}
+      <header className="bg-[#18181b] shadow-sm border-b border-neutral-800">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-neutral-700 rounded-full animate-pulse" />
+            <div className="w-32 h-8 bg-neutral-700 rounded animate-pulse" />
+          </div>
+          <div className="w-32 h-10 bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </header>
+
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Hero skeleton */}
+        <section className="mb-20">
+          <div className="flex flex-col items-center justify-center text-center px-4 py-6 md:py-12 space-y-8">
+            <div className="w-36 h-36 bg-neutral-700 rounded-full animate-pulse" />
+            <div className="w-96 h-16 bg-neutral-700 rounded animate-pulse" />
+            <div className="w-80 h-8 bg-neutral-700 rounded animate-pulse" />
+            <div className="w-48 h-12 bg-neutral-700 rounded animate-pulse" />
+          </div>
+        </section>
+
+        {/* Models skeleton */}
+        <section className="mb-20 py-20">
+          <div className="text-center mb-16">
+            <div className="w-96 h-12 bg-neutral-700 rounded animate-pulse mx-auto mb-8" />
+            <div className="w-4xl h-8 bg-neutral-700 rounded animate-pulse mx-auto" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {Array.from({ length: 20 }, (_, i) => (
+              <div
+                key={`skeleton-${Date.now()}-${i}`}
+                className="h-20 bg-neutral-700 rounded-2xl animate-pulse"
+              />
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
 export default function MainPageClient() {
   // Typewriter
   const [typeIndex, setTypeIndex] = useState(0);
@@ -86,32 +132,21 @@ export default function MainPageClient() {
   const searchParams = useSearchParams();
   const demoData = useDemo();
 
-  // Typewriter с данными из БД
-  const typewriterTexts =
-    demoData?.typewriterText1 && demoData?.typewriterText2
-      ? [
-          demoData.typewriterText1,
-          demoData.typewriterText2,
-          demoData.typewriterText3 || 'Напиши код на Python',
-          demoData.typewriterText4 || 'Создай презентацию',
-        ]
-      : defaultTypewriterTexts;
+  // Features Tabs
+  const [tab, setTab] = useState(0);
 
-  // Features с данными из БД для первого элемента
-  const featuresData = [
-    {
-      title: demoData?.features1_title || 'Исторические исследования',
-      h3:
-        demoData?.features1_h3 ||
-        'Глубокий анализ исторических событий и личностей',
-      p:
-        demoData?.features1_p ||
-        'Задайте любой вопрос об истории, и мой ИИ найдет интересные факты, малоизвестные детали и поможет разобраться в сложных исторических событиях. От древних цивилизаций до современности.',
-      video: '/images/case1.mp4',
-      poster: '/images/case1.jpg',
-    },
-    ...defaultFeaturesData.slice(1), // Остальные features остаются как есть
-  ];
+  // Promo banner
+  const [showPromo, setShowPromo] = useState(true);
+
+  // Typewriter с данными из БД
+  const typewriterTexts = demoData
+    ? [
+        demoData.typewriterText1 || 'Расскажи про историческое событие',
+        demoData.typewriterText2 || 'Напиши код на Python',
+        demoData.typewriterText3 || 'Создай презентацию',
+        demoData.typewriterText4 || 'Проверь исторический факт',
+      ]
+    : defaultTypewriterTexts;
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -134,13 +169,7 @@ export default function MainPageClient() {
       }
     }
     return () => clearTimeout(timeout);
-  }, [charIndex, isDeleting, typeIndex]);
-
-  // Features Tabs
-  const [tab, setTab] = useState(0);
-
-  // Promo banner
-  const [showPromo, setShowPromo] = useState(true);
+  }, [charIndex, isDeleting, typeIndex, typewriterTexts]);
 
   useEffect(() => {
     const referralCode = searchParams.get('ref');
@@ -151,6 +180,27 @@ export default function MainPageClient() {
     }
   }, [searchParams]);
 
+  // Показываем скелетон пока данные загружаются
+  if (!demoData) {
+    return <LoadingSkeleton />;
+  }
+
+  // Features с данными из БД для первого элемента
+  const featuresData = [
+    {
+      title: demoData.features1_title || 'Исторические исследования',
+      h3:
+        demoData.features1_h3 ||
+        'Глубокий анализ исторических событий и личностей',
+      p:
+        demoData.features1_p ||
+        'Задайте любой вопрос об истории, и мой ИИ найдет интересные факты, малоизвестные детали и поможет разобраться в сложных исторических событиях. От древних цивилизаций до современности.',
+      video: '/images/case1.mp4',
+      poster: '/images/case1.jpg',
+    },
+    ...defaultFeaturesData.slice(1), // Остальные features остаются как есть
+  ];
+
   return (
     <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
       {/* Header */}
@@ -159,8 +209,8 @@ export default function MainPageClient() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Image
-                src={demoData?.logo_url || '/demo/minaev.png'}
-                alt={demoData?.logo_name || 'Сергей Минаев'}
+                src={demoData.logo_url || '/demo/minaev.png'}
+                alt={demoData.logo_name || 'Сергей Минаев'}
                 width={48}
                 height={48}
                 className="rounded-full object-cover"
@@ -172,7 +222,7 @@ export default function MainPageClient() {
                 href="/"
                 className="flex items-center font-bold text-2xl text-white"
               >
-                {demoData?.logo_name || 'Сергей Минаев'}
+                {demoData.logo_name || 'Сергей Минаев'}
               </Link>
             </div>
           </div>
@@ -201,8 +251,8 @@ export default function MainPageClient() {
             {/* Фото блогера */}
             <div className="relative mb-4">
               <Image
-                src={demoData?.logo_url || '/demo/minaev.jpg'}
-                alt={demoData?.logo_name || 'Сергей Минаев'}
+                src={demoData.logo_url || '/demo/minaev.jpg'}
+                alt={demoData.logo_name || 'Сергей Минаев'}
                 width={150}
                 height={150}
                 className="rounded-full object-cover border-4 border-indigo-500/30 shadow-2xl"
@@ -211,7 +261,7 @@ export default function MainPageClient() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-indigo-400 mb-2 leading-tight drop-shadow-lg">
-              {demoData?.hero_title || 'Мой ИИ-помощник'}
+              {demoData.hero_title || 'Мой ИИ-помощник'}
             </h1>
             <div className="flex flex-col items-center space-y-4">
               <div className="flex items-center justify-center gap-2">
@@ -223,7 +273,7 @@ export default function MainPageClient() {
                 </span>
               </div>
               <p className="text-lg sm:text-xl md:text-2xl text-neutral-300 mt-2">
-                {demoData?.hero_subtitle ||
+                {demoData.hero_subtitle ||
                   'История • Программирование • Контент • Анализ'}
                 <br />
                 <span className="block mt-2 text-xl sm:text-2xl">
@@ -304,10 +354,10 @@ export default function MainPageClient() {
         <section className="mb-20 py-20">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              {demoData?.models_title || 'Доступные модели'}
+              {demoData.models_title || 'Доступные модели'}
             </h2>
             <p className="text-xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">
-              {demoData?.models_subtitle ||
+              {demoData.models_subtitle ||
                 'Используйте лучшие ИИ-модели для изучения истории. От простых вопросов до глубокого анализа.'}
             </p>
           </div>
@@ -332,10 +382,10 @@ export default function MainPageClient() {
         <section className="min-h-screen flex flex-col justify-center py-20">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              {demoData?.features_title || 'Что умеет мой ИИ'}
+              {demoData.features_title || 'Что умеет мой ИИ'}
             </h2>
             <p className="text-xl text-neutral-300 max-w-4xl mx-auto leading-relaxed">
-              {demoData?.features_subtitle ||
+              {demoData.features_subtitle ||
                 'Универсальный помощник для изучения истории и решения любых задач'}
             </p>
           </div>
@@ -568,8 +618,7 @@ export default function MainPageClient() {
           </a>
         </nav>
         <div className="text-center text-neutral-500 text-sm">
-          {' '}
-          {demoData?.footer_text || demoData?.logo_name || 'Сергей Минаев'}
+          {demoData.footer_text || demoData.logo_name || 'Сергей Минаев'}
         </div>
       </footer>
     </div>

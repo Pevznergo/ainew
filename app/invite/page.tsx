@@ -5,6 +5,82 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 
+// Компонент скелетона для загрузки
+function LoadingSkeleton() {
+  return (
+    <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
+      {/* Header skeleton */}
+      <header className="bg-[#18181b] shadow-sm border-b border-neutral-800">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
+          <div className="w-20 h-6 bg-neutral-700 rounded animate-pulse" />
+          <div className="w-24 h-8 bg-neutral-700 rounded animate-pulse" />
+          <div className="w-16 h-10 bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto py-12 px-4 sm:px-6 lg:px-8 flex-1 w-full">
+        {/* Реферальная ссылка skeleton */}
+        <section className="mb-12">
+          <div className="bg-[#18181b]/80 rounded-2xl shadow-xl p-8 flex flex-col items-center w-full border border-neutral-800 backdrop-blur-md">
+            <div className="w-64 h-8 bg-neutral-700 rounded animate-pulse mb-4" />
+            <div className="flex w-full max-w-2xl mb-3">
+              <div className="flex-1 h-12 bg-neutral-700 rounded-l-lg animate-pulse" />
+              <div className="w-24 h-12 bg-neutral-700 rounded-r-lg animate-pulse" />
+            </div>
+            <div className="w-80 h-6 bg-neutral-700 rounded animate-pulse" />
+          </div>
+        </section>
+
+        {/* Бонусные шаги skeleton */}
+        <section className="mb-16">
+          <div className="bg-gradient-to-r from-indigo-700/90 to-green-700/80 rounded-3xl p-10 text-white shadow-xl mb-10 text-center border border-indigo-900">
+            <div className="w-96 h-12 bg-neutral-700/50 rounded animate-pulse mx-auto mb-3" />
+            <div className="w-80 h-6 bg-neutral-700/50 rounded animate-pulse mx-auto mb-6" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map(() => (
+              <div
+                key={Math.random()}
+                className="bg-[#18181b] rounded-2xl shadow-lg p-8 flex flex-col items-center border border-neutral-800"
+              >
+                <div className="w-16 h-16 bg-neutral-700 rounded-xl animate-pulse mb-5" />
+                <div className="w-32 h-6 bg-neutral-700 rounded animate-pulse mb-2" />
+                <div className="w-48 h-16 bg-neutral-700 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA skeleton */}
+        <section className="bg-gradient-to-r from-indigo-700/90 to-green-700/80 rounded-3xl p-10 text-white shadow-xl mb-16 text-center border border-indigo-900">
+          <div className="w-96 h-10 bg-neutral-700/50 rounded animate-pulse mx-auto mb-8" />
+          <div className="flex flex-col md:flex-row gap-6 justify-center">
+            <div className="w-40 h-12 bg-neutral-700/50 rounded animate-pulse" />
+            <div className="w-48 h-12 bg-neutral-700/50 rounded animate-pulse" />
+          </div>
+        </section>
+
+        {/* Условия skeleton */}
+        <section className="bg-[#18181b] rounded-3xl shadow-xl p-10 mb-8 border border-neutral-800">
+          <div className="w-64 h-10 bg-neutral-700 rounded animate-pulse mx-auto mb-10" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            {Array.from({ length: 6 }).map(() => (
+              <div
+                key={Math.random()}
+                className="bg-[#232946] rounded-xl p-6 shadow border border-neutral-800"
+              >
+                <div className="w-32 h-6 bg-neutral-700 rounded animate-pulse mb-3" />
+                <div className="w-full h-20 bg-neutral-700 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="w-full h-16 bg-neutral-700 rounded-lg animate-pulse" />
+        </section>
+      </main>
+    </div>
+  );
+}
+
 export default function InvitePage() {
   const { data: session, status } = useSession();
   const [referralLink, setReferralLink] = useState(
@@ -46,6 +122,11 @@ export default function InvitePage() {
       console.error('Failed to copy:', error);
     }
   };
+
+  // Показываем скелетон пока загружаемся
+  if (status === 'loading' || loading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
@@ -100,7 +181,7 @@ export default function InvitePage() {
             <div className="flex w-full max-w-2xl mb-3">
               <input
                 type="text"
-                value={loading ? 'Загрузка...' : referralLink || ''}
+                value={referralLink || ''}
                 readOnly
                 className="flex-1 bg-neutral-900 text-white font-mono rounded-l-lg px-5 py-3 outline-none text-base border border-neutral-800"
               />
@@ -108,7 +189,6 @@ export default function InvitePage() {
                 className="modern-btn-outline rounded-l-none rounded-r-lg"
                 type="button"
                 onClick={copyToClipboard}
-                disabled={loading}
               >
                 Копировать
               </button>

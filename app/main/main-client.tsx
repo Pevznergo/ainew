@@ -6,6 +6,96 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { sendGTMEvent } from '@/lib/gtm';
 
+// Компонент скелетона для загрузки
+function LoadingSkeleton() {
+  return (
+    <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
+      {/* Header skeleton */}
+      <header className="bg-[#18181b] shadow-sm border-b border-neutral-800">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
+          <div className="w-24 h-8 bg-neutral-700 rounded animate-pulse" />
+          <div className="w-32 h-10 bg-neutral-700 rounded animate-pulse" />
+        </div>
+      </header>
+
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Hero skeleton */}
+        <section className="mb-20">
+          <div className="flex flex-col items-center justify-center text-center px-4 py-10 md:py-20 space-y-8">
+            <div className="w-96 h-16 bg-neutral-700 rounded animate-pulse" />
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-80 h-12 bg-neutral-700 rounded animate-pulse" />
+              <div className="w-4 h-12 bg-neutral-700 rounded animate-pulse" />
+            </div>
+            <div className="w-96 h-8 bg-neutral-700 rounded animate-pulse" />
+            <div className="w-48 h-12 bg-neutral-700 rounded animate-pulse" />
+          </div>
+        </section>
+
+        {/* Features skeleton */}
+        <section className="min-h-screen flex flex-col justify-center py-20">
+          <div className="text-center mb-20">
+            <div className="w-96 h-12 bg-neutral-700 rounded animate-pulse mx-auto mb-8" />
+            <div className="w-4xl h-8 bg-neutral-700 rounded animate-pulse mx-auto" />
+          </div>
+          <div className="flex flex-wrap justify-center gap-4 mb-16">
+            {Array.from({ length: 5 }).map(() => (
+              <div
+                key={Math.random()}
+                className="w-32 h-12 bg-neutral-700 rounded animate-pulse"
+              />
+            ))}
+          </div>
+          <div className="flex flex-col lg:flex-row gap-16 items-center px-4 max-w-7xl mx-auto">
+            <div className="flex-1 space-y-6">
+              <div className="w-80 h-10 bg-neutral-700 rounded animate-pulse" />
+              <div className="w-full h-24 bg-neutral-700 rounded animate-pulse" />
+            </div>
+            <div className="flex-1 flex justify-center">
+              <div className="w-96 h-80 bg-neutral-700 rounded-3xl animate-pulse" />
+            </div>
+          </div>
+        </section>
+
+        {/* Plans skeleton */}
+        <section className="min-h-screen flex flex-col justify-center py-20">
+          <div className="text-center mb-20">
+            <div className="w-96 h-12 bg-neutral-700 rounded animate-pulse mx-auto mb-8" />
+            <div className="w-4xl h-8 bg-neutral-700 rounded animate-pulse mx-auto" />
+          </div>
+          <div className="flex flex-col lg:flex-row gap-12 justify-center max-w-6xl mx-auto px-4">
+            {Array.from({ length: 2 }).map(() => (
+              <div
+                key={Math.random()}
+                className="bg-[#18181b]/80 rounded-3xl shadow-xl p-10 flex-1 max-w-md border border-neutral-800 flex flex-col justify-between backdrop-blur-md"
+              >
+                <div>
+                  <div className="flex justify-between items-center mb-6">
+                    <div className="w-24 h-6 bg-neutral-700 rounded animate-pulse" />
+                    <div className="w-20 h-6 bg-neutral-700 rounded animate-pulse" />
+                  </div>
+                  <div className="space-y-3">
+                    {Array.from({ length: 8 }).map(() => (
+                      <div
+                        key={Math.random()}
+                        className="flex items-center gap-3"
+                      >
+                        <div className="w-6 h-6 bg-neutral-700 rounded-full animate-pulse" />
+                        <div className="w-48 h-4 bg-neutral-700 rounded animate-pulse" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="w-full h-12 bg-neutral-700 rounded animate-pulse mt-4" />
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
 const typewriterTexts = [
   'Найди информацию',
   'Помоги с SEO',
@@ -58,6 +148,14 @@ export default function MainPageClient() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [charIndex, setCharIndex] = useState(0);
 
+  // Features Tabs
+  const [tab, setTab] = useState(3); // "Учёба" по умолчанию
+
+  // Promo banner
+  const [showPromo, setShowPromo] = useState(true);
+
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     const current = typewriterTexts[typeIndex];
@@ -81,14 +179,6 @@ export default function MainPageClient() {
     return () => clearTimeout(timeout);
   }, [charIndex, isDeleting, typeIndex]);
 
-  // Features Tabs
-  const [tab, setTab] = useState(3); // "Учёба" по умолчанию
-
-  // Promo banner
-  const [showPromo, setShowPromo] = useState(true);
-
-  const searchParams = useSearchParams();
-
   useEffect(() => {
     const referralCode = searchParams.get('ref');
 
@@ -97,6 +187,13 @@ export default function MainPageClient() {
       localStorage.setItem('referralCode', referralCode);
     }
   }, [searchParams]);
+
+  // Показываем скелетон пока загружаемся (можно добавить логику загрузки)
+  const [isLoading, setIsLoading] = useState(false);
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
