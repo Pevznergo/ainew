@@ -132,6 +132,7 @@ export default function MainPageClient() {
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [displayed, setDisplayed] = useState('');
+  const [isStarted, setIsStarted] = useState(false);
   const [tab, setTab] = useState(0);
 
   // Promo banner
@@ -150,6 +151,17 @@ export default function MainPageClient() {
   }, [demoData]);
 
   useEffect(() => {
+    // Задержка в 500мс перед началом печатания
+    const startTimeout = setTimeout(() => {
+      setIsStarted(true);
+    }, 500);
+
+    return () => clearTimeout(startTimeout);
+  }, []);
+
+  useEffect(() => {
+    if (!isStarted) return;
+
     let timeout: NodeJS.Timeout;
     const current = typewriterTexts[typeIndex];
     if (!isDeleting) {
@@ -170,7 +182,7 @@ export default function MainPageClient() {
       }
     }
     return () => clearTimeout(timeout);
-  }, [charIndex, isDeleting, typeIndex, typewriterTexts]);
+  }, [charIndex, isDeleting, typeIndex, typewriterTexts, isStarted]);
 
   useEffect(() => {
     const referralCode = searchParams.get('ref');
@@ -274,7 +286,7 @@ export default function MainPageClient() {
             <div className="flex flex-col items-center space-y-4">
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-white whitespace-nowrap">
-                  {displayed || 'Расскажи про историческое событие'}
+                  {isStarted ? displayed : ''}
                 </span>
                 <span className="typewriter-cursor text-indigo-400 animate-pulse text-2xl sm:text-3xl md:text-4xl">
                   |
