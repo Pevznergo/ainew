@@ -1,421 +1,474 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState } from 'react';
-import { sendGTMEvent } from '@/lib/gtm';
 
-const faqData = [
-  {
-    question: 'Нужно ли программировать?',
-    answer: 'Нет, всё настроено.',
-  },
-  {
-    question: 'Кто отвечает за поддержку и оплату?',
-    answer: 'Мы.',
-  },
-  {
-    question: 'Можно ли кастомизировать интерфейс?',
-    answer: 'Да, в версии PRO.',
-  },
-  {
-    question: 'Какие модели доступны?',
-    answer: 'GPT-4, Claude 3, Gemini и др.',
-  },
-  {
-    question: 'Сколько я заработаю?',
-    answer: '40% от всей выручки.',
-  },
-  {
-    question: 'За сколько запустишься?',
-    answer: '15–30 минут.',
-  },
-];
+interface ContactForm {
+  name: string;
+  phone: string;
+  blogUrl: string;
+}
 
-const targetAudience = [
-  'YouTube-блогерам',
-  'Instagram-креаторам',
-  'Подкастерам',
-  'Телеграм-каналам',
-  'Онлайн-экспертам',
-  'Актёрам, ведущим и другим публичным личностям',
-];
-
-const features = [
-  'GPT-4, Claude 3, Gemini, Mistral',
-  'Midjourney, DALL·E, ElevenLabs, Runway',
-  'Работа с текстами, изображениями, видео',
-  'Код, озвучка и презентации',
-  'Всё в одной подписке',
-];
-
-export default function NetLandingPage() {
+export default function NetPage() {
   const [activeTab, setActiveTab] = useState(0);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [formData, setFormData] = useState<ContactForm>({
+    name: '',
+    phone: '',
+    blogUrl: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  const benefits = [
+    {
+      title: 'Авторский Подход',
+      description:
+        'Продукт интегрируется в ваш контент естественно, без навязчивой рекламы.',
+      icon: '🎯',
+    },
+    {
+      title: 'Полная Поддержка',
+      description:
+        'Мы берем на себя всё — от упаковки продукта до технической поддержки.',
+      icon: '🛠️',
+    },
+    {
+      title: 'Без Рисков',
+      description:
+        'Если размещение не привело к продажам, вы ничего не теряете.',
+      icon: '🛡️',
+    },
+  ];
+
+  const steps = [
+    {
+      step: '01',
+      title: 'Получите Готовый Продукт',
+      description: 'Выбирайте из наших разработок, например, ИИ-помощник.',
+    },
+    {
+      step: '02',
+      title: 'Брендируйте Под Себя',
+      description:
+        'Мы размещаем продукт на вашем домене, оформляя его как ваш собственный сервис.',
+    },
+    {
+      step: '03',
+      title: 'Заполняйте Нераспроданные Слоты',
+      description:
+        'Когда у вас появляется нераспроданный рекламный слот, размещайте наш продукт и получайте до 70% от прибыли с каждой продажи.',
+    },
+  ];
+
+  const faqs = [
+    {
+      question: 'Нужны ли мне вложения?',
+      answer:
+        'Нет, сотрудничество абсолютно бесплатно. Вы начинаете зарабатывать без первоначальных затрат.',
+    },
+    {
+      question: 'Как быстро я смогу увидеть результаты?',
+      answer:
+        'Многие наши партнёры начинают получать прибыль уже после первого размещения.',
+    },
+    {
+      question: 'Подходит ли это для всех типов контента?',
+      answer:
+        'Да, наша модель гибкая и подходит для блогеров, YouTube-каналов, Instagram и других платформ.',
+    },
+  ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSubmitMessage(data.message);
+        setFormData({ name: '', phone: '', blogUrl: '' });
+        setTimeout(() => {
+          setShowContactForm(false);
+          setSubmitMessage('');
+        }, 3000);
+      } else {
+        setSubmitMessage('Ошибка при отправке заявки. Попробуйте еще раз.');
+      }
+    } catch (error) {
+      setSubmitMessage('Ошибка при отправке заявки. Попробуйте еще раз.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const openContactForm = () => {
+    setShowContactForm(true);
+    setSubmitMessage('');
+  };
 
   return (
     <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
       {/* Header */}
       <header className="bg-[#18181b] shadow-sm border-b border-neutral-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
-          <Link
-            href="/"
-            className="flex items-center font-bold text-2xl text-white"
-          >
-            Aporto
-          </Link>
-          <nav>
+          <div>
             <Link
               href="/"
-              className="modern-btn-cta"
-              onClick={() => {
-                sendGTMEvent('click_open_chat', {
-                  event_category: 'engagement',
-                  event_label: 'header_cta',
-                  location: 'header',
-                });
-              }}
+              className="flex items-center text-indigo-400 hover:text-indigo-300 font-medium"
             >
-              Открыть чат
+              ← Назад к чату
             </Link>
-          </nav>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Aporto</h1>
+          </div>
+          <div className="w-32" />
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Hero Section */}
-        <section className="mb-20">
-          <div className="flex flex-col items-center justify-center text-center px-4 py-10 md:py-20 space-y-8">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-indigo-400 mb-2 leading-tight drop-shadow-lg">
-              Хватит продвигать чужое – создавай своё!
+        <section className="mb-20 text-center">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-indigo-400 mb-6 leading-tight drop-shadow-lg">
+              Монетизируйте Нераспроданные Рекламные Слоты
             </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-neutral-300 mt-2 max-w-4xl leading-relaxed">
-              Запусти готовый AI-чат с десятками нейросетей под собственным
-              именем. Твой бренд, твой домен, свое приложение в сторах –
-              зарабатывай, а мы займемся остальным.
+            <p className="text-xl sm:text-2xl text-neutral-300 mb-8 leading-relaxed">
+              Легко и Без Риска!
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
-              <Link
-                href="/"
-                className="modern-btn-cta text-lg px-8 py-4 rounded-2xl shadow-lg"
-                onClick={() => {
-                  sendGTMEvent('click_launch_ai_service', {
-                    event_category: 'engagement',
-                    event_label: 'hero_cta',
-                    location: 'hero_section',
-                  });
-                }}
-              >
-                �� Запустить AI-сервис
-              </Link>
-              <Link
-                href="/"
-                className="modern-btn-outline text-lg px-8 py-4 rounded-2xl"
-                onClick={() => {
-                  sendGTMEvent('click_watch_demo', {
-                    event_category: 'engagement',
-                    event_label: 'hero_demo',
-                    location: 'hero_section',
-                  });
-                }}
-              >
-                Смотреть демо
-              </Link>
-            </div>
+            <p className="text-lg text-neutral-400 mb-12 max-w-3xl mx-auto leading-relaxed">
+              Превратите незаполненные рекламные места в стабильный пассивный
+              доход с готовых digital-продуктов, оформленными под вашим именем.
+            </p>
+            <button
+              type="button"
+              onClick={openContactForm}
+              className="modern-btn-cta text-lg px-8 py-4 rounded-2xl shadow-lg"
+            >
+              Начать Сейчас
+            </button>
           </div>
         </section>
 
-        {/* Problem & Solution Section */}
-        <section className="mb-20 py-20">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                Проблема и решение
-              </h2>
-              <div className="bg-red-900/20 border border-red-800 rounded-2xl p-6 mb-6">
-                <h3 className="text-xl font-bold text-red-400 mb-3">
-                  Проблема:
-                </h3>
-                <p className="text-neutral-300 text-lg">
-                  Когда у блогера большая аудитория, реклама становится дорогой,
-                  а найти подходящих рекламодателей – сложно. Ты тратишь деньги
-                  и время, а доход зачастую остаётся ниже потенциала.
-                </p>
-              </div>
-              <div className="bg-green-900/20 border border-green-800 rounded-2xl p-6">
-                <h3 className="text-xl font-bold text-green-400 mb-3">
-                  Решение:
-                </h3>
-                <p className="text-neutral-300 text-lg mb-4">
-                  Запусти свой AI-чат и продвигай собственные продукты. Создавая
-                  свой бренд, ты не только избавляешься от высоких затрат на
-                  рекламу, но и получаешь дополнительный стабильный доход.
-                </p>
-                <ul className="space-y-2 text-neutral-300">
-                  <li className="flex items-center gap-2">
-                    <span className="text-red-400">★</span>
-                    <span>Рекламируешь чужой продукт → Одноразовый платеж</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-green-400">★</span>
-                    <span>
-                      Собственный AI-чат → 40% с каждой подписки, постоянный
-                      доход
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-red-400">★</span>
-                    <span>
-                      Ограниченное количество рекламодателей → Свои продукты для
-                      своей аудитории
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            <div className="flex justify-center">
-              <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-3xl p-8 border border-indigo-500/30"></div>
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works Section */}
-        <section className="mb-20 py-20">
+        {/* What We Offer */}
+        <section className="mb-20">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Как это работает
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              Что Мы Предлагаем
             </h2>
-            <p className="text-xl text-neutral-300 max-w-4xl mx-auto">
-              3 простых шага к собственному AI-сервису
+            <p className="text-lg text-neutral-300 max-w-4xl mx-auto leading-relaxed">
+              Мы помогаем контент-мейкерам монетизировать нераспроданные
+              рекламные слоты путем продвижения своих digital-продуктов. Всё это
+              без вложений, технических сложностей и риска потери доверия вашей
+              аудитории.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-[#18181b]/80 rounded-3xl p-8 border border-neutral-800 text-center">
-              <div className="bg-indigo-600 size-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
-                1
-              </div>
-              <h3 className="text-xl font-bold text-white mb-4">
-                Получи свой AI-чат
-              </h3>
-              <p className="text-neutral-300">
-                Мы подтверждаем твой бренд, подключаем домен и создаём
-                уникальное приложение.
-              </p>
-            </div>
-            <div className="bg-[#18181b]/80 rounded-3xl p-8 border border-neutral-800 text-center">
-              <div className="bg-indigo-600 size-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
-                2
-              </div>
-              <h3 className="text-xl font-bold text-white mb-4">
-                Продвигай среди подписчиков
-              </h3>
-              <p className="text-neutral-300">
-                Размещай ссылку в описании, stories, интеграциях и т.п.
-              </p>
-            </div>
-            <div className="bg-[#18181b]/80 rounded-3xl p-8 border border-neutral-800 text-center">
-              <div className="bg-indigo-600 size-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
-                3
-              </div>
-              <h3 className="text-xl font-bold text-white mb-4">Зарабатывай</h3>
-              <p className="text-neutral-300">
-                Ты получаешь 40% от каждой оплаты, а мы решаем все технические
-                нюансы.
-              </p>
-            </div>
-          </div>
         </section>
 
-        {/* What's Inside Section */}
-        <section className="mb-20 py-20">
+        {/* How It Works */}
+        <section className="mb-20">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Что внутри
-            </h2>
-            <p className="text-xl text-neutral-300 max-w-4xl mx-auto">
-              Одна платформа – десятки нейросетей. Забудь о подписках на разные
-              сервисы:
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-indigo-900/30 to-purple-900/30 rounded-3xl p-8 border border-indigo-500/30">
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-2xl font-bold text-white mb-6">
-                  Доступные модели:
-                </h3>
-                <ul className="space-y-3">
-                  {features.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex items-center gap-3 text-neutral-300"
-                    >
-                      <span className="text-indigo-400">•</span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex justify-center items-center">
-                <div className="bg-[#18181b]/50 rounded-2xl p-6 border border-neutral-700">
-                  <p className="text-center text-neutral-300 text-lg">
-                    Работа с текстами, изображениями, видео, кодом, озвучкой и
-                    презентациями – всё в одной подписке.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Target Audience Section */}
-        <section className="mb-20 py-20">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Кому это подходит
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              Как Это Работает
             </h2>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {targetAudience.map((audience) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {steps.map((step, index) => (
               <div
-                key={audience}
-                className="bg-[#18181b]/80 rounded-2xl p-6 border border-neutral-800 hover:border-indigo-500/50 transition-colors"
+                key={`step-${step.step}`}
+                className="bg-[#18181b]/80 rounded-2xl p-8 border border-neutral-800 hover:border-indigo-500/50 transition-all duration-300"
               >
-                <div className="flex items-center gap-3">
-                  <div className="bg-indigo-600 size-10 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                    {targetAudience.indexOf(audience) + 1}
-                  </div>
-                  <span className="text-white font-semibold">{audience}</span>
+                <div className="text-4xl font-bold text-indigo-400 mb-4">
+                  {step.step}
                 </div>
+                <h3 className="text-xl font-bold text-white mb-4">
+                  {step.title}
+                </h3>
+                <p className="text-neutral-300 leading-relaxed">
+                  {step.description}
+                </p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Why It's Profitable Section */}
-        <section className="mb-20 py-20">
+        {/* Benefits */}
+        <section className="mb-20">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Почему это выгодно
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              Почему Это Выгодно
             </h2>
-            <p className="text-xl text-neutral-300 max-w-4xl mx-auto">
-              Мы берем на себя всю техническую сторону:
-            </p>
           </div>
-          <div className="grid md:grid-cols-2 gap-12">
-            <div className="bg-green-900/20 border border-green-800 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold text-green-400 mb-6">Мы:</h3>
-              <ul className="space-y-3 text-neutral-300">
-                <li className="flex items-center gap-3">
-                  <span className="text-green-400">✓</span>
-                  <span>хостинг</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-green-400">✓</span>
-                  <span>техническая поддержка</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-green-400">✓</span>
-                  <span>обновления</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-green-400">✓</span>
-                  <span>работа с пользовательской базой</span>
-                </li>
-              </ul>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {benefits.map((benefit, index) => (
+              <div
+                key={`benefit-${benefit.title}`}
+                className="bg-[#18181b]/80 rounded-2xl p-8 border border-neutral-800 hover:border-indigo-500/50 transition-all duration-300 text-center"
+              >
+                <div className="text-4xl mb-4">{benefit.icon}</div>
+                <h3 className="text-xl font-bold text-white mb-4">
+                  {benefit.title}
+                </h3>
+                <p className="text-neutral-300 leading-relaxed">
+                  {benefit.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Advantages */}
+        <section className="mb-20">
+          <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-3xl p-8 border border-indigo-500/30">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+                Преимущества Сотрудничества
+              </h2>
             </div>
-            <div className="bg-indigo-900/20 border border-indigo-800 rounded-3xl p-8">
-              <h3 className="text-2xl font-bold text-indigo-400 mb-6">Ты:</h3>
-              <ul className="space-y-3 text-neutral-300">
-                <li className="flex items-center gap-3">
-                  <span className="text-indigo-400">✓</span>
-                  <span>делишься ссылкой</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-indigo-400">✓</span>
-                  <span>строишь доверие</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="text-indigo-400">✓</span>
-                  <span>получаешь стабильный доход</span>
-                </li>
-              </ul>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-indigo-400 mb-2">
+                  70%
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">
+                  Высокий Доход
+                </h3>
+                <p className="text-neutral-300">
+                  Возможность получать до 70% от прибыли от каждой продажи.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-400 mb-2">0</div>
+                <h3 className="text-lg font-bold text-white mb-2">
+                  Минимум Усилий
+                </h3>
+                <p className="text-neutral-300">
+                  Мы обеспечиваем весь процесс, позволяя вам сосредоточиться на
+                  создании контента.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-400 mb-2">
+                  100%
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">
+                  Сохранение Доверия
+                </h3>
+                <p className="text-neutral-300">
+                  Продукты выглядят как ваши собственные разработки, укрепляя
+                  доверие вашей аудитории.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Offer Section */}
-        <section className="mb-20 py-20">
-          <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 rounded-3xl p-12 border border-indigo-500/30 text-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Начни бесплатно за 15 минут!
+        {/* CTA Section */}
+        <section className="mb-20 text-center">
+          <div className="bg-gradient-to-br from-indigo-700/90 to-purple-700/80 rounded-3xl p-12 border border-indigo-500/30">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              Сделайте Нераспроданные Рекламные Слоты Источником Пассивного
+              Дохода!
             </h2>
-            <p className="text-xl text-neutral-300 mb-8 max-w-3xl mx-auto">
-              Тестируй на поддомене yourname.aporto.tech, а затем переходи на
-              PRO – получай собственный домен и приложение в сторах.
+            <p className="text-lg text-neutral-200 mb-8 max-w-2xl mx-auto">
+              Присоединяйтесь к нам и начните зарабатывать на тех рекламных
+              местах, которые раньше оставались неиспользованными.
             </p>
-            <Link
-              href="/"
-              className="modern-btn-cta text-xl px-12 py-6 rounded-2xl shadow-lg"
-              onClick={() => {
-                sendGTMEvent('click_get_ai_chat', {
-                  event_category: 'engagement',
-                  event_label: 'offer_cta',
-                  location: 'offer_section',
-                });
-              }}
+            <button
+              type="button"
+              onClick={openContactForm}
+              className="modern-btn-cta text-lg px-8 py-4 rounded-2xl shadow-lg"
             >
-              🚀 Получить свой AI‑чат
+              Начать Сейчас
+            </button>
+          </div>
+        </section>
+
+        {/* Catalog Section */}
+        <section className="mb-20">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              Каталог страниц ИИ-помощников
+            </h2>
+            <p className="text-lg text-neutral-300 max-w-4xl mx-auto leading-relaxed mb-8">
+              Посмотрите, как могут выглядеть ваши собственные ИИ-продукты —
+              оформленные под стиль блога и готовые к продвижению.
+            </p>
+            <p className="text-neutral-400 max-w-3xl mx-auto">
+              Каждая страница в каталоге — это демонстрация, как может быть
+              реализован продукт от вашего имени, с уникальным оформлением,
+              доменом и потенциальной монетизацией.
+            </p>
+          </div>
+          <div className="text-center">
+            <Link
+              href="/my/catalog"
+              className="modern-btn-outline text-lg px-8 py-4 rounded-2xl inline-flex items-center gap-2"
+            >
+              🔗 Открыть каталог
             </Link>
           </div>
         </section>
 
         {/* FAQ Section */}
-        <section className="mb-20 py-20">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white">
-              Часто задаваемые вопросы
+        <section className="mb-20">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              Часто Задаваемые Вопросы
             </h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            {faqData.map((faq) => (
+          <div className="max-w-4xl mx-auto space-y-6">
+            {faqs.map((faq, index) => (
               <div
-                key={faq.question}
-                className="bg-[#18181b]/80 rounded-2xl p-6 border border-neutral-800"
+                key={`faq-${faq.question}`}
+                className="bg-[#18181b]/80 rounded-2xl p-8 border border-neutral-800"
               >
-                <h3 className="text-lg font-bold text-white mb-3">
+                <h3 className="text-xl font-bold text-white mb-4">
                   {faq.question}
                 </h3>
-                <p className="text-neutral-300">{faq.answer}</p>
+                <p className="text-neutral-300 leading-relaxed">{faq.answer}</p>
               </div>
             ))}
           </div>
         </section>
+
+        {/* Final CTA */}
+        <section className="text-center">
+          <div className="bg-gradient-to-br from-green-600/20 to-indigo-600/20 rounded-3xl p-12 border border-green-500/30">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
+              Готовы Начать?
+            </h2>
+            <p className="text-lg text-neutral-200 mb-8 max-w-2xl mx-auto">
+              Не упустите возможность превратить нераспроданные рекламные слоты
+              в источник пассивного дохода!
+            </p>
+            <button
+              type="button"
+              onClick={openContactForm}
+              className="modern-btn-cta text-lg px-8 py-4 rounded-2xl shadow-lg"
+            >
+              Присоединиться Сейчас
+            </button>
+          </div>
+        </section>
       </main>
 
-      {/* Footer */}
+      {/* Contact Form Modal */}
+      {showContactForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#18181b] rounded-3xl p-8 max-w-md w-full border border-neutral-800">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-white">Оставить заявку</h3>
+              <button
+                type="button"
+                onClick={() => setShowContactForm(false)}
+                className="text-neutral-400 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-neutral-300 mb-2"
+                >
+                  Имя (необязательно)
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-[#111] border border-neutral-700 rounded-xl text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
+                  placeholder="Ваше имя"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-neutral-300 mb-2"
+                >
+                  Номер телефона *
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 bg-[#111] border border-neutral-700 rounded-xl text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
+                  placeholder="+7 (999) 123-45-67"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="blogUrl"
+                  className="block text-sm font-medium text-neutral-300 mb-2"
+                >
+                  Ссылка на ваш блог/канал *
+                </label>
+                <input
+                  id="blogUrl"
+                  type="url"
+                  name="blogUrl"
+                  value={formData.blogUrl}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 bg-[#111] border border-neutral-700 rounded-xl text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
+                  placeholder="https://t.me/yourchannel"
+                />
+              </div>
+
+              {submitMessage && (
+                <div
+                  className={`p-4 rounded-xl ${
+                    submitMessage.includes('Ошибка')
+                      ? 'bg-red-500/20 text-red-400'
+                      : 'bg-green-500/20 text-green-400'
+                  }`}
+                >
+                  {submitMessage}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full modern-btn-cta py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Отправляем...' : 'Отправить заявку'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       <footer className="mt-8 pb-4">
-        <nav className="flex flex-wrap gap-6 justify-center items-center text-sm mb-2">
-          <a
-            href="https://t.me/aporto_tech"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-indigo-400 hover:underline"
-          >
-            Telegram для связи
-          </a>
-          <Link href="/" className="text-indigo-400 hover:underline">
-            Публичное демо
-          </Link>
-          <Link href="/" className="text-indigo-400 hover:underline">
-            Условия партнёрства
-          </Link>
-          <Link href="/privacy" className="text-indigo-400 hover:underline">
-            Политика конфиденциальности
-          </Link>
-          <Link href="/tos" className="text-indigo-400 hover:underline">
-            Пользовательское соглашение
-          </Link>
-        </nav>
-        <div className="text-center text-neutral-500 text-sm">© 2025</div>
+        <div className="text-center text-neutral-500 text-sm">
+          © 2024 Aporto Tech. Все права защищены.
+        </div>
       </footer>
     </div>
   );
