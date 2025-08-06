@@ -80,7 +80,7 @@ function LoadingSkeleton() {
                         key={Math.random()}
                         className="flex items-center gap-3"
                       >
-                        <div className="w-6 h-6 bg-neutral-700 rounded-full animate-pulse" />
+                        <div className="size-6 bg-neutral-700 rounded-full animate-pulse" />
                         <div className="w-48 h-4 bg-neutral-700 rounded animate-pulse" />
                       </div>
                     ))}

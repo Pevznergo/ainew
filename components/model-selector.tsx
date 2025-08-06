@@ -164,7 +164,7 @@ function ModelSelectorComponent({
                     </div>
                   </div>
 
-                  <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100 flex-shrink-0 ml-2">
+                  <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100 shrink-0 ml-2">
                     <CheckCircleFillIcon />
                   </div>
                 </button>
@@ -201,7 +201,7 @@ function ModelSelectorComponent({
                     </div>
                   </div>
 
-                  <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100 flex-shrink-0 ml-2">
+                  <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100 shrink-0 ml-2">
                     <CheckCircleFillIcon />
                   </div>
                 </button>

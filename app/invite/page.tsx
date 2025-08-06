@@ -43,7 +43,7 @@ function LoadingSkeleton() {
                 key={Math.random()}
                 className="bg-[#18181b] rounded-2xl shadow-lg p-8 flex flex-col items-center border border-neutral-800"
               >
-                <div className="w-16 h-16 bg-neutral-700 rounded-xl animate-pulse mb-5" />
+                <div className="size-16 bg-neutral-700 rounded-xl animate-pulse mb-5" />
                 <div className="w-32 h-6 bg-neutral-700 rounded animate-pulse mb-2" />
                 <div className="w-48 h-16 bg-neutral-700 rounded animate-pulse" />
               </div>

@@ -23,7 +23,7 @@ function LoadingSkeleton() {
           {/* Профиль пользователя skeleton */}
           <section className="bg-[#18181b]/90 rounded-3xl shadow-2xl p-10 flex flex-col md:flex-row items-center gap-10 border border-neutral-800 backdrop-blur-md">
             <div className="flex flex-col items-center md:items-start gap-4 min-w-[220px]">
-              <div className="w-28 h-28 bg-neutral-700 rounded-full animate-pulse" />
+              <div className="size-28 bg-neutral-700 rounded-full animate-pulse" />
               <div className="text-center md:text-left">
                 <div className="w-32 h-8 bg-neutral-700 rounded animate-pulse mb-2" />
                 <div className="w-40 h-6 bg-neutral-700 rounded animate-pulse" />

@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { sendGTMEvent } from '@/lib/gtm';
 import { useDemo } from '@/hooks/use-demo';
 
@@ -84,7 +84,7 @@ function LoadingSkeleton() {
       <header className="bg-[#18181b] shadow-sm border-b border-neutral-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-neutral-700 rounded-full animate-pulse" />
+            <div className="size-12 bg-neutral-700 rounded-full animate-pulse" />
             <div className="w-32 h-8 bg-neutral-700 rounded animate-pulse" />
           </div>
           <div className="w-32 h-10 bg-neutral-700 rounded animate-pulse" />
@@ -95,7 +95,7 @@ function LoadingSkeleton() {
         {/* Hero skeleton */}
         <section className="mb-20">
           <div className="flex flex-col items-center justify-center text-center px-4 py-6 md:py-12 space-y-8">
-            <div className="w-36 h-36 bg-neutral-700 rounded-full animate-pulse" />
+            <div className="size-36 bg-neutral-700 rounded-full animate-pulse" />
             <div className="w-96 h-16 bg-neutral-700 rounded animate-pulse" />
             <div className="w-80 h-8 bg-neutral-700 rounded animate-pulse" />
             <div className="w-48 h-12 bg-neutral-700 rounded animate-pulse" />
@@ -123,30 +123,31 @@ function LoadingSkeleton() {
 }
 
 export default function MainPageClient() {
-  // Typewriter
-  const [typeIndex, setTypeIndex] = useState(0);
-  const [displayed, setDisplayed] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [charIndex, setCharIndex] = useState(0);
-
-  const searchParams = useSearchParams();
   const demoData = useDemo();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
-  // Features Tabs
+  // Typewriter state
+  const [typeIndex, setTypeIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [displayed, setDisplayed] = useState('');
   const [tab, setTab] = useState(0);
 
   // Promo banner
   const [showPromo, setShowPromo] = useState(true);
 
-  // Typewriter с данными из БД
-  const typewriterTexts = demoData
-    ? [
-        demoData.typewriterText1 || 'Расскажи про историческое событие',
-        demoData.typewriterText2 || 'Напиши код на Python',
-        demoData.typewriterText3 || 'Создай презентацию',
-        demoData.typewriterText4 || 'Проверь исторический факт',
-      ]
-    : defaultTypewriterTexts;
+  // Typewriter с данными из БД - обернуто в useMemo для стабильности зависимостей
+  const typewriterTexts = useMemo(() => {
+    return demoData
+      ? [
+          demoData.typewriterText1 || 'Расскажи про историческое событие',
+          demoData.typewriterText2 || 'Напиши код на Python',
+          demoData.typewriterText3 || 'Создай презентацию',
+          demoData.typewriterText4 || 'Проверь исторический факт',
+        ]
+      : defaultTypewriterTexts;
+  }, [demoData]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -180,20 +181,20 @@ export default function MainPageClient() {
     }
   }, [searchParams]);
 
-  // Показываем скелетон пока данные загружаются
-  if (!demoData) {
+  // Показываем скелетон только если нет данных И мы на демо-странице
+  if (!demoData && pathname.startsWith('/my/')) {
     return <LoadingSkeleton />;
   }
 
   // Features с данными из БД для первого элемента
   const featuresData = [
     {
-      title: demoData.features1_title || 'Исторические исследования',
+      title: demoData?.features1_title || 'Исторические исследования',
       h3:
-        demoData.features1_h3 ||
+        demoData?.features1_h3 ||
         'Глубокий анализ исторических событий и личностей',
       p:
-        demoData.features1_p ||
+        demoData?.features1_p ||
         'Задайте любой вопрос об истории, и мой ИИ найдет интересные факты, малоизвестные детали и поможет разобраться в сложных исторических событиях. От древних цивилизаций до современности.',
       video: '/images/case1.mp4',
       poster: '/images/case1.jpg',
@@ -209,11 +210,12 @@ export default function MainPageClient() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Image
-                src={demoData.logo_url || '/demo/minaev.png'}
-                alt={demoData.logo_name || 'Сергей Минаев'}
+                src={demoData?.logo_url || '/demo/minaev.png'}
+                alt={demoData?.logo_name || 'Сергей Минаев'}
                 width={48}
                 height={48}
                 className="rounded-full object-cover"
+                priority // Добавляем приоритет для критических изображений
               />
               <div className="absolute inset-0 rounded-full bg-black/30" />
             </div>
@@ -222,7 +224,7 @@ export default function MainPageClient() {
                 href="/"
                 className="flex items-center font-bold text-2xl text-white"
               >
-                {demoData.logo_name || 'Сергей Минаев'}
+                {demoData?.logo_name || 'Сергей Минаев'}
               </Link>
             </div>
           </div>
@@ -231,11 +233,13 @@ export default function MainPageClient() {
               href="/"
               className="modern-btn-cta"
               onClick={() => {
-                sendGTMEvent('click_open_chat', {
-                  event_category: 'engagement',
-                  event_label: 'header_cta',
-                  location: 'header',
-                });
+                if (typeof window !== 'undefined' && window.dataLayer) {
+                  sendGTMEvent('click_open_chat', {
+                    event_category: 'engagement',
+                    event_label: 'header_cta',
+                    location: 'header',
+                  });
+                }
               }}
             >
               Попробовать бесплатно
@@ -251,29 +255,33 @@ export default function MainPageClient() {
             {/* Фото блогера */}
             <div className="relative mb-4">
               <Image
-                src={demoData.logo_url || '/demo/minaev.jpg'}
-                alt={demoData.logo_name || 'Сергей Минаев'}
+                src={demoData?.logo_url || '/demo/minaev.jpg'}
+                alt={demoData?.logo_name || 'Сергей Минаев'}
                 width={150}
                 height={150}
                 className="rounded-full object-cover border-4 border-indigo-500/30 shadow-2xl"
+                priority // Добавляем приоритет
               />
               <div className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-500/20 to-transparent" />
             </div>
 
+            {/* КРИТИЧЕСКИЙ КОНТЕНТ - рендерим сразу */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-indigo-400 mb-2 leading-tight drop-shadow-lg">
-              {demoData.hero_title || 'Мой ИИ-помощник'}
+              {demoData?.hero_title || 'Мой ИИ-помощник'}
             </h1>
+
+            {/* Typewriter - рендерим сразу с fallback */}
             <div className="flex flex-col items-center space-y-4">
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-white whitespace-nowrap">
-                  {displayed}
+                  {displayed || 'Расскажи про историческое событие'}
                 </span>
                 <span className="typewriter-cursor text-indigo-400 animate-pulse text-2xl sm:text-3xl md:text-4xl">
                   |
                 </span>
               </div>
               <p className="text-lg sm:text-xl md:text-2xl text-neutral-300 mt-2">
-                {demoData.hero_subtitle ||
+                {demoData?.hero_subtitle ||
                   'История • Программирование • Контент • Анализ'}
                 <br />
                 <span className="block mt-2 text-xl sm:text-2xl">
@@ -290,11 +298,13 @@ export default function MainPageClient() {
                 href="/"
                 className="modern-btn-cta text-lg px-8 py-4 rounded-2xl shadow-lg"
                 onClick={() => {
-                  sendGTMEvent('click_open_chat', {
-                    event_category: 'engagement',
-                    event_label: 'hero_cta',
-                    location: 'hero_section',
-                  });
+                  if (typeof window !== 'undefined' && window.dataLayer) {
+                    sendGTMEvent('click_open_chat', {
+                      event_category: 'engagement',
+                      event_label: 'hero_cta',
+                      location: 'hero_section',
+                    });
+                  }
                 }}
               >
                 Начать бесплатно
