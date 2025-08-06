@@ -178,7 +178,7 @@ export default function CatalogPage() {
                 placeholder="Поиск по названию или описанию..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 bg-[#18181b] border border-neutral-700 rounded-xl text-white placeholder-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
+                className="w-full px-4 py-3 bg-[#18181b] border border-neutral-700 rounded-xl text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
               />
             </div>
             <div className="flex gap-2">
