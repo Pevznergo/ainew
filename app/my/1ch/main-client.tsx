@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
+import { useDemo } from '@/hooks/use-demo';
 
 type NavChild = { label: string; href: string };
 type NavItem = { label: string; href?: string; children?: NavChild[] };
@@ -74,34 +75,12 @@ type Content = {
 
 const content: Content = {
   header: {
-    brand: 'Aporto',
+    brand: '4ch',
     nav: [
       { label: 'О проекте', href: '#about' },
       { label: 'Тарифы', href: '#pricing' },
       { label: 'Вопросы', href: '#faq' },
       { label: 'Поддержка', href: '#support' },
-      {
-        label: 'Модели',
-        children: [
-          { label: 'GPT‑изображения', href: '#models' },
-          { label: 'Доступ в API', href: '#models' },
-          { label: 'Преобразование аудио в текст', href: '#models' },
-          { label: 'OpenAI o1 и o3‑mini', href: '#models' },
-          { label: 'OpenAI 4o, 4o‑mini, 3.5', href: '#models' },
-          { label: 'Anthropic Claude', href: '#models' },
-          { label: 'Google Gemini 2.5 Flash', href: '#models' },
-          { label: 'Google Gemini 2.5 Pro', href: '#models' },
-          { label: 'DeepSeek R1', href: '#models' },
-          { label: 'Qwen‑32B', href: '#models' },
-        ],
-      },
-      {
-        label: 'Блог',
-        children: [
-          { label: 'Блог Aporto', href: '#blog' },
-          { label: 'Наш блог в телеграм', href: '#blog' },
-        ],
-      },
     ],
     loginLabel: 'Вход',
     loginHref: '/login',
@@ -110,11 +89,11 @@ const content: Content = {
   },
   hero: {
     eyebrow: 'Sonnet 4.0, Google Gemini, Anthropic, Midjourney и DALL·E 3',
-    title: 'Все лучшие Нейросети на одной платформе',
+    title: 'Все лучшие Нейросети на одной платформе от 4ch',
     subtitle: 'GPT‑5 • GPT‑4 • Claude • Gemini • Qwen • DALL·E 3 • Midjourney',
     description: '',
-    primaryCta: { label: 'Попробовать бесплатно', href: '#' },
-    secondaryCta: { label: 'Корпоративный тариф', href: '#' },
+    primaryCta: { label: 'Попробовать бесплатно', href: '/register' },
+    secondaryCta: { label: 'Корпоративный тариф', href: '#support' },
   },
   capabilities: {
     title: 'Что умеет Чат GPT 5?',
@@ -323,6 +302,7 @@ const content: Content = {
 };
 
 export default function AIAcademyDarkEditable() {
+  const demoData = useDemo();
   const nav = useMemo(() => content.header.nav, []);
   const [formSuccess, setFormSuccess] = useState(false);
 
@@ -360,7 +340,7 @@ export default function AIAcademyDarkEditable() {
       <header className="sticky top-0 z-40 backdrop-blur bg-[#0b0b0f]/70 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="#" className="text-white font-semibold">
-            {content.header.brand}
+            {demoData?.logo_name || content.header.brand}
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             {nav.map((item) => (
@@ -414,7 +394,7 @@ export default function AIAcademyDarkEditable() {
                 {content.hero.eyebrow}
               </div>
               <h1 className="text-4xl sm:text-5xl font-extrabold text-white leading-tight">
-                {content.hero.title}
+                {`Все лучшие Нейросети на одной платформе от ${demoData?.logo_name || '4ch'}`}
               </h1>
               <p className="text-lg sm:text-xl text-neutral-300 mt-4">
                 {content.hero.subtitle}
@@ -438,16 +418,16 @@ export default function AIAcademyDarkEditable() {
               </div>
             </div>
             <div className="flex justify-center">
-              {content.images.hero ? (
+              {(demoData?.logo_url || content.images.hero) ? (
                 <Image
-                  src={content.images.hero}
+                  src={demoData?.logo_url || content.images.hero}
                   alt="Hero"
-                  width={560}
-                  height={360}
+                  width={400}
+                  height={250}
                   className="rounded-3xl border border-white/10 object-cover"
                 />
               ) : (
-                <div className="w-full max-w-[560px] aspect-[16/10] rounded-3xl border border-white/10 bg-white/[0.04]" />
+                <div className="w-full max-w-[400px] aspect-[16/10] rounded-3xl border border-white/10 bg-white/[0.04]" />
               )}
             </div>
           </div>
