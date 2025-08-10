@@ -441,7 +441,10 @@ export default function AIAcademyDarkEditable() {
                 className="w-full max-w-[560px] aspect-[16/10] rounded-3xl border border-white/10 object-cover"
                 src="/images/demo.mp4"
                 poster="/images/demo.png"
-                controls
+                autoPlay
+                loop
+                muted
+                playsInline
               />
             </div>
           </div>
