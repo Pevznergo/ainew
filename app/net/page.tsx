@@ -398,8 +398,8 @@ export default function NetPage() {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-[#111] border border-neutral-700 rounded-xl text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
-                  placeholder="Ваше имя"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
+                  placeholder="Иван Иванов"
                 />
               </div>
 
@@ -416,8 +416,7 @@ export default function NetPage() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 bg-[#111] border border-neutral-700 rounded-xl text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
                   placeholder="+7 (999) 123-45-67"
                 />
               </div>
@@ -436,7 +435,7 @@ export default function NetPage() {
                   value={formData.blogUrl}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 bg-[#111] border border-neutral-700 rounded-xl text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white placeholder:text-neutral-400 focus:border-indigo-500 focus:outline-none transition-colors"
                   placeholder="https://t.me/yourchannel"
                 />
               </div>
@@ -456,7 +455,7 @@ export default function NetPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full modern-btn-cta py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white py-4 shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Отправляем...' : 'Отправить заявку'}
               </button>
