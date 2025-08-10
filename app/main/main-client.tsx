@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useMemo, useState } from 'react';
 
 type NavChild = { label: string; href: string };
@@ -438,17 +437,12 @@ export default function AIAcademyDarkEditable() {
               </div>
             </div>
             <div className="flex justify-center">
-              {content.images.hero ? (
-                <Image
-                  src={content.images.hero}
-                  alt="Hero"
-                  width={560}
-                  height={360}
-                  className="rounded-3xl border border-white/10 object-cover"
-                />
-              ) : (
-                <div className="w-full max-w-[560px] aspect-[16/10] rounded-3xl border border-white/10 bg-white/[0.04]" />
-              )}
+              <video
+                className="w-full max-w-[560px] aspect-[16/10] rounded-3xl border border-white/10 object-cover"
+                src="/images/demo.mp4"
+                poster="/images/demo.png"
+                controls
+              />
             </div>
           </div>
         </section>
