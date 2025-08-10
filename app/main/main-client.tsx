@@ -496,7 +496,7 @@ export default function AIAcademyDarkEditable() {
               {content.plans.map((p) => (
                 <div
                   key={`plan-${p.id}`}
-                  className={`rounded-3xl border p-8 bg-white/[0.04] hover:bg-white/[0.06] transition-colors transition-transform duration-200 hover:scale-[1.02] ${
+                  className={`rounded-3xl border p-8 bg-white/[0.04] hover:bg-white/[0.06] transition-all duration-200 hover:scale-[1.02] ${
                     p.popular
                       ? 'border-green-500 shadow-lg shadow-green-500/20'
                       : 'border-white/10'
@@ -626,9 +626,9 @@ export default function AIAcademyDarkEditable() {
             )}
             {formSuccess ? (
               <div className="text-center py-12 animate-fade-in">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/20 rounded-full mb-6 animate-bounce">
+                <div className="inline-flex items-center justify-center size-20 bg-green-500/20 rounded-full mb-6 animate-bounce">
                   <svg
-                    className="w-10 h-10 text-green-400"
+                    className="size-10 text-green-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -653,7 +653,7 @@ export default function AIAcademyDarkEditable() {
                   className="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
                 >
                   <svg
-                    className="w-4 h-4"
+                    className="size-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

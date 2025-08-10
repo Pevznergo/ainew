@@ -48,7 +48,7 @@ export default function Page() {
         router.push('/subscriptions');
       }
     }
-  }, [state.status, router]);
+  }, [state.status, state.subscriptionActive, router]);
 
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get('email') as string);
