@@ -123,14 +123,14 @@ export default function NetPage() {
   };
 
   return (
-    <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
+    <div className="font-geist font-sans min-h-screen bg-[#0b0b0f] text-neutral-100">
       {/* Header */}
-      <header className="bg-[#18181b] shadow-sm border-b border-neutral-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
+      <header className="sticky top-0 z-40 backdrop-blur bg-[#0b0b0f]/70 border-b border-white/10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
           <div>
             <Link
               href="/"
-              className="flex items-center text-indigo-400 hover:text-indigo-300 font-medium"
+              className="px-3 py-2 rounded-lg text-sm text-neutral-200 hover:bg-white/10 transition-colors inline-flex items-center"
             >
               ← Назад к чату
             </Link>
@@ -159,7 +159,7 @@ export default function NetPage() {
             <button
               type="button"
               onClick={openContactForm}
-              className="modern-btn-cta text-lg px-8 py-4 rounded-2xl shadow-lg"
+              className="rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-8 py-4 text-lg shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
             >
               Начать Сейчас
             </button>
@@ -192,7 +192,7 @@ export default function NetPage() {
             {steps.map((step, index) => (
               <div
                 key={`step-${step.step}`}
-                className="bg-[#18181b]/80 rounded-2xl p-8 border border-neutral-800 hover:border-indigo-500/50 transition-all duration-300"
+                className="rounded-2xl p-8 border border-white/10 bg-white/[0.04] hover:border-indigo-500/50 transition-all duration-300"
               >
                 <div className="text-4xl font-bold text-indigo-400 mb-4">
                   {step.step}
@@ -219,7 +219,7 @@ export default function NetPage() {
             {benefits.map((benefit, index) => (
               <div
                 key={`benefit-${benefit.title}`}
-                className="bg-[#18181b]/80 rounded-2xl p-8 border border-neutral-800 hover:border-indigo-500/50 transition-all duration-300 text-center"
+                className="rounded-2xl p-8 border border-white/10 bg-white/[0.04] hover:border-indigo-500/50 transition-all duration-300 text-center"
               >
                 <div className="text-4xl mb-4">{benefit.icon}</div>
                 <h3 className="text-xl font-bold text-white mb-4">
@@ -319,7 +319,7 @@ export default function NetPage() {
           <div className="text-center">
             <Link
               href="/my/catalog"
-              className="modern-btn-outline text-lg px-8 py-4 rounded-2xl inline-flex items-center gap-2"
+              className="rounded-2xl border border-white/10 bg-white/5 px-8 py-4 text-lg text-neutral-200 hover:bg-white/10 transition-colors inline-flex items-center gap-2"
             >
               🔗 Открыть каталог
             </Link>
@@ -337,7 +337,7 @@ export default function NetPage() {
             {faqs.map((faq, index) => (
               <div
                 key={`faq-${faq.question}`}
-                className="bg-[#18181b]/80 rounded-2xl p-8 border border-neutral-800"
+                className="rounded-2xl p-8 border border-white/10 bg-white/[0.04]"
               >
                 <h3 className="text-xl font-bold text-white mb-4">
                   {faq.question}
@@ -361,7 +361,7 @@ export default function NetPage() {
             <button
               type="button"
               onClick={openContactForm}
-              className="modern-btn-cta text-lg px-8 py-4 rounded-2xl shadow-lg"
+              className="rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-8 py-4 text-lg shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
             >
               Присоединиться Сейчас
             </button>
@@ -372,7 +372,7 @@ export default function NetPage() {
       {/* Contact Form Modal */}
       {showContactForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#18181b] rounded-3xl p-8 max-w-md w-full border border-neutral-800">
+          <div className="rounded-3xl p-8 max-w-md w-full border border-white/10 bg-white/[0.04] shadow-xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-bold text-white">Оставить заявку</h3>
               <button

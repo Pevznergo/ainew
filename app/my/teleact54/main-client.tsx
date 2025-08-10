@@ -418,7 +418,7 @@ export default function AIAcademyDarkEditable() {
               </div>
             </div>
             <div className="flex justify-center">
-              {(demoData?.logo_url || content.images.hero) ? (
+              {demoData?.logo_url || content.images.hero ? (
                 <Image
                   src={demoData?.logo_url || content.images.hero}
                   alt="Hero"
