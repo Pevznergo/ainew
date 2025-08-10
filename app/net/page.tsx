@@ -293,7 +293,7 @@ export default function NetPage() {
             <button
               type="button"
               onClick={openContactForm}
-              className="modern-btn-cta text-lg px-8 py-4 rounded-2xl shadow-lg"
+              className="rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-8 py-4 text-lg shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
             >
               Начать Сейчас
             </button>
