@@ -17,6 +17,7 @@ type Plan = {
   badges: string[];
   features: string[];
   cta: { label: string; href: string };
+  popular?: boolean;
 };
 
 type Capability = { title: string; description?: string; example?: string };
@@ -28,7 +29,9 @@ type Content = {
     brand: string;
     nav: NavItem[];
     loginLabel: string;
+    loginHref: string;
     tryLabel: string;
+    tryHref: string;
   };
   hero: {
     eyebrow: string;
@@ -101,14 +104,16 @@ const content: Content = {
       },
     ],
     loginLabel: 'Вход',
-    tryLabel: 'Попробовать за 1 рубль',
+    loginHref: '/login',
+    tryLabel: 'Попробовать бесплатно',
+    tryHref: '/register',
   },
   hero: {
     eyebrow: 'Sonnet 4.0, Google Gemini, Anthropic, Midjourney и DALL·E 3',
     title: 'Все лучшие Нейросети на одной платформе',
     subtitle: 'GPT‑5 • GPT‑4 • Claude • Gemini • Qwen • DALL·E 3 • Midjourney',
     description: '',
-    primaryCta: { label: 'Попробовать за 1 рубль', href: '#' },
+    primaryCta: { label: 'Попробовать бесплатно', href: '#' },
     secondaryCta: { label: 'Корпоративный тариф', href: '#' },
   },
   capabilities: {
@@ -154,55 +159,40 @@ const content: Content = {
   plansBlockTitle: 'Выберите ваш уровень доступа к ИИ',
   plans: [
     {
-      id: 'student',
-      title: 'Студенческий',
-      credits: 'Токены: 1 000',
-      price: '279 ₽/мес',
-      priceNote: 'далее 279 ₽ каждый месяц',
-      pricePer: '1.00 ₽ / 1000 кр',
-      badges: ['Быстрые ответы и простые тексты — Хорошо (~3 000 страниц*)'],
-      features: ['поиск по интернет', 'работа с небольшими файлами'],
-      cta: { label: 'Попробовать за 1 ₽ на 3 дня', href: '/register' },
+      id: 'basic',
+      title: 'Базовый',
+      credits: '',
+      price: 'Бесплатно',
+      priceNote: '',
+      pricePer: '',
+      badges: [],
+      features: [
+        'Чат с нейросетью',
+        'Цифровое видение',
+        'GPT-4 mini, Gemini 2 Flash',
+      ],
+      cta: { label: 'Попробовать сейчас', href: '/register' },
     },
     {
-      id: 'weekly',
-      title: 'Пару раз в неделю',
-      credits: 'Токены: 5 000',
-      price: '1 290 ₽/мес',
-      priceNote: 'далее 1 290 ₽ каждый месяц',
-      pricePer: '0.86 ₽ / 1000 кр',
-      badges: [
-        'Быстрые ответы и простые тексты — Отлично (~15 900 страниц*)',
-        'Качественный контент и стандартный код — Отлично (~4 700 страниц*)',
-        'Анализ, сложный креатив и разработка — Отлично (~1 700 страниц*)',
-      ],
+      id: 'pro',
+      title: 'ПРО-аккаунт',
+      credits: '',
+      price: '199₽ в месяц',
+      priceNote: '',
+      pricePer: '',
+      badges: [],
       features: [
-        'создание GPT‑изображений',
-        'рисование (Midjourney и Dalle‑3)',
-        'обработка больших файлов',
-        'транскрипция аудио',
+        'Чат с нейросетью',
+        'Цифровое видение',
+        'GPT 5, Claude, Grok, Gemini и др.',
+        '1000 токенов ежемесячно',
+        'Приоритетная поддержка',
+        'Запросы на новые функции',
+        'Бесплатные консультации',
+        'Отсутствие рекламы',
       ],
-      cta: { label: 'Попробовать за 1 ₽ на 3 дня', href: '/register' },
-    },
-    {
-      id: 'daily',
-      title: 'На каждый день',
-      credits: 'Токены: 11 000',
-      price: '2 490 ₽/мес',
-      priceNote: 'далее 2 490 ₽ каждый месяц',
-      pricePer: '0.78 ₽ / 1000 кр (на 22% выгоднее)',
-      badges: [
-        'Быстрые ответы и простые тексты — Отлично (~34 000 страниц*)',
-        'Качественный контент и стандартный код — Отлично (~10 000 страниц*)',
-        'Анализ, сложный креатив и разработка — Отлично (~3 700 страниц*)',
-      ],
-      features: [
-        'создание GPT‑изображений',
-        'рисование (Midjourney и Dalle‑3)',
-        'обработка больших файлов',
-        'транскрипция аудио',
-      ],
-      cta: { label: 'Попробовать за 1 ₽ на 3 дня', href: '/register' },
+      cta: { label: 'Оформить подписку', href: '/register' },
+      popular: true,
     },
   ],
   modelsBlockTitle: 'Модели',
@@ -279,7 +269,7 @@ const content: Content = {
     },
     {
       q: 'Есть ли тестовый период?',
-      a: 'Да, можно попробовать за 1 ₽ на 3 дня. Далее — согласно выбранному тарифу.',
+      a: 'Да, можно попробовать бесплатно. 2 модели доступны для бесплатного исползьования.',
     },
     {
       q: 'Как работают кредиты и списания?',
@@ -291,11 +281,11 @@ const content: Content = {
     },
     {
       q: 'Доступны ли GPT‑изображения и Midjourney?',
-      a: 'Да, доступны генерация изображений, Midjourney и DALL·E 3 (в средних и старших тарифах).',
+      a: 'Да, доступны генерация изображений, Midjourney и DALL·E 3.',
     },
     {
       q: 'Есть ли поиск по интернету?',
-      a: 'Да, доступен во всех тарифах, начиная со студенческого.',
+      a: 'Да, доступен на тарифе ПРО.',
     },
     {
       q: 'Как связаться с поддержкой?',
@@ -400,13 +390,13 @@ export default function AIAcademyDarkEditable() {
               </div>
             ))}
             <Link
-              href="#login"
+              href={content.header.loginHref}
               className="ml-2 px-3 py-2 rounded-lg text-sm text-neutral-200 hover:bg-white/10"
             >
               {content.header.loginLabel}
             </Link>
             <Link
-              href="#trial"
+              href={content.header.tryHref}
               className="ml-2 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-4 py-2 text-sm shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
             >
               {content.header.tryLabel}
@@ -497,16 +487,20 @@ export default function AIAcademyDarkEditable() {
         {/* Plans */}
         <section id="pricing" className="px-6 py-12">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-3xl font-bold text-white mb-6">
+            <h2 className="text-3xl font-bold text-white mb-6 text-center">
               {content.plansBlockTitle}
             </h2>
             {/* Plan tabs removed; titles moved into cards */}
 
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto justify-items-center">
               {content.plans.map((p) => (
                 <div
                   key={`plan-${p.id}`}
-                  className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] hover:bg-white/[0.06] transition-colors transition-transform duration-200 hover:scale-[1.02]"
+                  className={`rounded-3xl border p-8 bg-white/[0.04] hover:bg-white/[0.06] transition-colors transition-transform duration-200 hover:scale-[1.02] ${
+                    p.popular
+                      ? 'border-green-500 shadow-lg shadow-green-500/20'
+                      : 'border-white/10'
+                  }`}
                 >
                   <div className="text-xl font-semibold text-white mb-2">
                     {p.title}
@@ -759,7 +753,10 @@ export default function AIAcademyDarkEditable() {
         <div className="max-w-7xl mx-auto px-6 py-8 text-sm text-neutral-400 grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <div>
-              <Link href="#trial" className="text-neutral-200 hover:text-white">
+              <Link
+                href={content.header.tryHref}
+                className="text-neutral-200 hover:text-white"
+              >
                 {content.header.tryLabel}
               </Link>
             </div>

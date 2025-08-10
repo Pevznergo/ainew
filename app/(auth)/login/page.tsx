@@ -40,7 +40,13 @@ export default function Page() {
     } else if (state.status === 'success') {
       gtmEvent('login', { method: 'email' });
       setIsSuccessful(true);
-      router.push('/');
+
+      // Redirect based on subscription status
+      if (state.subscriptionActive) {
+        router.push('/');
+      } else {
+        router.push('/subscriptions');
+      }
     }
   }, [state.status, router]);
 

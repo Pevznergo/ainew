@@ -30,7 +30,7 @@ export default function Page() {
     toast({ type: 'success', description: 'Account created successfully!' });
     setIsSuccessful(true);
     gtmEvent('sign_up', { method: 'email' });
-    router.push('/');
+    router.push('/subscriptions');
   }, [router]);
 
   useEffect(() => {

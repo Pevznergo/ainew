@@ -13,10 +13,11 @@ const authFormSchema = z.object({
 
 export interface LoginActionState {
   status: 'idle' | 'in_progress' | 'success' | 'failed' | 'invalid_data';
+  subscriptionActive?: boolean;
 }
 
 export const login = async (
-  _: LoginActionState,
+  state: LoginActionState,
   formData: FormData,
 ): Promise<LoginActionState> => {
   try {
@@ -31,13 +32,17 @@ export const login = async (
       redirect: false,
     });
 
-    return { status: 'success' };
+    // Get user subscription status
+    const users = await getUser(validatedData.email);
+    const subscriptionActive = users[0]?.subscription_active || false;
+
+    return { ...state, status: 'success', subscriptionActive };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { status: 'invalid_data' };
+      return { ...state, status: 'invalid_data' };
     }
 
-    return { status: 'failed' };
+    return { ...state, status: 'failed' };
   }
 };
 

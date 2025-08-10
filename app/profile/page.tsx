@@ -8,20 +8,20 @@ import Image from 'next/image';
 // Компонент скелетона для загрузки
 function LoadingSkeleton() {
   return (
-    <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
+    <div className="font-geist font-sans bg-[#0b0b0f] min-h-screen flex flex-col text-neutral-100">
       {/* Header skeleton */}
-      <header className="bg-[#18181b] shadow-sm border-b border-neutral-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-6">
+      <header className="sticky top-0 z-40 backdrop-blur bg-[#0b0b0f]/70 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="w-20 h-6 bg-neutral-700 rounded animate-pulse" />
           <div className="w-24 h-8 bg-neutral-700 rounded animate-pulse" />
           <div className="w-16 h-10 bg-neutral-700 rounded animate-pulse" />
         </div>
       </header>
 
-      <main className="flex-1 w-full flex flex-col items-center py-14 px-2">
-        <div className="w-full max-w-4xl space-y-10">
+      <main className="flex-1 w-full flex flex-col items-center py-12 px-6">
+        <div className="w-full max-w-4xl space-y-8">
           {/* Профиль пользователя skeleton */}
-          <section className="bg-[#18181b]/90 rounded-3xl shadow-2xl p-10 flex flex-col md:flex-row items-center gap-10 border border-neutral-800 backdrop-blur-md">
+          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col md:flex-row items-center gap-8">
             <div className="flex flex-col items-center md:items-start gap-4 min-w-[220px]">
               <div className="size-28 bg-neutral-700 rounded-full animate-pulse" />
               <div className="text-center md:text-left">
@@ -39,7 +39,7 @@ function LoadingSkeleton() {
           </section>
 
           {/* Баланс skeleton */}
-          <section className="bg-[#18181b]/90 rounded-3xl shadow-2xl p-10 flex flex-col md:flex-row items-center gap-10 border border-neutral-800 backdrop-blur-md">
+          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1 flex flex-col gap-4">
               <div className="w-48 h-8 bg-neutral-700 rounded animate-pulse mb-2" />
               <div className="flex items-center gap-6 mb-4">
@@ -111,6 +111,7 @@ export default function ProfilePage() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [isProcessingCoinsPayment, setIsProcessingCoinsPayment] =
     useState(false);
+  const [isCancelingSubscription, setIsCancelingSubscription] = useState(false);
 
   const handleProUpgrade = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,6 +204,45 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (
+      !confirm(
+        'Вы уверены, что хотите отменить подписку и отключить автоплатежи?',
+      )
+    ) {
+      return;
+    }
+
+    setIsCancelingSubscription(true);
+
+    try {
+      const response = await fetch('/api/subscription/cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка отмены подписки');
+      }
+
+      alert('Подписка успешно отменена. Автоплатежи отключены.');
+
+      // Перезагружаем страницу для обновления статуса
+      window.location.reload();
+    } catch (error) {
+      console.error('Cancel subscription error:', error);
+      alert(
+        `Ошибка при отмене подписки: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
+      );
+    } finally {
+      setIsCancelingSubscription(false);
+    }
+  };
+
   // Для закрытия dropdown при клике вне
   const dropdownRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -239,10 +279,10 @@ export default function ProfilePage() {
   const subscriptionActive = session.user?.subscription_active ?? false;
 
   return (
-    <div className="font-geist font-sans bg-[#111] min-h-screen flex flex-col text-neutral-100">
+    <div className="font-geist font-sans bg-[#0b0b0f] min-h-screen flex flex-col text-neutral-100">
       {/* Header */}
-      <header className="bg-[#18181b] shadow-sm border-b border-neutral-800">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-8 py-6">
+      <header className="sticky top-0 z-40 backdrop-blur bg-[#0b0b0f]/70 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <Link
               href="/"
@@ -281,10 +321,10 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <main className="flex-1 w-full flex flex-col items-center py-14 px-2">
-        <div className="w-full max-w-4xl space-y-10">
+      <main className="flex-1 w-full flex flex-col items-center py-12 px-6">
+        <div className="w-full max-w-4xl space-y-8">
           {/* Профиль пользователя */}
-          <section className="bg-[#18181b]/90 rounded-3xl shadow-2xl p-10 flex flex-col md:flex-row items-center gap-10 border border-neutral-800 backdrop-blur-md">
+          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col md:flex-row items-center gap-8">
             <div className="flex flex-col items-center md:items-start gap-4 min-w-[220px]">
               <Image
                 src="/images/profile.png"
@@ -297,7 +337,7 @@ export default function ProfilePage() {
                 <div className="font-extrabold text-2xl text-white">
                   {email}
                 </div>
-                <div className="text-indigo-400 text-base bg-[#232946] rounded px-3 py-1 inline-block mt-2">
+                <div className="text-indigo-400 text-base rounded-xl border border-white/10 bg-white/[0.02] px-3 py-1 inline-block mt-2">
                   {subscriptionActive
                     ? 'PRO-подписка активна'
                     : 'Базовый тариф'}
@@ -307,10 +347,10 @@ export default function ProfilePage() {
             <div className="flex-1 flex flex-col gap-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <span
-                  className={`rounded-xl px-6 py-3 font-semibold text-lg shadow border ${
+                  className={`rounded-xl px-6 py-3 font-semibold text-lg border ${
                     subscriptionActive
                       ? 'bg-gradient-to-r from-green-600 to-indigo-700 text-white border-green-600'
-                      : 'bg-gradient-to-r from-indigo-700 to-green-700 text-white border-indigo-700'
+                      : 'border-white/10 bg-white/[0.02] text-neutral-300'
                   }`}
                 >
                   Тариф: {subscriptionActive ? 'PRO' : 'Базовый'}
@@ -318,10 +358,22 @@ export default function ProfilePage() {
                 {!subscriptionActive && (
                   <button
                     type="button"
-                    className="modern-btn-cta-alt w-full sm:w-auto"
+                    className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-6 py-3 text-lg font-semibold shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity w-full sm:w-auto"
                     onClick={() => setShowProModal(true)}
                   >
                     Улучшить до ПРО
+                  </button>
+                )}
+                {subscriptionActive && (
+                  <button
+                    type="button"
+                    className="rounded-xl border border-red-500/50 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 px-6 py-3 text-sm font-medium transition-colors w-full sm:w-auto disabled:opacity-50"
+                    onClick={handleCancelSubscription}
+                    disabled={isCancelingSubscription}
+                  >
+                    {isCancelingSubscription
+                      ? 'Отменяем...'
+                      : 'Отменить подписку и отвязать карту'}
                   </button>
                 )}
               </div>
@@ -333,13 +385,13 @@ export default function ProfilePage() {
           </section>
 
           {/* Баланс */}
-          <section className="bg-[#18181b]/90 rounded-3xl shadow-2xl p-10 flex flex-col md:flex-row items-center gap-10 border border-neutral-800 backdrop-blur-md">
+          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1 flex flex-col gap-4">
               <div className="font-bold text-xl text-white mb-2">
                 Баланс токенов
               </div>
               <div className="flex items-center gap-6 mb-4">
-                <span className="text-3xl font-extrabold text-indigo-400 bg-[#232946] rounded-xl px-7 py-3 border border-indigo-700 shadow">
+                <span className="text-3xl font-extrabold text-indigo-400 rounded-xl border border-white/10 bg-white/[0.02] px-7 py-3 shadow">
                   {balance}
                 </span>
               </div>
@@ -352,7 +404,7 @@ export default function ProfilePage() {
                 <div className="relative w-full max-w-md" ref={dropdownRef}>
                   <button
                     type="button"
-                    className="flex justify-between items-center w-full bg-[#232946] border border-neutral-800 rounded-lg px-5 py-3 text-white text-base focus:ring-2 focus:ring-indigo-600 transition cursor-pointer"
+                    className="flex justify-between items-center w-full rounded-xl border border-white/10 bg-white/[0.02] px-5 py-3 text-white text-base focus:ring-2 focus:ring-indigo-600 transition cursor-pointer"
                     onClick={() => setOpen((v) => !v)}
                     aria-haspopup="listbox"
                     aria-expanded={open}
@@ -380,16 +432,16 @@ export default function ProfilePage() {
                   </button>
                   {open && (
                     <ul
-                      className="absolute z-20 w-full bg-[#232946] border border-neutral-800 rounded-lg shadow-lg max-h-60 overflow-auto bottom-full mb-2"
+                      className="absolute z-20 w-full rounded-xl border border-white/10 bg-white/[0.02] backdrop-blur shadow-lg max-h-60 overflow-auto bottom-full mb-2"
                       tabIndex={-1}
                       style={{ minWidth: 320 }}
                     >
                       {packages.map((pkg) => (
                         <li
                           key={pkg.label}
-                          className={`px-5 py-3 cursor-pointer hover:bg-indigo-600 hover:text-white transition flex justify-between items-center ${
+                          className={`px-5 py-3 cursor-pointer hover:bg-white/10 transition flex justify-between items-center ${
                             selected.label === pkg.label
-                              ? 'bg-indigo-700 text-white'
+                              ? 'bg-indigo-600 text-white'
                               : 'text-white'
                           }`}
                           onClick={() => {
@@ -700,7 +752,7 @@ export default function ProfilePage() {
             Связаться с нами
           </a>
         </nav>
-        <div className="text-center text-neutral-500 text-sm">© 2025</div>
+        <div className="text-center text-neutral-500 text-sm"> 2025</div>
       </footer>
     </div>
   );
