@@ -156,7 +156,7 @@ const content: Content = {
     {
       id: 'student',
       title: 'Студенческий',
-      credits: 'Кредиты: 279 000',
+      credits: 'Токены: 1 000',
       price: '279 ₽/мес',
       priceNote: 'далее 279 ₽ каждый месяц',
       pricePer: '1.00 ₽ / 1000 кр',
@@ -167,7 +167,7 @@ const content: Content = {
     {
       id: 'weekly',
       title: 'Пару раз в неделю',
-      credits: 'Кредиты: 1 500 000',
+      credits: 'Токены: 5 000',
       price: '1 290 ₽/мес',
       priceNote: 'далее 1 290 ₽ каждый месяц',
       pricePer: '0.86 ₽ / 1000 кр',
@@ -187,7 +187,7 @@ const content: Content = {
     {
       id: 'daily',
       title: 'На каждый день',
-      credits: 'Кредиты: 3 200 000',
+      credits: 'Токены: 11 000',
       price: '2 490 ₽/мес',
       priceNote: 'далее 2 490 ₽ каждый месяц',
       pricePer: '0.78 ₽ / 1000 кр (на 22% выгоднее)',
@@ -333,9 +333,36 @@ const content: Content = {
 };
 
 export default function AIAcademyDarkEditable() {
-  const [activePlan, setActivePlan] = useState<string>(content.plans[0].id);
-
   const nav = useMemo(() => content.header.nav, []);
+  const [formSuccess, setFormSuccess] = useState(false);
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement & {
+      elements: any;
+    };
+    const name = (form.elements.namedItem('contact-name') as HTMLInputElement)
+      ?.value;
+    const email = (form.elements.namedItem('contact-email') as HTMLInputElement)
+      ?.value;
+    const phone = (form.elements.namedItem('contact-phone') as HTMLInputElement)
+      ?.value;
+    const message = (
+      form.elements.namedItem('contact-message') as HTMLTextAreaElement
+    )?.value;
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, message }),
+      });
+      const data = await res.json();
+      setFormSuccess(true);
+    } catch (err) {
+      alert('Ошибка при отправке. Попробуйте ещё раз.');
+    }
+  };
 
   return (
     <div className="font-geist font-sans min-h-screen bg-[#0b0b0f] text-neutral-100">
@@ -473,33 +500,17 @@ export default function AIAcademyDarkEditable() {
             <h2 className="text-3xl font-bold text-white mb-6">
               {content.plansBlockTitle}
             </h2>
-            <div className="flex gap-3 mb-8 flex-wrap">
-              {content.plans.map((p) => (
-                <button
-                  key={`tab-${p.id}`}
-                  type="button"
-                  onClick={() => setActivePlan(p.id)}
-                  className={`px-4 py-2 rounded-lg text-sm border transition-colors ${
-                    activePlan === p.id
-                      ? 'border-indigo-500/50 bg-indigo-500/10 text-white'
-                      : 'border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
-                  }`}
-                >
-                  {p.title}
-                </button>
-              ))}
-            </div>
+            {/* Plan tabs removed; titles moved into cards */}
 
             <div className="grid gap-6 md:grid-cols-3">
               {content.plans.map((p) => (
                 <div
                   key={`plan-${p.id}`}
-                  className={`rounded-3xl border p-8 transition-colors ${
-                    activePlan === p.id
-                      ? 'border-indigo-500/50 bg-gradient-to-br from-indigo-600/15 to-cyan-600/15'
-                      : 'border-white/10 bg-white/[0.04]'
-                  }`}
+                  className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] hover:bg-white/[0.06] transition-colors transition-transform duration-200 hover:scale-[1.02]"
                 >
+                  <div className="text-xl font-semibold text-white mb-2">
+                    {p.title}
+                  </div>
                   <div className="text-neutral-300 mb-2">{p.credits}</div>
                   <div className="text-3xl font-bold text-white">{p.price}</div>
                   {p.pricePer && (
@@ -619,81 +630,127 @@ export default function AIAcademyDarkEditable() {
                 {content.contact.subtitle}
               </p>
             )}
-            <form className="grid gap-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="contact-name"
-                    className="block text-sm text-neutral-300 mb-1"
+            {formSuccess ? (
+              <div className="text-center py-12 animate-fade-in">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-green-500/20 rounded-full mb-6 animate-bounce">
+                  <svg
+                    className="w-10 h-10 text-green-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    {content.contact.fields.name}
-                  </label>
-                  <input
-                    id="contact-name"
-                    type="text"
-                    required
-                    placeholder={content.contact.fields.name}
-                    className="w-full rounded-xl border border-white/10 bg-[#0f1016]/80 px-4 py-3 text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-indigo-500/50"
-                  />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
                 </div>
-                <div>
-                  <label
-                    htmlFor="contact-email"
-                    className="block text-sm text-neutral-300 mb-1"
-                  >
-                    {content.contact.fields.email}
-                  </label>
-                  <input
-                    id="contact-email"
-                    type="email"
-                    required
-                    placeholder={content.contact.fields.email}
-                    className="w-full rounded-xl border border-white/10 bg-[#0f1016]/80 px-4 py-3 text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-indigo-500/50"
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  htmlFor="contact-phone"
-                  className="block text-sm text-neutral-300 mb-1"
-                >
-                  {content.contact.fields.phone}
-                </label>
-                <input
-                  id="contact-phone"
-                  type="tel"
-                  required
-                  placeholder={content.contact.fields.phone}
-                  className="w-full rounded-xl border border-white/10 bg-[#0f1016]/80 px-4 py-3 text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-indigo-500/50"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="contact-message"
-                  className="block text-sm text-neutral-300 mb-1"
-                >
-                  {content.contact.fields.message}
-                </label>
-                <textarea
-                  id="contact-message"
-                  required
-                  rows={4}
-                  placeholder={content.contact.fields.message}
-                  className="w-full rounded-xl border border-white/10 bg-[#0f1016]/80 px-4 py-3 text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-indigo-500/50"
-                />
-              </div>
-              <div className="text-xs text-neutral-400">
-                {content.contact.consent}
-              </div>
-              <div>
+                <h3 className="text-2xl font-bold text-white mb-3">
+                  Заявка отправлена!
+                </h3>
+                <p className="text-neutral-300 mb-8 text-lg">
+                  Мы получили вашу заявку и свяжемся с вами в ближайшее время.
+                </p>
                 <button
                   type="button"
-                  className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-5 py-3 text-sm shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
+                  onClick={() => setFormSuccess(false)}
+                  className="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
                 >
-                  {content.contact.submitLabel}
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  Отправить ещё одну заявку
                 </button>
               </div>
-            </form>
+            ) : (
+              <form className="grid gap-4" onSubmit={handleFormSubmit}>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="contact-name"
+                      className="block text-sm text-neutral-300 mb-1"
+                    >
+                      {content.contact.fields.name}
+                    </label>
+                    <input
+                      id="contact-name"
+                      type="text"
+                      required
+                      placeholder={content.contact.fields.name}
+                      className="w-full rounded-xl border border-white/10 bg-[#0f1016]/80 px-4 py-3 text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-indigo-500/50"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="contact-email"
+                      className="block text-sm text-neutral-300 mb-1"
+                    >
+                      {content.contact.fields.email}
+                    </label>
+                    <input
+                      id="contact-email"
+                      type="email"
+                      required
+                      placeholder={content.contact.fields.email}
+                      className="w-full rounded-xl border border-white/10 bg-[#0f1016]/80 px-4 py-3 text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-indigo-500/50"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label
+                    htmlFor="contact-phone"
+                    className="block text-sm text-neutral-300 mb-1"
+                  >
+                    {content.contact.fields.phone}
+                  </label>
+                  <input
+                    id="contact-phone"
+                    type="tel"
+                    required
+                    placeholder={content.contact.fields.phone}
+                    className="w-full rounded-xl border border-white/10 bg-[#0f1016]/80 px-4 py-3 text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-indigo-500/50"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="contact-message"
+                    className="block text-sm text-neutral-300 mb-1"
+                  >
+                    {content.contact.fields.message}
+                  </label>
+                  <textarea
+                    id="contact-message"
+                    required
+                    rows={4}
+                    placeholder={content.contact.fields.message}
+                    className="w-full rounded-xl border border-white/10 bg-[#0f1016]/80 px-4 py-3 text-neutral-100 placeholder:text-neutral-500 outline-none focus:border-indigo-500/50"
+                  />
+                </div>
+                <div className="text-xs text-neutral-400">
+                  {content.contact.consent}
+                </div>
+                <div>
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-5 py-3 text-sm shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
+                  >
+                    {content.contact.submitLabel}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </section>
       </main>
@@ -723,7 +780,7 @@ export default function AIAcademyDarkEditable() {
           <div className="space-y-1 sm:text-right">
             <div>{content.legal.ogrnip}</div>
             <div>{content.legal.inn}</div>
-            <div className="text-neutral-600">© 2025 Aporto</div>
+            <div className="text-neutral-600"> 2025 Aporto</div>
           </div>
         </div>
       </footer>

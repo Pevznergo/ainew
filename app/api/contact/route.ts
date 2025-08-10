@@ -3,12 +3,12 @@ import resend from '@/lib/resend';
 
 export async function POST(request: Request) {
   try {
-    const { phone, blogUrl, name } = await request.json();
+    const { phone, blogUrl, name, email, message } = await request.json();
 
-    // Валидация
-    if (!phone || !blogUrl) {
+    // Валидация: требуем телефон и хотя бы один из полей (email | message | blogUrl)
+    if (!phone || (!email && !message && !blogUrl)) {
       return NextResponse.json(
-        { error: 'Phone and blog URL are required' },
+        { error: 'Phone and one of email/message/blogUrl are required' },
         { status: 400 },
       );
     }
@@ -25,7 +25,9 @@ export async function POST(request: Request) {
           <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
             <p><strong>Имя:</strong> ${name || 'Не указано'}</p>
             <p><strong>Телефон:</strong> ${phone}</p>
-            <p><strong>Блог/канал:</strong> <a href="${blogUrl}" target="_blank">${blogUrl}</a></p>
+            ${email ? `<p><strong>Email:</strong> ${email}</p>` : ''}
+            ${blogUrl ? `<p><strong>Блог/канал:</strong> <a href="${blogUrl}" target="_blank">${blogUrl}</a></p>` : ''}
+            ${message ? `<p><strong>Сообщение:</strong> ${message}</p>` : ''}
           </div>
           
           <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; font-size: 14px; color: #64748b;">
