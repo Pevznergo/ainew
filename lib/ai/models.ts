@@ -29,6 +29,18 @@ export const chatModels: ChatModel[] = [
     description: 'Самая популярная модель от OpenAI',
   },
   {
+    id: 'gpt-5-mini',
+    name: 'GPT-5 Mini (10 токенов/запрос)',
+    cost: 5, // Added cost field
+    description: 'Быстрая, компактная, умная, гибкая, разговорная.',
+  },
+  {
+    id: 'gpt-5-chat',
+    name: 'GPT-5 Chat (10 токенов/запрос)',
+    cost: 60, // Added cost field
+    description: 'Мощная, контекстная, точная, адаптивная.',
+  },
+  {
     id: 'o3-2025-04-16',
     name: 'GPT o3 2025 (50 токенов/запрос)',
     cost: 50, // Added cost field

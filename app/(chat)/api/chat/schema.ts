@@ -23,7 +23,8 @@ export const postRequestBodySchema = z.object({
   }),
   selectedChatModel: z.enum([
     'gpt-4o-mini-2024-07-18',
-    'gpt-4o',
+    'gpt-5-mini',
+    'gpt-5-chat',
     'gpt-4.1-2025-04-14',
     'o3-2025-04-16',
     'o3-mini-2025-01-31',
