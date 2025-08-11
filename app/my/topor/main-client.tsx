@@ -302,7 +302,7 @@ const content: Content = {
 };
 
 export default function AIAcademyDarkEditable() {
-  const demoData = useDemo();
+  const { data: demoData, loading } = useDemo();
   const nav = useMemo(() => content.header.nav, []);
   const [formSuccess, setFormSuccess] = useState(false);
 
@@ -333,6 +333,39 @@ export default function AIAcademyDarkEditable() {
       alert('Ошибка при отправке. Попробуйте ещё раз.');
     }
   };
+
+  // Скелетон: показываем только во время загрузки и только если нет кэша (demoData == null)
+  if (loading && !demoData) {
+    return (
+      <div className="font-geist font-sans min-h-screen bg-[#0b0b0f] text-neutral-100">
+        <header className="sticky top-0 z-40 backdrop-blur bg-[#0b0b0f]/70 border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div className="h-6 w-14 bg-white/10 rounded animate-pulse" />
+            <div className="hidden md:flex items-center gap-2">
+              <div className="h-8 w-16 bg-white/10 rounded animate-pulse" />
+              <div className="h-8 w-36 bg-white/10 rounded animate-pulse" />
+            </div>
+          </div>
+        </header>
+        <main className="px-6">
+          <div className="max-w-6xl mx-auto grid gap-8 md:grid-cols-2 items-center py-12 sm:py-16">
+            <div className="space-y-4">
+              <div className="h-6 w-64 bg-white/10 rounded-full animate-pulse" />
+              <div className="h-10 w-full max-w-[600px] bg-white/10 rounded-xl animate-pulse" />
+              <div className="h-6 w-80 bg-white/10 rounded-xl animate-pulse" />
+              <div className="flex gap-3 pt-4">
+                <div className="h-11 w-44 bg-white/10 rounded-2xl animate-pulse" />
+                <div className="h-11 w-44 bg-white/10 rounded-2xl animate-pulse" />
+              </div>
+            </div>
+            <div className="flex justify-center">
+              <div className="w-full max-w-[400px] aspect-[16/10] rounded-3xl border border-white/10 bg-white/[0.04] animate-pulse" />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="font-geist font-sans min-h-screen bg-[#0b0b0f] text-neutral-100">
