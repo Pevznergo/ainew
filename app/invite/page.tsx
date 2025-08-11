@@ -347,7 +347,10 @@ export default function InvitePage() {
             Связаться с нами
           </a>
         </nav>
-        <div className="text-center text-neutral-500 text-sm"> 2025</div>
+        <div className="text-center text-neutral-500 text-sm">
+          {' '}
+          2025@ Aporto
+        </div>
       </footer>
     </div>
   );
