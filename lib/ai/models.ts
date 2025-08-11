@@ -30,13 +30,13 @@ export const chatModels: ChatModel[] = [
   },
   {
     id: 'gpt-5-mini',
-    name: 'GPT-5 Mini (10 токенов/запрос)',
+    name: 'GPT-5 Mini (5 токенов/запрос)',
     cost: 5, // Added cost field
     description: 'Быстрая, компактная, умная, гибкая, разговорная.',
   },
   {
     id: 'gpt-5-chat',
-    name: 'GPT-5 Chat (10 токенов/запрос)',
+    name: 'GPT-5 Chat (60 токенов/запрос)',
     cost: 60, // Added cost field
     description: 'Мощная, контекстная, точная, адаптивная.',
   },
