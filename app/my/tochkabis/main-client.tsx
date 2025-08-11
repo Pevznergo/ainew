@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useDemo } from '@/hooks/use-demo';
 
 type NavChild = { label: string; href: string };
@@ -295,8 +296,8 @@ const content: Content = {
     publicOffer: 'Публичная оферта',
     privacy: 'Политика конфиденциальности',
     subscription: 'Соглашение с подпиской',
-    ogrnip: 'ОГРНИП 318774611605815',
-    inn: 'ИНН 771630193789',
+    ogrnip: 'Ткаченко Игорь Алексеевич',
+    inn: 'ИНН 262513548985',
   },
   images: { hero: '/demo/4ch.jpg' },
 };
@@ -305,6 +306,8 @@ export default function AIAcademyDarkEditable() {
   const { data: demoData, loading } = useDemo();
   const nav = useMemo(() => content.header.nav, []);
   const [formSuccess, setFormSuccess] = useState(false);
+  const [showPromo, setShowPromo] = useState(true);
+  const router = useRouter();
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -417,6 +420,56 @@ export default function AIAcademyDarkEditable() {
           </nav>
         </div>
       </header>
+
+      {showPromo && (
+        <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
+          <div className="relative max-w-2xl w-full">
+            {/* Glow background */}
+            <div className="pointer-events-none absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-indigo-500/35 via-fuchsia-500/25 to-cyan-500/35 blur-xl opacity-80" />
+            <button
+              type="button"
+              onClick={() => router.push('/register')}
+              className="w-full text-left rounded-2xl border border-white/15 bg-[#0f1016]/70 backdrop-blur-xl p-4 text-sm text-neutral-100 shadow-xl shadow-indigo-900/20 hover:bg-[#141622]/75 transition-colors pr-10 ring-1 ring-white/10"
+            >
+              <span className="font-medium">Бонус до 40000 рублей</span> при
+              регистрации сегодня.
+              <Link
+                href="/invite"
+                onClick={(e) => e.stopPropagation()}
+                className="ml-2 underline text-neutral-300 hover:text-white"
+              >
+                Условия акции
+              </Link>
+              <span className="sr-only">Перейти к регистрации</span>
+            </button>
+
+            <button
+              type="button"
+              aria-label="Закрыть"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowPromo(false);
+              }}
+              className="absolute right-2 top-2 inline-flex size-7 items-center justify-center rounded-md text-neutral-300 hover:text-white hover:bg-white/10"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="size-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="relative">
         {/* Hero */}

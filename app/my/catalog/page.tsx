@@ -111,7 +111,9 @@ export default function CatalogPage() {
             >
               ← Назад к чату
             </Link>
-            <h1 className="text-xl font-semibold text-white">Каталог страниц</h1>
+            <h1 className="text-xl font-semibold text-white">
+              Каталог страниц
+            </h1>
             <div className="w-32" />
           </div>
         </header>
@@ -248,8 +250,9 @@ export default function CatalogPage() {
                         }`}
                       >
                         {
-                          categories.find((c) => c.id === getCategory(page.name))
-                            ?.name
+                          categories.find(
+                            (c) => c.id === getCategory(page.name),
+                          )?.name
                         }
                       </span>
                     </div>
