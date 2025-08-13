@@ -1,6 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { createUser, setUserReferrer } from '@/lib/db/queries';
-import { generateHashedPassword } from '@/lib/db/utils';
+import { createUser, setUserReferrer, getInviteByCode, markInviteUsed } from '@/lib/db/queries';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +17,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Invite code is required for registration
+    if (!referralCode || typeof referralCode !== 'string' || referralCode.trim() === '') {
+      return new Response(
+        JSON.stringify({ error: 'invite_required', message: 'Инвайт код обязателен' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } },
+      );
+    }
+
+    // If referral code provided, validate there is available invite
+    if (referralCode) {
+      const invite = await getInviteByCode(referralCode);
+      const remaining = invite
+        ? Math.max(0, (invite.available_count || 0) - (invite.used_count || 0))
+        : 0;
+      if (!invite || remaining <= 0) {
+        return new Response(
+          JSON.stringify({ error: 'invite_unavailable', message: 'По данному коду нет доступных инвайтов' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+    }
+
     console.log('Creating user...');
     // Создаем пользователя
     const [newUser] = (await createUser(email, password)) as any;
@@ -31,7 +52,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Если есть реферальный код, устанавливаем связь
+    // Если есть реферальный код, устанавливаем связь и списываем инвайт
     if (referralCode && newUser) {
       console.log(
         'Setting referrer for user:',
@@ -42,6 +63,12 @@ export async function POST(request: NextRequest) {
       try {
         await setUserReferrer(newUser.id, referralCode);
         console.log('Referrer set successfully');
+        try {
+          await markInviteUsed(referralCode);
+          console.log('Invite marked as used');
+        } catch (err) {
+          console.error('Failed to mark invite used:', err);
+        }
       } catch (error) {
         console.error('Failed to set referrer:', error);
       }

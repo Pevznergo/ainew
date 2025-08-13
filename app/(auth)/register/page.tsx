@@ -18,6 +18,9 @@ export default function Page() {
 
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [isCheckingInvite, setIsCheckingInvite] = useState(false);
 
   const [state, formAction] = useActionState<RegisterActionState, FormData>(
     register,
@@ -32,6 +35,20 @@ export default function Page() {
     gtmEvent('sign_up', { method: 'email' });
     router.push('/subscriptions');
   }, [router]);
+
+  // Prefill invite code from localStorage or cookies
+  useEffect(() => {
+    try {
+      const lsCode = typeof window !== 'undefined' ? localStorage.getItem('referralCode') : null;
+      let cookieCode: string | null = null;
+      if (typeof document !== 'undefined') {
+        const match = document.cookie.match(/(?:^|; )referralCode=([^;]+)/);
+        cookieCode = match ? decodeURIComponent(match[1]) : null;
+      }
+      const prefill = lsCode || cookieCode || '';
+      if (prefill) setInviteCode(prefill);
+    } catch (_) {}
+  }, []);
 
   useEffect(() => {
     if (state.status === 'user_exists') {
@@ -53,10 +70,48 @@ export default function Page() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    // Получаем реферальный код из localStorage
-    const referralCode = localStorage.getItem('referralCode');
+    // Инвайт-код из поля формы, затем из localStorage/cookie как fallback
+    const formInvite = (formData.get('inviteCode') as string) || '';
+    const lsInvite = typeof window !== 'undefined' ? localStorage.getItem('referralCode') : null;
+    let cookieInvite: string | null = null;
+    if (typeof document !== 'undefined') {
+      const match = document.cookie.match(/(?:^|; )referralCode=([^;]+)/);
+      cookieInvite = match ? decodeURIComponent(match[1]) : null;
+    }
+    const referralCode = formInvite || lsInvite || cookieInvite || '';
 
     console.log('Submitting registration with:', { email, referralCode });
+
+    // Инвайт-код обязателен
+    setInviteError(null);
+    if (!referralCode || referralCode.trim() === '') {
+      setInviteError('Инвайт код обязателен');
+      return;
+    }
+
+    // Проверяем доступность инвайта
+    if (referralCode) {
+      try {
+        setIsCheckingInvite(true);
+        const vr = await fetch('/api/invite/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: referralCode }),
+        });
+        const vdata = await vr.json();
+        if (!vdata?.available) {
+          setInviteError('По данному коду нет доступных инвайтов');
+          setIsCheckingInvite(false);
+          return; // прерываем регистрацию
+        }
+        setIsCheckingInvite(false);
+      } catch (e) {
+        setIsCheckingInvite(false);
+        // В случае ошибки валидации считаем код недоступным
+        setInviteError('По данному коду нет доступных инвайтов');
+        return;
+      }
+    }
 
     try {
       const response = await fetch('/api/auth/register', {
@@ -73,14 +128,25 @@ export default function Page() {
       console.log('Registration response:', data);
 
       if (data.success) {
-        // Очищаем реферальный код из localStorage
-        localStorage.removeItem('referralCode');
+        // Очищаем реферальный код из localStorage и cookies
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('referralCode');
+        }
+        if (typeof document !== 'undefined') {
+          document.cookie = 'referralCode=; path=/; max-age=0; samesite=lax';
+        }
         handleSuccess();
       } else {
         toast({
           type: 'error',
           description: data.error || 'Регистрация не удалась',
         });
+        if (data.error === 'invite_unavailable') {
+          setInviteError('По данному коду нет доступных инвайтов');
+        }
+        if (data.error === 'invite_required') {
+          setInviteError('Инвайт код обязателен');
+        }
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -156,6 +222,29 @@ export default function Page() {
         </div>
 
         <AuthForm action={handleSubmit} defaultEmail={email}>
+          {/* Инвайт код */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="inviteCode" className="text-zinc-600 font-normal dark:text-zinc-400">
+              Инвайт код
+            </label>
+            <input
+              id="inviteCode"
+              name="inviteCode"
+              className="bg-muted text-md md:text-sm rounded-md border px-3 py-2 dark:bg-zinc-900 dark:border-zinc-800"
+              type="text"
+              placeholder="Введите инвайт код (если есть)"
+              required
+              value={inviteCode}
+              onChange={(e) => {
+                setInviteCode(e.target.value);
+                if (inviteError) setInviteError(null);
+              }}
+            />
+            {inviteError ? (
+              <span className="text-sm text-red-500">{inviteError}</span>
+            ) : null}
+          </div>
+
           <SubmitButton isSuccessful={isSuccessful}>Регистрация</SubmitButton>
           <p className="text-center text-sm text-gray-600 mt-4 dark:text-zinc-400">
             {'Уже есть аккаунт? '}

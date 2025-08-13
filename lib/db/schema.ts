@@ -6,7 +6,6 @@ import {
   json,
   text,
   primaryKey,
-  foreignKey,
   boolean,
   integer,
 } from 'drizzle-orm/pg-core';
@@ -200,3 +199,19 @@ export const demo = pgTable('Demo', {
 });
 
 export type Demo = InferSelectModel<typeof demo>;
+
+// Invites
+export const invites = pgTable('invites', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => generateUUID()),
+  code: varchar('code', { length: 16 }).notNull().unique(),
+  owner_user_id: text('owner_user_id')
+    .notNull()
+    .references(() => user.id),
+  available_count: integer('available_count').notNull().default(4),
+  used_count: integer('used_count').notNull().default(0),
+  created_at: timestamp('created_at').notNull().defaultNow(),
+});
+
+export type Invite = InferSelectModel<typeof invites>;

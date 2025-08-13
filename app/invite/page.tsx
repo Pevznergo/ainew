@@ -4,6 +4,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/toast';
+
+type Invite = {
+  id: string;
+  code: string;
+  available_count: number;
+  used_count: number;
+  created_at: string;
+};
 
 // Компонент скелетона для загрузки
 function LoadingSkeleton() {
@@ -83,10 +92,11 @@ function LoadingSkeleton() {
 
 export default function InvitePage() {
   const { data: session, status } = useSession();
-  const [referralLink, setReferralLink] = useState(
-    'https://aporto.tech/api/auth/guest',
-  );
+  const [referralLink, setReferralLink] = useState('');
+  const [referralCode, setReferralCode] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [invites, setInvites] = useState<Invite[]>([]);
+  // invite is created automatically (if missing) on load; no manual button
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -102,6 +112,10 @@ export default function InvitePage() {
         const response = await fetch('/api/referral/link');
         const data = await response.json();
         setReferralLink(data.referralLink);
+        try {
+          const url = new URL(data.referralLink);
+          setReferralCode(url.searchParams.get('ref') || '');
+        } catch (_) {}
       } catch (error) {
         console.error('Failed to fetch referral link:', error);
         setReferralLink('https://aporto.tech/api/auth/guest');
@@ -111,6 +125,27 @@ export default function InvitePage() {
     };
 
     fetchReferralCode();
+  }, [session, status]);
+
+  // Ensure invite exists and load it for current user (not for guests)
+  useEffect(() => {
+    const loadInvites = async () => {
+      if (!session?.user) return;
+      try {
+        // ensure there is an invite row bound to user's referral_code
+        await fetch('/api/invite/create', { method: 'POST' }).catch(() => {});
+
+        const res = await fetch('/api/invite/list');
+        if (!res.ok) throw new Error('Failed to fetch invites');
+        const data = await res.json();
+        setInvites(data || []);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    if (status === 'authenticated') {
+      loadInvites();
+    }
   }, [session, status]);
 
   const copyToClipboard = async () => {
@@ -161,43 +196,133 @@ export default function InvitePage() {
               Aporto
             </Link>
           </div>
-          <div>
-            {!session && (
-              <Link href="/login" className="modern-btn-cta">
-                Войти
-              </Link>
+          <div className="flex items-center gap-3">
+            {!session?.user && (
+              <>
+                <Link
+                  href="/register"
+                  className="rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-4 py-2 text-sm shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
+                >
+                  Попробовать бесплатно
+                </Link>
+                <Link
+                  href="/login"
+                  className="px-3 py-2 rounded-lg text-sm text-neutral-200 hover:bg-white/10"
+                >
+                  Войти
+                </Link>
+              </>
             )}
           </div>
         </div>
       </header>
 
+      {/* Основной контент */}
       <main className="max-w-5xl mx-auto py-12 px-6 flex-1 w-full">
-        {/* Реферальная ссылка */}
-        <section className="mb-12">
-          <div className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col items-center w-full">
-            <h2 className="text-2xl font-bold mb-4 text-white">
-              Ваша реферальная ссылка
-            </h2>
-            <div className="flex w-full max-w-2xl mb-3">
-              <input
-                type="text"
-                value={referralLink || ''}
-                readOnly
-                className="flex-1 bg-neutral-900 text-white font-mono rounded-l-lg px-5 py-3 outline-none text-base border border-neutral-800"
-              />
-              <button
-                className="modern-btn-outline rounded-l-none rounded-r-lg"
-                type="button"
-                onClick={copyToClipboard}
+        {/* Hero секция в стиле main */}
+        <section className="mb-12 text-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4">
+            Приглашайте друзей в Aporto
+          </h1>
+          <p className="text-neutral-300 text-lg md:text-xl mb-6 max-w-3xl mx-auto">
+            Делитесь своей реферальной ссылкой или инвайт-кодом и получайте
+            бонусы.
+          </p>
+          {!session?.user ? (
+            <div className="flex items-center justify-center gap-3">
+              <Link
+                href="/register"
+                className="rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-6 py-3 text-base shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
+                prefetch
               >
-                Копировать
-              </button>
+                Попробовать бесплатно
+              </Link>
             </div>
-            <p className="text-neutral-400 text-base">
-              Поделитесь этой ссылкой с друзьями и получите бонусы!
-            </p>
-          </div>
+          ) : null}
         </section>
+
+        {/* Реферальная ссылка (недоступно для guest) */}
+        {session?.user ? (
+          <section className="mb-12">
+            <div className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col items-center w-full">
+              <h2 className="text-2xl font-bold mb-4 text-white">
+                Ваша реферальная ссылка
+              </h2>
+              <div className="flex w-full max-w-2xl mb-3">
+                <input
+                  type="text"
+                  value={referralLink || ''}
+                  readOnly
+                  className="flex-1 bg-neutral-900 text-white font-mono rounded-l-lg px-5 py-3 outline-none text-base border border-neutral-800"
+                />
+                <button
+                  className="rounded-l-none rounded-r-lg border border-white/10 bg-white/5 px-5 py-3 text-base text-neutral-200 hover:bg-white/10 transition-colors"
+                  type="button"
+                  onClick={copyToClipboard}
+                >
+                  Копировать
+                </button>
+              </div>
+              <p className="text-neutral-400 text-base">
+                Поделитесь этой ссылкой с друзьями и получите бонусы!
+              </p>
+              {/* Инвайт-код в этой секции скрыт */}
+            </div>
+          </section>
+        ) : null}
+
+        {/* Инвайт-код (недоступно для guest) */}
+        {session?.user ? (
+          <section className="mb-12">
+            <div className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] w-full">
+              <div className="flex items-center justify-between gap-4 mb-6">
+                <h2 className="text-2xl font-bold text-white">Инвайт-код</h2>
+              </div>
+
+              {invites.length === 0 ? (
+                <p className="text-neutral-400">У вас пока нет инвайтов.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {invites.map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="text-white font-mono text-lg">
+                          {inv.code}
+                        </div>
+                        <div className="text-neutral-400 text-sm mt-1">
+                          Доступно:{' '}
+                          {Math.max(
+                            0,
+                            (inv.available_count || 0) - (inv.used_count || 0),
+                          )}{' '}
+                          из {inv.available_count}
+                        </div>
+                      </div>
+                      <button
+                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-neutral-200 hover:bg-white/10 transition-colors"
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(inv.code);
+                            toast({
+                              type: 'success',
+                              description: 'Код скопирован',
+                            });
+                          } catch (_) {}
+                        }}
+                      >
+                        Копировать код
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        ) : null}
 
         {/* Бонусные шаги */}
         <section className="mb-16">
@@ -241,10 +366,16 @@ export default function InvitePage() {
             Воспользуйтесь реферальной программой уже сегодня. Вы участвуете?
           </h3>
           <div className="flex flex-col md:flex-row gap-6 justify-center">
-            <Link href="/" className="modern-btn-cta">
+            <Link
+              href="/register"
+              className="rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-6 py-3 text-base shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
+            >
               Начать приглашать
             </Link>
-            <Link href="/login" className="modern-btn-outline">
+            <Link
+              href="/login"
+              className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-base text-neutral-200 hover:bg-white/10 transition-colors"
+            >
               Уже есть аккаунт? Войти
             </Link>
           </div>
@@ -257,7 +388,7 @@ export default function InvitePage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-indigo-400 mb-3">
+              <h3 className="font-semibold text-neutral-200 mb-3">
                 Бонус за привлечение
               </h3>
               <p className="text-neutral-300 text-base">
@@ -266,7 +397,7 @@ export default function InvitePage() {
               </p>
             </div>
             <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-indigo-400 mb-3">
+              <h3 className="font-semibold text-neutral-200 mb-3">
                 Условия вывода
               </h3>
               <p className="text-neutral-300 text-base">
@@ -274,7 +405,7 @@ export default function InvitePage() {
                 Для вывода необходимо написать на почту{' '}
                 <a
                   href="mailto:hey@aporto.tech"
-                  className="underline text-indigo-400"
+                  className="underline text-neutral-300 hover:text-white"
                 >
                   hey@aporto.tech
                 </a>{' '}
@@ -282,7 +413,7 @@ export default function InvitePage() {
               </p>
             </div>
             <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-indigo-400 mb-3">
+              <h3 className="font-semibold text-neutral-200 mb-3">
                 Реферальная ссылка
               </h3>
               <p className="text-neutral-300 text-base">
@@ -292,7 +423,7 @@ export default function InvitePage() {
               </p>
             </div>
             <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-indigo-400 mb-3">
+              <h3 className="font-semibold text-neutral-200 mb-3">
                 Правила начисления
               </h3>
               <p className="text-neutral-300 text-base">
@@ -301,7 +432,7 @@ export default function InvitePage() {
               </p>
             </div>
             <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-indigo-400 mb-3">
+              <h3 className="font-semibold text-neutral-200 mb-3">
                 Срок действия
               </h3>
               <p className="text-neutral-300 text-base">
@@ -310,7 +441,7 @@ export default function InvitePage() {
               </p>
             </div>
             <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-indigo-400 mb-3">
+              <h3 className="font-semibold text-neutral-200 mb-3">
                 Ограничения
               </h3>
               <p className="text-neutral-300 text-base">
@@ -328,21 +459,21 @@ export default function InvitePage() {
       </main>
       <footer className="mt-8 pb-4">
         <nav className="flex flex-wrap gap-6 justify-center items-center text-sm mb-2">
-          <Link href="/privacy" className="text-indigo-400 hover:underline">
+          <Link href="/privacy" className="text-neutral-300 hover:text-white">
             Политика конфиденциальности
           </Link>
-          <Link href="/tos" className="text-indigo-400 hover:underline">
+          <Link href="/tos" className="text-neutral-300 hover:text-white">
             Пользовательское соглашение
           </Link>
           <Link
             href="/tos-subscription"
-            className="text-indigo-400 hover:underline"
+            className="text-neutral-300 hover:text-white"
           >
             Соглашение с подпиской
           </Link>
           <a
             href="mailto:hey@aporto.tech"
-            className="text-indigo-400 hover:underline"
+            className="text-neutral-300 hover:text-white"
           >
             Связаться с нами
           </a>

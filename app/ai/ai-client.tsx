@@ -42,11 +42,11 @@ type Content = {
     secondaryCta: { label: string; href: string };
   };
   capabilities: { title: string; items: Capability[] };
-  plansBlockTitle: string;
-  plans: Plan[];
-  modelsBlockTitle: string;
-  models: string[];
-  extra: { note: string; bullets: string[] };
+  plansBlockTitle?: string;
+  plans?: Plan[];
+  modelsBlockTitle?: string;
+  models?: string[];
+  extra?: { note: string; bullets: string[] };
   corporate?: {
     title: string;
     subtitle?: string;
@@ -77,10 +77,9 @@ const content: Content = {
     brand: 'Aporto',
     nav: [
       { label: 'О проекте', href: '#about' },
-      { label: 'Тарифы', href: '#pricing' },
       { label: 'Вопросы', href: '#faq' },
       { label: 'Поддержка', href: '#support' },
-      {
+      /* {
         label: 'Модели',
         children: [
           { label: 'GPT‑изображения', href: '#models' },
@@ -101,20 +100,21 @@ const content: Content = {
           { label: 'Блог Aporto', href: '#blog' },
           { label: 'Наш блог в телеграм', href: '#blog' },
         ],
-      },
+      }, */
     ],
-    loginLabel: 'Вход',
+    loginLabel: 'Войти',
     loginHref: '/login',
-    tryLabel: 'Попробовать бесплатно',
+    tryLabel: 'Регистрация',
     tryHref: '/register',
   },
   hero: {
     eyebrow: 'Sonnet 4.0, Google Gemini, Anthropic, Midjourney и DALL·E 3',
-    title: 'Все лучшие Нейросети на одной платформе',
+    title: 'Бесплатный доступ к нейросетям. Только по приглашениям.',
     subtitle: 'GPT‑5 • GPT‑4 • Claude • Gemini • Qwen • DALL·E 3 • Midjourney',
-    description: '',
-    primaryCta: { label: 'Попробовать бесплатно', href: '#' },
-    secondaryCta: { label: 'Корпоративный тариф', href: '#' },
+    description:
+      'Mari AI — закрытая клубная платформа. Внутри — лучшие модели (GPT‑5, Gemini 2.5, Claude и др.). Вступление по инвайту.',
+    primaryCta: { label: 'Зарегистрироваться', href: '/register' },
+    secondaryCta: { label: 'У меня есть код', href: '/register' },
   },
   capabilities: {
     title: 'Что умеет Чат GPT 5?',
@@ -156,7 +156,7 @@ const content: Content = {
       { title: 'Написание промта для других нейросетей через Чат GPT' },
     ],
   },
-  plansBlockTitle: 'Выберите ваш уровень доступа к ИИ',
+  /* plansBlockTitle: 'Выберите ваш уровень доступа к ИИ',
   plans: [
     {
       id: 'basic',
@@ -200,7 +200,7 @@ const content: Content = {
     'GPT‑изображения',
     'Доступ в API',
     'Преобразование аудио в текст',
-    'OpenAI o1 и o3‑mini',
+    'OpenAI o1 и o3‑мини',
     'OpenAI 4o, 4o‑mini, 3.5',
     'Anthropic Claude',
     'Google Gemini 2.5 Flash',
@@ -218,8 +218,8 @@ const content: Content = {
       'Скрипты для чат‑ботов',
       'Описание товаров для маркетплейсов',
     ],
-  },
-  corporate: {
+  }, */
+  /*  corporate: {
     title: 'Корпоративный тариф',
     subtitle:
       'Доступ к топ‑моделям, единый биллинг, управление пользователями, SLA и поддержка.',
@@ -232,16 +232,24 @@ const content: Content = {
       'SAML/SSO по запросу',
     ],
     cta: { label: 'Оставить заявку', href: '#support' },
-  },
+  }, */
   faqBlockTitle: 'Вопросы',
   faq: [
     {
-      q: 'Как подключиться к корпоративному тарифу?',
-      a: 'Оставьте заявку в разделе "Поддержка" — менеджер свяжется и предложит условия под вашу команду.',
+      q: 'Что такое Aporto?',
+      a: 'Aporto — это закрытая платформа с десятками нейросетей в одном месте: от ChatGPT и Midjourney-аналога до инструментов для анализа данных, генерации видео и аудио. Всё в одном аккаунте, без лишних подписок.',
     },
     {
-      q: 'Можно ли купить доступ к API OpenAI, Anthropic, Midjourney?',
-      a: 'Да, вы можете купить API популярных нейросетей через нас. Условия — на странице: https://aiacademy.me/api',
+      q: 'Почему платформа закрытая?',
+      a: 'Мы ограничиваем количество участников, чтобы сохранить высокое качество работы и стабильность сервиса. Доступ возможен только по личному приглашению (инвайту).',
+    },
+    {
+      q: 'Что такое “инвайт”?',
+      a: 'Инвайт — это уникальное приглашение, которое даёт право зарегистрироваться в Aporto. У каждого пользователя есть ограниченное количество инвайтов для друзей.',
+    },
+    {
+      q: 'Как получить инвайт?',
+      a: 'У знакомого, который уже в клубе, у блогеров/амбассадоров Aporto.',
     },
     {
       q: 'Поддерживаются ли reasoning‑модели (o‑series, DeepSeek R1, Qwen‑32B)?',
@@ -253,15 +261,11 @@ const content: Content = {
     },
     {
       q: 'Что такое OpenAI o4‑mini? Доступна ли модель?',
-      a: 'Да, доступна в старших тарифах. Это специализированная LLM для рассуждений (STEM, логика) с высокой скоростью и низкой задержкой.',
+      a: 'Да, доступна бесплатно. Это специализированная LLM для рассуждений (STEM, логика) с высокой скоростью и низкой задержкой.',
     },
     {
       q: 'В чём преимущества Claude 4.0 Sonnet для кодинга?',
       a: 'Глубокое понимание контекста, высокая продуктивность, расширенный вывод, исправление ошибок и сложный анализ данных.',
-    },
-    {
-      q: 'Чем Claude 4.0 Sonnet отличается от GPT‑4?',
-      a: 'Значительно большее контекстное окно — удобнее для обработки больших объёмов данных и комплексных ответов.',
     },
     {
       q: 'Что за модель QwQ‑32B и кому подойдёт?',
@@ -269,7 +273,7 @@ const content: Content = {
     },
     {
       q: 'Есть ли тестовый период?',
-      a: 'Да, можно попробовать бесплатно. 2 модели доступны для бесплатного исползьования.',
+      a: 'Многие модели доступны бесплатно.',
     },
     {
       q: 'Как работают кредиты и списания?',
@@ -290,14 +294,6 @@ const content: Content = {
     {
       q: 'Как связаться с поддержкой?',
       a: 'Через форму в разделе Поддержка. Также возможны e‑mail и мессенджеры по запросу.',
-    },
-    {
-      q: 'Можно ли выставлять закрывающие документы?',
-      a: 'Да, для юрлиц доступен единый счёт и комплект документов. По запросу — SAML/SSO.',
-    },
-    {
-      q: 'Подходит ли сервис для образовательных учреждений?',
-      a: 'Да, есть льготные условия и дополнительные параметры администрирования по запросу.',
     },
   ],
   contact: {
@@ -325,18 +321,19 @@ const content: Content = {
 export default function AIAcademyDarkEditable() {
   const nav = useMemo(() => content.header.nav, []);
   const [formSuccess, setFormSuccess] = useState(false);
-  const [showPromo, setShowPromo] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Save referral code from ?ref= to localStorage and a cookie
+  // Save referral code from ?ref= to localStorage and a cookie (AI page)
   useEffect(() => {
     try {
-      const code = searchParams?.get('ref') || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('ref') : null);
+      const code =
+        searchParams?.get('ref') ||
+        (typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('ref')
+          : null);
       if (code) {
-        // Persist for client-side flows
         localStorage.setItem('referralCode', code);
-        // Also set a cookie for server-side access if needed
         document.cookie = `referralCode=${encodeURIComponent(code)}; path=/; max-age=2592000; samesite=lax`;
       }
     } catch (_) {
@@ -423,56 +420,6 @@ export default function AIAcademyDarkEditable() {
         </div>
       </header>
 
-      {showPromo && (
-        <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
-          <div className="relative max-w-2xl w-full">
-            {/* Glow background */}
-            <div className="pointer-events-none absolute inset-0 -z-10 rounded-2xl bg-gradient-to-r from-indigo-500/35 via-fuchsia-500/25 to-cyan-500/35 blur-xl opacity-80" />
-            <button
-              type="button"
-              onClick={() => router.push('/register')}
-              className="w-full text-left rounded-2xl border border-white/15 bg-[#0f1016]/70 backdrop-blur-xl p-4 text-sm text-neutral-100 shadow-xl shadow-indigo-900/20 hover:bg-[#141622]/75 transition-colors pr-10 ring-1 ring-white/10"
-            >
-              <span className="font-medium">Бонус до 40000 рублей</span> при
-              регистрации сегодня.
-              <Link
-                href="/invite"
-                onClick={(e) => e.stopPropagation()}
-                className="ml-2 underline text-neutral-300 hover:text-white"
-              >
-                Условия акции
-              </Link>
-              <span className="sr-only">Перейти к регистрации</span>
-            </button>
-
-            <button
-              type="button"
-              aria-label="Закрыть"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowPromo(false);
-              }}
-              className="absolute right-2 top-2 inline-flex size-7 items-center justify-center rounded-md text-neutral-300 hover:text-white hover:bg-white/10"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="size-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
       <main className="relative">
         {/* Hero */}
         <section id="about" className="px-6">
@@ -551,71 +498,75 @@ export default function AIAcademyDarkEditable() {
         {/* Models removed as requested */}
 
         {/* Plans */}
-        <section id="pricing" className="px-6 py-12">
-          <div className="max-w-7xl mx-auto">
-            <h2 className="text-3xl font-bold text-white mb-6 text-center">
-              {content.plansBlockTitle}
-            </h2>
-            {/* Plan tabs removed; titles moved into cards */}
+        {content.plans && content.plans.length > 0 && (
+          <section id="pricing" className="px-6 py-12">
+            <div className="max-w-7xl mx-auto">
+              <h2 className="text-3xl font-bold text-white mb-6 text-center">
+                {content.plansBlockTitle ?? 'Тарифы'}
+              </h2>
+              {/* Plan tabs removed; titles moved into cards */}
 
-            <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto justify-items-center">
-              {content.plans.map((p) => (
-                <div
-                  key={`plan-${p.id}`}
-                  className={`rounded-3xl border p-8 bg-white/[0.04] hover:bg-white/[0.06] transition-all duration-200 hover:scale-[1.02] ${
-                    p.popular
-                      ? 'border-green-500 shadow-lg shadow-green-500/20'
-                      : 'border-white/10'
-                  }`}
-                >
-                  <div className="text-xl font-semibold text-white mb-2">
-                    {p.title}
-                  </div>
-                  <div className="text-neutral-300 mb-2">{p.credits}</div>
-                  <div className="text-3xl font-bold text-white">{p.price}</div>
-                  {p.pricePer && (
-                    <div className="text-sm text-neutral-400 mt-1">
-                      {p.pricePer}
-                    </div>
-                  )}
-                  {/* priceNote перенесен внутрь кнопки */}
-
-                  <div className="mt-6 space-y-2">
-                    {p.badges.map((b) => (
-                      <div
-                        key={`badge-${p.id}-${b}`}
-                        className="rounded-xl border border-white/10 bg-[#0f1016]/80 px-3 py-2 text-sm text-neutral-200"
-                      >
-                        {b}
-                      </div>
-                    ))}
-                  </div>
-
-                  <ul className="mt-6 space-y-2 text-neutral-300">
-                    {p.features.map((f) => (
-                      <li key={`feat-${p.id}-${f}`} className="flex gap-2">
-                        <span className="text-indigo-400">✓</span>
-                        <span className="capitalize">{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Link
-                    href={p.cta.href}
-                    className="mt-8 inline-block rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-5 py-3 text-sm shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
+              <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto justify-items-center">
+                {content.plans.map((p) => (
+                  <div
+                    key={`plan-${p.id}`}
+                    className={`rounded-3xl border p-8 bg-white/[0.04] hover:bg-white/[0.06] transition-all duration-200 hover:scale-[1.02] ${
+                      p.popular
+                        ? 'border-green-500 shadow-lg shadow-green-500/20'
+                        : 'border-white/10'
+                    }`}
                   >
-                    <span className="block">{p.cta.label}</span>
-                    {p.priceNote && (
-                      <span className="block text-[11px] leading-tight text-white/80 mt-1">
-                        {p.priceNote}
-                      </span>
+                    <div className="text-xl font-semibold text-white mb-2">
+                      {p.title}
+                    </div>
+                    <div className="text-neutral-300 mb-2">{p.credits}</div>
+                    <div className="text-3xl font-bold text-white">
+                      {p.price}
+                    </div>
+                    {p.pricePer && (
+                      <div className="text-sm text-neutral-400 mt-1">
+                        {p.pricePer}
+                      </div>
                     )}
-                  </Link>
-                </div>
-              ))}
+                    {/* priceNote перенесен внутрь кнопки */}
+
+                    <div className="mt-6 space-y-2">
+                      {p.badges.map((b) => (
+                        <div
+                          key={`badge-${p.id}-${b}`}
+                          className="rounded-xl border border-white/10 bg-[#0f1016]/80 px-3 py-2 text-sm text-neutral-200"
+                        >
+                          {b}
+                        </div>
+                      ))}
+                    </div>
+
+                    <ul className="mt-6 space-y-2 text-neutral-300">
+                      {p.features.map((f) => (
+                        <li key={`feat-${p.id}-${f}`} className="flex gap-2">
+                          <span className="text-indigo-400">✓</span>
+                          <span className="capitalize">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Link
+                      href={p.cta.href}
+                      className="mt-8 inline-block rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-5 py-3 text-sm shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
+                    >
+                      <span className="block">{p.cta.label}</span>
+                      {p.priceNote && (
+                        <span className="block text-[11px] leading-tight text-white/80 mt-1">
+                          {p.priceNote}
+                        </span>
+                      )}
+                    </Link>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Corporate */}
         {content.corporate && (

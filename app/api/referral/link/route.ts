@@ -10,7 +10,7 @@ export async function GET() {
 
   const referralCode = await getUserReferralCode(session.user.id);
   // Исправляем ссылку - она должна вести на /main с реферальным кодом
-  const referralLink = `https://aporto.tech/main?ref=${referralCode}`;
+  const referralLink = `https://aporto.tech/ai?ref=${referralCode}`;
 
   return Response.json({ referralLink });
 }

@@ -28,6 +28,7 @@ import {
   type Chat,
   stream,
   demo, // Add this import
+  invites,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -42,6 +43,90 @@ import { ChatSDKError } from '../errors';
 // biome-ignore lint: Forbidden non-null assertion.
 const client = postgres(process.env.POSTGRES_URL!);
 export const db = drizzle(client);
+
+// ===================== INVITES =====================
+// Create or return invite entry using user's existing referral_code
+export async function createInvite(
+  ownerUserId: string,
+  availableCount = 4,
+) {
+  try {
+    // ensure user has referral_code
+    const referralCode = await getUserReferralCode(ownerUserId);
+
+    // if invite already exists for this owner, return it
+    const existing = await db
+      .select()
+      .from(invites)
+      .where(and(eq(invites.owner_user_id, ownerUserId), eq(invites.code, referralCode)))
+      .limit(1);
+    if (existing.length > 0) {
+      return existing[0];
+    }
+
+    const [created] = await db
+      .insert(invites)
+      .values({
+        code: referralCode,
+        owner_user_id: ownerUserId,
+        available_count: availableCount,
+        used_count: 0,
+      } as any)
+      .returning({
+        id: invites.id,
+        code: invites.code,
+        available_count: invites.available_count,
+        used_count: invites.used_count,
+        created_at: invites.created_at,
+      });
+    return created;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database');
+  }
+}
+
+export async function listInvitesByOwner(ownerUserId: string) {
+  try {
+    return await db
+      .select()
+      .from(invites)
+      .where(eq(invites.owner_user_id, ownerUserId))
+      .orderBy(desc(invites.created_at));
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database');
+  }
+}
+
+export async function getInviteByCode(code: string) {
+  try {
+    const [inv] = await db
+      .select()
+      .from(invites)
+      .where(eq(invites.code, code))
+      .limit(1);
+    return inv;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database');
+  }
+}
+
+export async function markInviteUsed(code: string) {
+  try {
+    const inv = await getInviteByCode(code);
+    if (!inv) return null;
+    if ((inv.used_count || 0) >= (inv.available_count || 0)) {
+      return inv; // no change if exhausted
+    }
+    const [updated] = await db
+      .update(invites)
+      .set({ used_count: (inv.used_count || 0) + 1 } as any)
+      .where(eq(invites.code, code))
+      .returning();
+    return updated;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database');
+  }
+}
 
 export async function getUser(email: string): Promise<Array<User>> {
   try {
