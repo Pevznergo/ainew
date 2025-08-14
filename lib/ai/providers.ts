@@ -27,15 +27,21 @@ export const deepseekProvider = deepseek;
 export const xaiProvider = xai;
 export const openrouterProvider = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY || '',
+  baseURL: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
+  headers: {
+    'HTTP-Referer': process.env.OPENROUTER_SITE_URL || process.env.APP_ORIGIN || '',
+    'X-Title': process.env.OPENROUTER_APP_NAME || 'Ainew',
+  },
 });
 
 export function getProviderByModelId(modelId: string) {
+  // Любая namespaced-модель (vendor/model) идёт через OpenRouter
+  if (modelId.includes('/')) return openrouterProvider.chat(modelId);
   if (modelId.startsWith('gpt-')) return openai;
   if (modelId.startsWith('claude-')) return anthropic;
   if (modelId.startsWith('gemini-')) return google;
   if (modelId.startsWith('deepseek-')) return deepseek;
   if (modelId.startsWith('grok-')) return xai;
-  if (modelId.startsWith('x-ai/')) return openrouterProvider.chat(modelId);
 
   // Для моделей изображений
   if (modelId === 'gpt_image_2022-09-12' || modelId === 'dalle3') return openai;
@@ -47,12 +53,12 @@ export function getProviderByModelId(modelId: string) {
 
 // Отдельная функция для артефактов, которая всегда возвращает LanguageModelV2
 export function getArtifactModel(modelId: string) {
+  if (modelId.includes('/')) return openrouterProvider.chat(modelId);
   if (modelId.startsWith('gpt-')) return openai.languageModel(modelId);
   if (modelId.startsWith('claude-')) return anthropic.languageModel(modelId);
   if (modelId.startsWith('gemini-')) return google.languageModel(modelId);
   if (modelId.startsWith('deepseek-')) return deepseek.languageModel(modelId);
   if (modelId.startsWith('grok-')) return xai.languageModel(modelId);
-  if (modelId.startsWith('x-ai/')) return openrouterProvider.chat(modelId);
 
   // Для моделей изображений
   if (modelId === 'gpt_image_2022-09-12' || modelId === 'dalle3')

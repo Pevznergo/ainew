@@ -42,6 +42,7 @@ import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { anthropic } from '@ai-sdk/anthropic';
 import { google } from '@ai-sdk/google';
 import { xai } from '@ai-sdk/xai';
@@ -55,12 +56,37 @@ import type { User } from '@/lib/db/schema';
 const openaiDirect = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
 });
-const openaiOR = createOpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY || '',
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY || '',
   baseURL: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
+  headers: {
+    'HTTP-Referer': process.env.OPENROUTER_SITE_URL || process.env.APP_ORIGIN || '',
+    'X-Title': process.env.OPENROUTER_APP_NAME || 'Ainew',
+  },
 });
 
 function getProviderByModelId(modelId: string) {
+  // Any OpenRouter vendor-namespaced id should go to OpenRouter
+  if (modelId.includes('/')) {
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error('OpenRouter API key is required for namespaced models');
+    }
+    console.log('[ProviderSelect] Using OpenRouter (namespaced):', modelId);
+    return openrouter(modelId);
+  }
+  // Route GPT-5 family through OpenRouter (OpenRouter-style ids)
+  if (
+    modelId === 'openai/gpt-5-mini' ||
+    modelId === 'openai/gpt-5-chat' ||
+    modelId.startsWith('openai/gpt-5')
+  ) {
+    const hasOpenRouter = !!process.env.OPENROUTER_API_KEY;
+    if (!hasOpenRouter) {
+      throw new Error('OpenRouter API key is required for GPT-5 models');
+    }
+    console.log('[ProviderSelect] Using OpenRouter for model:', modelId);
+    return openrouter(modelId);
+  }
   // Prefer direct OpenAI for OpenAI-family models when available
   if (
     modelId.startsWith('gpt-') ||
@@ -71,7 +97,7 @@ function getProviderByModelId(modelId: string) {
     const hasOpenAI = !!process.env.OPENAI_API_KEY;
     const hasOpenRouter = !!process.env.OPENROUTER_API_KEY;
     if (hasOpenAI) return openaiDirect(modelId);
-    if (hasOpenRouter) return openaiOR(modelId);
+    if (hasOpenRouter) return openrouter(modelId);
     throw new Error('No API key available for OpenAI models');
   }
   if (modelId.startsWith('claude-sonnet-4-20250514')) return anthropic(modelId);
@@ -86,7 +112,7 @@ function getProviderByModelId(modelId: string) {
 
   // Для моделей изображений
   if (modelId === 'gpt_image_2022-09-12' || modelId === 'dalle3')
-    return openaiOR(modelId);
+    return openrouter(modelId);
   if (modelId === 'flux_1.1_pro')
     throw new Error('Unsupported model without OpenRouter provider: flux_1.1_pro');
   if (modelId === 'midjourney')
@@ -166,6 +192,20 @@ export async function POST(request: Request) {
     const debugRaw = url.searchParams.get('raw') === '1';
     const body = await request.json();
     console.log('Request body:', body);
+
+    // Validate OpenRouter availability for namespaced models
+    if (selectedChatModel.includes('/')) {
+      if (!process.env.OPENROUTER_API_KEY) {
+        return new Response(
+          JSON.stringify({
+            error: 'OpenRouter not configured',
+            message:
+              'Для выбранной модели требуется OPENROUTER_API_KEY. Установите ключ и повторите запрос.',
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+    }
 
     // useChat отправляет { messages, id }
     const { messages, id } = body;
@@ -427,6 +467,8 @@ export async function POST(request: Request) {
       if (readable) return new Response(readable as ReadableStream);
       // Fallback to UI stream if no helper available
     }
+
+    // For OpenRouter namespaced models, use the unified UI stream merge below
 
     const stream = createUIMessageStream({
       execute: async (messageStream) => {

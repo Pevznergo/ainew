@@ -29,16 +29,41 @@ export const chatModels: ChatModel[] = [
     description: 'Самая популярная модель от OpenAI',
   },
   {
-    id: 'gpt-5-mini',
-    name: 'GPT-5 Mini (5 токенов/запрос)',
-    cost: 5, // Added cost field
+    id: 'openai/gpt-5-mini',
+    name: 'GPT-5 Mini (бесплатно)',
+    cost: 0,
     description: 'Быстрая, компактная, умная, гибкая, разговорная.',
   },
   {
-    id: 'gpt-5-chat',
+    id: 'openai/gpt-5-chat',
     name: 'GPT-5 Chat (60 токенов/запрос)',
     cost: 60, // Added cost field
     description: 'Мощная, контекстная, точная, адаптивная.',
+  },
+  // OpenRouter community models (бесплатно)
+  {
+    id: 'qwen/qwen3-235b-a22b-2507',
+    name: 'Qwen3 235B (бесплатно)',
+    cost: 0,
+    description: 'Qwen3 235B — мощная модель от Qwen.',
+  },
+  {
+    id: 'z-ai/glm-4.5-air:free',
+    name: 'GLM-4.5 Air (бесплатно)',
+    cost: 0,
+    description: 'GLM-4.5 Air — бесплатная модель Zhipu AI.',
+  },
+  {
+    id: 'mistralai/mistral-medium-3.1',
+    name: 'Mistral Medium 3.1 (бесплатно)',
+    cost: 0,
+    description: 'Средняя модель от Mistral AI, доступна.',
+  },
+  {
+    id: 'minimax/minimax-m1',
+    name: 'MiniMax M1 (бесплатно)',
+    cost: 0,
+    description: 'MiniMax M1 — бесплатная модель.',
   },
   {
     id: 'o3-2025-04-16',

@@ -9,7 +9,6 @@ import { twMerge } from 'tailwind-merge';
 import type { DBMessage, Document } from '@/lib/db/schema';
 import { ChatSDKError, type ErrorCode } from './errors';
 import type { ChatMessage, CustomUIDataTypes } from './types';
-import { formatISO } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -98,14 +97,33 @@ export function sanitizeText(text: string) {
 }
 
 export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
-  return messages.map((message) => ({
-    id: message.id,
-    role: message.role as 'user' | 'assistant' | 'system',
-    parts: message.parts as UIMessagePart<CustomUIDataTypes, any>[],
-    metadata: {
-      createdAt: formatISO(message.createdAt),
-    },
-  }));
+  return messages.map((message) => {
+    const rawCreatedAt: any = (message as any)?.createdAt;
+    let date: Date;
+    if (rawCreatedAt instanceof Date) {
+      date = rawCreatedAt;
+    } else if (typeof rawCreatedAt === 'string' || typeof rawCreatedAt === 'number') {
+      const d = new Date(rawCreatedAt);
+      date = Number.isNaN(d.getTime()) ? new Date() : d;
+    } else {
+      date = new Date();
+    }
+
+    return {
+      id: message.id,
+      role: message.role as 'user' | 'assistant' | 'system',
+      parts: message.parts as UIMessagePart<CustomUIDataTypes, any>[],
+      metadata: {
+        createdAt: (() => {
+          try {
+            return date.toISOString();
+          } catch {
+            return new Date().toISOString();
+          }
+        })(),
+      },
+    };
+  });
 }
 
 export function convertToModelMessages(messages: ChatMessage[]) {

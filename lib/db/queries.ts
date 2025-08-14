@@ -400,7 +400,7 @@ export async function saveMessages({
       text?: string;
       imageUrl?: string;
     }>;
-    createdAt: Date;
+    createdAt?: Date | string | number;
     attachments: Array<{
       type: 'image' | 'file';
       url: string;
@@ -412,14 +412,26 @@ export async function saveMessages({
   try {
     console.log('Saving messages:', messages.length);
 
-    const messagesToInsert = messages.map((message) => ({
-      id: message.id,
-      role: message.role,
-      parts: message.parts,
-      createdAt: message.createdAt,
-      attachments: message.attachments,
-      chatId: message.chatId,
-    }));
+    const messagesToInsert = messages.map((message) => {
+      const raw = (message as any).createdAt;
+      let createdAt: Date | undefined;
+      if (raw instanceof Date) createdAt = raw;
+      else if (typeof raw === 'string' || typeof raw === 'number') {
+        const d = new Date(raw);
+        createdAt = Number.isNaN(d.getTime()) ? new Date() : d;
+      } else {
+        createdAt = new Date();
+      }
+
+      return {
+        id: message.id,
+        role: message.role,
+        parts: message.parts,
+        createdAt,
+        attachments: message.attachments,
+        chatId: message.chatId,
+      };
+    });
 
     console.log('Messages to insert:', messagesToInsert);
 
