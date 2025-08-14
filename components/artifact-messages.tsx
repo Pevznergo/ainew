@@ -3,18 +3,21 @@ import type { Vote } from '@/lib/db/schema';
 import { memo } from 'react';
 import equal from 'fast-deep-equal';
 import type { UIArtifact } from './artifact';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import { motion } from 'framer-motion';
 import { useMessages } from '@/hooks/use-messages';
 import type { ChatMessage } from '@/lib/types';
 
 interface ArtifactMessagesProps {
   chatId: string;
-  status: UseChatHelpers<ChatMessage>['status'];
+  status: 'submitted' | 'streaming' | 'ready' | 'error';
   votes: Array<Vote> | undefined;
   messages: ChatMessage[];
-  setMessages: UseChatHelpers<ChatMessage>['setMessages'];
-  reload: UseChatHelpers<ChatMessage>['reload'];
+  setMessages: (
+    updater:
+      | ChatMessage[]
+      | ((prev: ChatMessage[]) => ChatMessage[]),
+  ) => void;
+  reload: () => void;
   isReadonly: boolean;
   artifactStatus: UIArtifact['status'];
 }

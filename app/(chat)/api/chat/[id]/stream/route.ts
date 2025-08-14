@@ -94,7 +94,7 @@ export async function GET(
 
     const restoredStream = createUIMessageStream({
       execute: (messageStream) => {
-        messageStream.write({
+        messageStream.writer.write({
           type: 'data-appendMessage',
           data: JSON.stringify(mostRecentMessage),
         });

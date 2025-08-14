@@ -20,7 +20,7 @@ export const requestSuggestions = ({
   session,
   dataStream,
 }: RequestSuggestionsProps) =>
-  tool({
+  (tool as any)({
     description: 'Request suggestions for a document',
     parameters: z.object({
       // Changed from inputSchema

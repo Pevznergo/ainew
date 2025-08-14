@@ -3,7 +3,7 @@ import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
-import { DocumentToolCall, DocumentToolResult } from './document';
+import { DocumentToolCall } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';
 import { Markdown } from './markdown';
 import { MessageActions } from './message-actions';
@@ -16,7 +16,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
 
@@ -37,15 +36,35 @@ const PurePreviewMessage = ({
   message: ChatMessage;
   vote: Vote | undefined;
   isLoading: boolean;
-  setMessages: UseChatHelpers<ChatMessage>['setMessages'];
-  reload: UseChatHelpers<ChatMessage>['reload'];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  reload: () => void;
   isReadonly: boolean;
   requiresScrollPadding: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
-  const attachmentsFromMessage = message.parts.filter(
-    (part) => part.type === 'file',
+  // Derive parts from content blocks if not present
+  const parts: any[] = Array.isArray((message as any)?.parts)
+    ? ((message as any).parts as any[])
+    : Array.isArray((message as any)?.content)
+      ? ((message as any).content as any[])
+          .map((b: any) => {
+            if (!b) return null;
+            if (b.type === 'text' && typeof b.text === 'string') {
+              return { type: 'text', text: b.text };
+            }
+            if (b.type === 'image' && typeof b.image === 'string') {
+              return { type: 'image', url: b.image, mediaType: 'image/*' };
+            }
+            return null;
+          })
+          .filter(Boolean)
+      : typeof (message as any)?.content === 'string' && (message as any).content.length > 0
+        ? [{ type: 'text', text: (message as any).content }]
+        : [];
+
+  const attachmentsFromMessage = parts.filter(
+    (part: any) => part.type === 'file' || part.type === 'image',
   );
 
   useDataStream();
@@ -99,7 +118,7 @@ const PurePreviewMessage = ({
               </div>
             )}
 
-            {message.parts?.map((part, index) => {
+            {parts.map((part: any, index: number) => {
               const { type } = part;
               const key = `message-${message.id}-part-${index}`;
 
@@ -111,6 +130,11 @@ const PurePreviewMessage = ({
                     reasoning={part.text}
                   />
                 );
+              }
+
+              // Skip rendering image parts here since they are shown as attachments above
+              if (type === 'image') {
+                return null;
               }
 
               if (type === 'text') {

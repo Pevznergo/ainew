@@ -1,16 +1,19 @@
 export function getResponseChunksByPrompt(
-  prompt: string,
-  includeReasoningStep?: boolean,
-): Array<{ type: string; text: string }> {
-  // Mock implementation for testing
-  const baseChunks = [{ type: 'text', text: `Response to: ${prompt}` }];
+  prompt: unknown,
+  _includeReasoningStep?: boolean,
+): any[] {
+  const promptText =
+    typeof prompt === 'string' ? prompt : JSON.stringify(prompt ?? '');
 
-  if (includeReasoningStep) {
-    return [
-      { type: 'reasoning', text: 'Thinking about the response...' },
-      ...baseChunks,
-    ];
-  }
-
-  return baseChunks;
+  // Return a minimal valid LanguageModelV2 stream sequence
+  return [
+    { id: '1', type: 'text-start' },
+    { id: '1', type: 'text-delta', delta: `Response to: ${promptText}` },
+    { id: '1', type: 'text-end' },
+    {
+      type: 'finish',
+      finishReason: 'stop',
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+    },
+  ];
 }

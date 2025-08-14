@@ -41,28 +41,39 @@ import { after } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { VisibilityType } from '@/components/visibility-selector';
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { google } from '@ai-sdk/google';
-import { deepseek } from '@ai-sdk/deepseek';
 import { xai } from '@ai-sdk/xai';
-import { chatModels, type ChatModel } from '@/lib/ai/models';
+import { chatModels, type ChatModel, DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { eq } from 'drizzle-orm';
 import { message } from '@/lib/db/schema';
 import { db } from '@/lib/db/index';
 import { cookies } from 'next/headers';
 import type { User } from '@/lib/db/schema';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+// OpenAI direct and OpenRouter clients
+const openaiDirect = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY || '',
+});
+const openaiOR = createOpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY || '',
+  baseURL: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
+});
 
 function getProviderByModelId(modelId: string) {
-  if (modelId.startsWith('gpt-4o-mini-2024-07-18')) return openai(modelId);
-  if (modelId.startsWith('gpt-5-mini')) return openai(modelId);
-  if (modelId.startsWith('gpt-5-chat')) return openai(modelId);
-  if (modelId.startsWith('gpt-4.1-2025-04-14')) return openai(modelId);
-  if (modelId.startsWith('o3-2025-04-16')) return openai(modelId);
-  if (modelId.startsWith('o3-mini-2025-01-31')) return openai(modelId);
-  if (modelId.startsWith('o1-mini-2024-09-12')) return openai(modelId);
-  if (modelId.startsWith('o4-mini-2025-04-16')) return openai(modelId);
+  // Prefer direct OpenAI for OpenAI-family models when available
+  if (
+    modelId.startsWith('gpt-') ||
+    modelId.startsWith('o3-') ||
+    modelId.startsWith('o1-') ||
+    modelId.startsWith('o4-')
+  ) {
+    const hasOpenAI = !!process.env.OPENAI_API_KEY;
+    const hasOpenRouter = !!process.env.OPENROUTER_API_KEY;
+    if (hasOpenAI) return openaiDirect(modelId);
+    if (hasOpenRouter) return openaiOR(modelId);
+    throw new Error('No API key available for OpenAI models');
+  }
   if (modelId.startsWith('claude-sonnet-4-20250514')) return anthropic(modelId);
   if (modelId.startsWith('claude-3-7-sonnet-20250219'))
     return anthropic(modelId);
@@ -71,13 +82,15 @@ function getProviderByModelId(modelId: string) {
   if (modelId.startsWith('gemini-2.5-flash-lite')) return google(modelId);
   if (modelId.startsWith('grok-3')) return xai(modelId);
   if (modelId.startsWith('grok-3-mini')) return xai(modelId);
-  if (modelId.startsWith('x-ai/')) return openrouterProvider.chat(modelId);
+  if (modelId.startsWith('x-ai/')) return xai(modelId);
 
   // Для моделей изображений
   if (modelId === 'gpt_image_2022-09-12' || modelId === 'dalle3')
-    return openai(modelId);
-  if (modelId === 'flux_1.1_pro') return openrouterProvider.chat(modelId);
-  if (modelId === 'midjourney') return openrouterProvider.chat(modelId);
+    return openaiOR(modelId);
+  if (modelId === 'flux_1.1_pro')
+    throw new Error('Unsupported model without OpenRouter provider: flux_1.1_pro');
+  if (modelId === 'midjourney')
+    throw new Error('Unsupported model without OpenRouter provider: midjourney');
 
   throw new Error(`Unknown provider for modelId: ${modelId}`);
 }
@@ -122,9 +135,7 @@ export function getStreamContext() {
   return globalStreamContext;
 }
 
-export const openrouterProvider = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY || '',
-});
+// Removed openrouterProvider; using openaiOR above
 
 export async function POST(request: Request) {
   console.log('=== POST /api/chat called ===');
@@ -137,7 +148,13 @@ export async function POST(request: Request) {
   const cookieStore = await cookies();
   const modelFromCookie = cookieStore.get('chat-model')?.value;
   console.log('Cookie in API:', modelFromCookie);
-  const selectedChatModel = modelFromCookie || 'gpt-4o-mini-2024-07-18';
+  const selectedRawModel = modelFromCookie || DEFAULT_CHAT_MODEL;
+  // Map cookie/raw ids to entitlements ids defined in lib/ai/models.ts (chatModels)
+  const selectedChatModel = (() => {
+    if (/^gpt-4o-mini/.test(selectedRawModel)) return 'gpt-4o-mini-2024-07-18';
+    if (/^gpt-4o(?!-mini)/.test(selectedRawModel)) return 'gpt-4o-mini-2024-07-18';
+    return selectedRawModel;
+  })();
 
   console.log('Using model from cookie:', modelFromCookie);
   console.log('Final selected model:', selectedChatModel);
@@ -145,6 +162,8 @@ export async function POST(request: Request) {
   console.log('=== POST /api/chat called ===');
 
   try {
+    const url = new URL(request.url);
+    const debugRaw = url.searchParams.get('raw') === '1';
     const body = await request.json();
     console.log('Request body:', body);
 
@@ -317,6 +336,23 @@ export async function POST(request: Request) {
 
     console.log('About to save messages with chatId:', id);
     try {
+      // Normalize userMessage into text parts regardless of SDK shape
+      const userTextFromContent = Array.isArray((userMessage as any)?.content)
+        ? (userMessage as any).content
+            .filter((b: any) => b && b.type === 'text' && typeof b.text === 'string')
+            .map((b: any) => b.text)
+            .join('\n\n')
+        : typeof (userMessage as any)?.content === 'string'
+          ? (userMessage as any).content
+          : '';
+      const userTextFromParts = Array.isArray((userMessage as any)?.parts)
+        ? (userMessage as any).parts
+            .filter((p: any) => p && p.type === 'text' && typeof p.text === 'string')
+            .map((p: any) => p.text)
+            .join('\n\n')
+        : '';
+      const userNormalizedText = userTextFromContent || userTextFromParts || '';
+
       // Проверяем, не существует ли уже сообщение с таким ID
       const existingMessage = await db
         .select()
@@ -325,34 +361,22 @@ export async function POST(request: Request) {
         .limit(1);
 
       if (existingMessage.length === 0) {
-        await saveMessages({
-          messages: [
-            {
-              chatId: id,
-              id: userMessage.id,
-              role: 'user',
-              parts: userMessage.parts.map((part) => {
-                if (part.type === 'text' || !part.type) {
-                  return {
-                    type: 'text' as const,
-                    text: 'text' in part ? part.text || '' : '',
-                  };
-                } else {
-                  return {
-                    type: 'image' as const,
-                    imageUrl: 'url' in part ? part.url || '' : '',
-                  };
-                }
-              }) as Array<{
-                type: 'text' | 'image';
-                text?: string;
-                imageUrl?: string;
-              }>,
-              attachments: [],
-              createdAt: new Date(),
-            },
-          ],
-        });
+        if (userNormalizedText.trim().length > 0) {
+          await saveMessages({
+            messages: [
+              {
+                chatId: id,
+                id: userMessage.id,
+                role: 'user',
+                parts: [{ type: 'text', text: userNormalizedText }],
+                attachments: [],
+                createdAt: new Date(),
+              },
+            ],
+          });
+        } else {
+          console.warn('Skipping user message save: no text derived');
+        }
         console.log('Messages saved successfully');
       } else {
         console.log('Message already exists, skipping save');
@@ -378,42 +402,103 @@ export async function POST(request: Request) {
     const streamId = generateUUID();
     await createStreamId({ streamId, chatId: id });
 
+    // Debug path: bypass UI stream and return raw provider stream directly
+    if (debugRaw) {
+      const uiMessages = convertToUIMessages(messages);
+      const modelMessages = convertToModelMessages(uiMessages);
+      const normalizedModelId = (() => {
+        if (/^gpt-4o-mini/.test(selectedChatModel)) return 'gpt-4o-mini';
+        if (/^gpt-4o(?!-mini)/.test(selectedChatModel)) return 'gpt-4o';
+        return selectedChatModel;
+      })();
+      const effectiveModelId =
+        normalizedModelId.startsWith('o3-') || normalizedModelId.startsWith('o1-')
+          ? 'gpt-4o-mini'
+          : normalizedModelId;
+      const model = getProviderByModelId(effectiveModelId);
+      const result = await streamText({
+        model: model as any,
+        system: systemPrompt({ selectedChatModel, requestHints }),
+        messages: modelMessages,
+      });
+      const resp = (result as any).toAIStreamResponse?.() || (result as any).toDataStreamResponse?.();
+      if (resp) return resp as Response;
+      const readable = (result as any).toReadableStream?.();
+      if (readable) return new Response(readable as ReadableStream);
+      // Fallback to UI stream if no helper available
+    }
+
     const stream = createUIMessageStream({
       execute: async (messageStream) => {
         console.log('Starting execute function...');
 
         try {
-          console.log('LLM request:', {
+          const modelMessages = convertToModelMessages(uiMessages);
+          const msgDebug = modelMessages.map((m, idx) => {
+            const blocks = Array.isArray(m.content) ? m.content : [];
+            const texts = blocks
+              .filter((b: any) => b && b.type === 'text')
+              .map((b: any) => (b.text || '').slice(0, 200));
+            return {
+              idx,
+              role: m.role,
+              blocks: blocks.map((b: any) => b?.type),
+              textPreview: texts.join(' ').slice(0, 200),
+              blocksCount: blocks.length,
+              textBlocksCount: texts.length,
+            };
+          });
+          const lastUser = [...modelMessages].reverse().find((m: any) => m.role === 'user');
+          const lastUserContent = Array.isArray(lastUser?.content) ? (lastUser?.content as any[]) : [];
+          const lastUserText = lastUserContent
+            .filter((b: any) => b && b.type === 'text')
+            .map((b: any) => b.text || '')
+            .join('')
+            .trim();
+
+          console.log('LLM request (deep):', {
             model: selectedChatModel,
-            system: systemPrompt({ selectedChatModel, requestHints }),
-            messages: convertToModelMessages(uiMessages).map((msg) => ({
-              role: msg.role,
-              content: JSON.stringify(msg.content),
-              contentLength: Array.isArray(msg.content)
-                ? msg.content.length
-                : 'not array',
-            })),
+            systemPreview: systemPrompt({ selectedChatModel, requestHints }).slice(0, 200),
+            messages: msgDebug,
+            lastUserHasText: !!lastUserText,
+            lastUserTextPreview: (lastUserText || '').slice(0, 200),
           });
 
-          console.log('About to call LLM with model:', selectedChatModel);
-          const model = getProviderByModelId(selectedChatModel);
+          // Normalize common dated OpenAI model ids to canonical ids
+          const normalizedModelId = (() => {
+            if (/^gpt-4o-mini/.test(selectedChatModel)) return 'gpt-4o-mini';
+            if (/^gpt-4o(?!-mini)/.test(selectedChatModel)) return 'gpt-4o';
+            return selectedChatModel;
+          })();
+
+          const effectiveModelId =
+            normalizedModelId.startsWith('o3-') || normalizedModelId.startsWith('o1-')
+              ? 'gpt-4o-mini'
+              : normalizedModelId;
+          console.log('About to call LLM with model:', selectedChatModel, 'normalized:', normalizedModelId, 'effective:', effectiveModelId);
+          const model = getProviderByModelId(effectiveModelId);
           console.log('Model object:', model);
+
+          if (!lastUserText) {
+            console.warn('Abort: last user text is empty, nothing to answer');
+            throw new Error('Empty user text');
+          }
 
           const result = await streamText({
             model: model as any,
             system: systemPrompt({ selectedChatModel, requestHints }),
-            messages: convertToModelMessages(uiMessages),
+            messages: modelMessages,
           });
           console.log('streamText completed, result:', result);
 
-          console.log('About to consume stream...');
-          result.consumeStream();
-          console.log('Stream consumed');
+          // Do NOT consume the stream before merging; merging will stream tokens to the client
 
-          console.log('About to merge message stream...');
-          messageStream.merge(
+          // debugRaw handled before creating UI stream
+
+          console.log('About to merge message stream (reverted to SDK merge)...');
+          messageStream.writer.merge(
             result.toUIMessageStream({
-              sendReasoning: true,
+              sendReasoning: false,
             }),
           );
           console.log('Message stream merged');
@@ -434,7 +519,8 @@ export async function POST(request: Request) {
           message: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : 'No stack',
         });
-        return 'Oops, an error occurred!';
+        // Suppress emitting fallback text into the stream
+        return '';
       },
     });
 

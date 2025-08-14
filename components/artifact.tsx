@@ -25,7 +25,6 @@ import { codeArtifact } from '@/artifacts/code/client';
 import { sheetArtifact } from '@/artifacts/sheet/client';
 import { textArtifact } from '@/artifacts/text/client';
 import equal from 'fast-deep-equal';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
 
@@ -71,15 +70,17 @@ function PureArtifact({
   chatId: string;
   input: string;
   setInput: Dispatch<SetStateAction<string>>;
-  status: UseChatHelpers<ChatMessage>['status'];
-  stop: UseChatHelpers<ChatMessage>['stop'];
+  status: 'submitted' | 'streaming' | 'ready' | 'error';
+  stop: () => void;
   attachments: Attachment[];
   setAttachments: Dispatch<SetStateAction<Attachment[]>>;
   messages: ChatMessage[];
-  setMessages: UseChatHelpers<any>['setMessages']; // This should match the actual type
+  setMessages: (
+    updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[]),
+  ) => void;
   votes: Array<Vote> | undefined;
-  append: UseChatHelpers<ChatMessage>['append'];
-  reload: UseChatHelpers<ChatMessage>['reload'];
+  append: (message: any) => Promise<void> | void;
+  reload: () => void;
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
 }) {
@@ -503,7 +504,7 @@ export const Artifact = memo(PureArtifact, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
   if (!equal(prevProps.votes, nextProps.votes)) return false;
   if (prevProps.input !== nextProps.input) return false;
-  if (!equal(prevProps.messages, nextProps.messages.length)) return false;
+  if (!equal(prevProps.messages, nextProps.messages)) return false;
   if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
     return false;
 

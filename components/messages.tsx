@@ -3,7 +3,6 @@ import { Greeting } from './greeting';
 import { memo } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import { motion } from 'framer-motion';
 import { useMessages } from '@/hooks/use-messages';
 import type { UIMessage } from 'ai';
@@ -16,12 +15,10 @@ interface Props {
   status: 'submitted' | 'streaming' | 'ready' | 'error';
   votes?: Vote[];
   messages: UIMessage<MessageMetadata, CustomUIDataTypes>[]; // Changed from ChatMessage[]
-  setMessages: UseChatHelpers<
-    UIMessage<MessageMetadata, CustomUIDataTypes>
-  >['setMessages']; // Changed
-  reload: UseChatHelpers<
-    UIMessage<MessageMetadata, CustomUIDataTypes>
-  >['reload']; // Changed
+  setMessages: Dispatch<
+    SetStateAction<UIMessage<MessageMetadata, CustomUIDataTypes>[]>
+  >; // Changed
+  reload: () => void; // Changed
   isReadonly: boolean;
   isArtifactVisible: boolean;
 }
@@ -36,6 +33,35 @@ function PureMessages({
   isReadonly,
 }: Props) {
   console.log('Messages component render:', { messages, status });
+  // Normalize incoming messages that may be in {parts: [...] } shape
+  const normalizedMessages = (messages || []).map((m: any) => {
+    if (!m) return m;
+    if (!m.content && Array.isArray(m.parts)) {
+      const text = m.parts
+        .filter((p: any) => p && p.type === 'text' && typeof p.text === 'string')
+        .map((p: any) => p.text)
+        .join('\n\n');
+      return { ...m, content: text };
+    }
+    return m;
+  })
+  // Drop assistant step-start messages without any text
+  .filter((m: any) => {
+    if (!m) return false;
+    if (m.role === 'assistant' && !m.content) {
+      if (Array.isArray(m.parts)) {
+        const hasText = m.parts.some((p: any) => p && p.type === 'text' && typeof p.text === 'string' && p.text.length > 0);
+        return hasText;
+      }
+      return false;
+    }
+    return true;
+  });
+  console.log('[Messages] normalizedMessages:', {
+    inputCount: messages?.length ?? 0,
+    outputCount: normalizedMessages.length,
+    last: normalizedMessages[normalizedMessages.length - 1],
+  });
   const {
     containerRef: messagesContainerRef,
     endRef: messagesEndRef,
@@ -54,14 +80,14 @@ function PureMessages({
       ref={messagesContainerRef}
       className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4 relative"
     >
-      {messages.length === 0 && <Greeting />}
+      {normalizedMessages.length === 0 && <Greeting />}
 
-      {messages.map((message, index) => (
+      {normalizedMessages.map((message, index) => (
         <PreviewMessage
           key={message.id}
           chatId={chatId}
           message={message as any} // Temporary fix
-          isLoading={status === 'streaming' && messages.length - 1 === index}
+          isLoading={status === 'streaming' && normalizedMessages.length - 1 === index}
           vote={
             votes
               ? votes.find((vote) => vote.messageId === message.id)
@@ -71,14 +97,14 @@ function PureMessages({
           reload={reload}
           isReadonly={isReadonly}
           requiresScrollPadding={
-            hasSentMessage && index === messages.length - 1
+            hasSentMessage && index === normalizedMessages.length - 1
           }
         />
       ))}
 
       {status === 'submitted' &&
-        messages.length > 0 &&
-        messages[messages.length - 1].role === 'user' && <ThinkingMessage />}
+        normalizedMessages.length > 0 &&
+        normalizedMessages[normalizedMessages.length - 1].role === 'user' && <ThinkingMessage />}
 
       <motion.div
         ref={messagesEndRef}

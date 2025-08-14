@@ -32,7 +32,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
     if (streamPart.type === 'data-suggestion') {
       setMetadata((metadata) => {
         return {
-          suggestions: [...metadata.suggestions, streamPart.value],
+          suggestions: [...metadata.suggestions, streamPart.data],
         };
       });
     }
@@ -41,7 +41,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
       setArtifact((draftArtifact) => {
         return {
           ...draftArtifact,
-          content: draftArtifact.content + streamPart.value,
+          content: draftArtifact.content + streamPart.data,
           isVisible:
             draftArtifact.status === 'streaming' &&
             draftArtifact.content.length > 400 &&
@@ -151,7 +151,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
       icon: <PenIcon />,
       description: 'Add final polish',
       onClick: ({ sendMessage }) => {
-        sendMessage({
+        (sendMessage as any)({
           role: 'user',
           parts: [
             {
@@ -166,7 +166,7 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
       icon: <MessageIcon />,
       description: 'Request suggestions',
       onClick: ({ sendMessage }) => {
-        sendMessage({
+        (sendMessage as any)({
           role: 'user',
           parts: [
             {

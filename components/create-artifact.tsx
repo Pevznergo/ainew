@@ -1,5 +1,4 @@
 import type { Suggestion } from '@/lib/db/schema';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ComponentType, Dispatch, ReactNode, SetStateAction } from 'react';
 import type { UIArtifact } from './artifact';
 import type { ChatMessage, CustomUIDataTypes } from '@/lib/types';
@@ -24,7 +23,7 @@ type ArtifactAction<M = any> = {
 };
 
 export type ArtifactToolbarContext = {
-  sendMessage: UseChatHelpers<ChatMessage>['append'];
+  sendMessage: (message: any) => Promise<void> | void;
 };
 
 export type ArtifactToolbarItem = {

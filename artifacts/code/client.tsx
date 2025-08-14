@@ -79,7 +79,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
     if (streamPart.type === 'data-codeDelta') {
       setArtifact((draftArtifact) => ({
         ...draftArtifact,
-        content: streamPart.value,
+        content: streamPart.data,
         isVisible:
           draftArtifact.status === 'streaming' &&
           draftArtifact.content.length > 300 &&
@@ -249,7 +249,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
       icon: <MessageIcon />,
       description: 'Add comments',
       onClick: ({ sendMessage }) => {
-        sendMessage({
+        (sendMessage as any)({
           role: 'user',
           parts: [
             {
@@ -264,7 +264,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
       icon: <LogsIcon />,
       description: 'Add logs',
       onClick: ({ sendMessage }) => {
-        sendMessage({
+        (sendMessage as any)({
           role: 'user',
           parts: [
             {

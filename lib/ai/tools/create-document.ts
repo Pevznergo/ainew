@@ -6,7 +6,7 @@ import {
   artifactKinds,
   documentHandlersByArtifactKind,
 } from '@/lib/artifacts/server';
-import type { ChatMessage } from '@/lib/types';
+// Removed unused ChatMessage import
 
 interface CreateDocumentProps {
   session: Session;
@@ -14,7 +14,7 @@ interface CreateDocumentProps {
 }
 
 export const createDocument = ({ session, dataStream }: CreateDocumentProps) =>
-  tool({
+  (tool as any)({
     description:
       'Create a document for a writing or content creation activities. This tool will call other functions that will generate the contents of the document based on the title and kind.',
     parameters: z.object({

@@ -37,6 +37,7 @@ export type CustomUIDataTypes = {
   finish: null;
 };
 
+// UIMessage<Metadata, DataTypes>
 export type ChatMessage = UIMessage<MessageMetadata, CustomUIDataTypes>;
 
 export interface Attachment {

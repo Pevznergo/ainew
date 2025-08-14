@@ -10,7 +10,6 @@ import {
 } from 'react';
 import { Textarea } from './ui/textarea';
 import { deleteTrailingMessages } from '@/app/(chat)/actions';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import type { UIMessage } from 'ai';
 import type { MessageMetadata, CustomUIDataTypes } from '@/lib/types';
 import { getTextFromMessage } from '@/lib/utils';
@@ -18,12 +17,10 @@ import { getTextFromMessage } from '@/lib/utils';
 export type MessageEditorProps = {
   message: UIMessage<MessageMetadata, CustomUIDataTypes>;
   setMode: Dispatch<SetStateAction<'view' | 'edit'>>;
-  setMessages: UseChatHelpers<
-    UIMessage<MessageMetadata, CustomUIDataTypes>
-  >['setMessages'];
-  reload: UseChatHelpers<
-    UIMessage<MessageMetadata, CustomUIDataTypes>
-  >['reload'];
+  setMessages: Dispatch<
+    SetStateAction<UIMessage<MessageMetadata, CustomUIDataTypes>[]>
+  >;
+  reload: () => void;
 };
 
 export function MessageEditor({

@@ -11,7 +11,7 @@ interface UpdateDocumentProps {
 }
 
 export const updateDocument = ({ session, dataStream }: UpdateDocumentProps) =>
-  tool({
+  (tool as any)({
     description: 'Update a document with the given description.',
     parameters: z.object({
       // Changed from inputSchema

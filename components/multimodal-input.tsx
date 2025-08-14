@@ -1,6 +1,4 @@
 'use client';
-
-import type { UIMessage } from 'ai';
 import cx from 'classnames';
 import type React from 'react';
 import {
@@ -22,7 +20,6 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { SuggestedActions } from './suggested-actions';
 import equal from 'fast-deep-equal';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
@@ -39,7 +36,7 @@ interface Props {
   setAttachments: Dispatch<SetStateAction<Attachment[]>>;
   messages: ChatMessage[];
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
-  sendMessage: UseChatHelpers<ChatMessage>['append'];
+  sendMessage: (message: any) => Promise<void> | void;
   selectedVisibilityType: VisibilityType;
   className?: string;
 }
@@ -113,7 +110,13 @@ function PureMultimodalInput({
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
-    sendMessage({
+    if (typeof sendMessage !== 'function') {
+      console.error('sendMessage is not a function', sendMessage);
+      toast.error('Невозможно отправить сообщение. Пожалуйста, обновите страницу.');
+      return;
+    }
+
+    const outgoing = {
       role: 'user',
       parts: [
         ...attachments.map((attachment) => ({
@@ -127,7 +130,16 @@ function PureMultimodalInput({
           text: input,
         },
       ],
+    };
+
+    console.log('[MultimodalInput] sending message:', {
+      hasAttachments: attachments.length > 0,
+      textLength: input?.length ?? 0,
+      message: outgoing,
+      sendMessageType: typeof sendMessage,
     });
+
+    sendMessage(outgoing as any);
 
     setAttachments([]);
     setLocalStorageInput('');

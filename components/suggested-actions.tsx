@@ -3,12 +3,10 @@
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 import { memo } from 'react';
-import type { UseChatHelpers } from '@ai-sdk/react';
 import type { VisibilityType } from './visibility-selector';
-import type { ChatMessage } from '@/lib/types';
 
 interface SuggestedActionsProps {
-  sendMessage: UseChatHelpers<ChatMessage>['append'];
+  sendMessage: (message: any) => Promise<void> | void;
   chatId: string;
   selectedVisibilityType: VisibilityType;
 }
@@ -62,7 +60,7 @@ function PureSuggestedActions({
 
               sendMessage({
                 role: 'user',
-                parts: [{ type: 'text', text: suggestedAction.action }],
+                content: [{ type: 'text', text: suggestedAction.action }],
               });
             }}
             className="text-left border rounded-xl p-3 sm:px-4 sm:py-3.5 text-xs sm:text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"

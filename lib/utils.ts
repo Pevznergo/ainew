@@ -8,7 +8,7 @@ import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import type { DBMessage, Document } from '@/lib/db/schema';
 import { ChatSDKError, type ErrorCode } from './errors';
-import type { ChatMessage, ChatTools, CustomUIDataTypes } from './types';
+import type { ChatMessage, CustomUIDataTypes } from './types';
 import { formatISO } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
@@ -101,7 +101,7 @@ export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
   return messages.map((message) => ({
     id: message.id,
     role: message.role as 'user' | 'assistant' | 'system',
-    parts: message.parts as UIMessagePart<CustomUIDataTypes>[],
+    parts: message.parts as UIMessagePart<CustomUIDataTypes, any>[],
     metadata: {
       createdAt: formatISO(message.createdAt),
     },
@@ -109,16 +109,26 @@ export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
 }
 
 export function convertToModelMessages(messages: ChatMessage[]) {
-  const result = messages.map((message) => {
+  const result = messages.map((message: any) => {
+    // Prefer SDK content blocks if present
+    const contentBlocks = Array.isArray(message?.content)
+      ? message.content
+      : Array.isArray(message?.parts)
+        ? message.parts
+            .map((p: any) => (p?.type === 'text' ? { type: 'text', text: p.text || '' } : null))
+            .filter(Boolean)
+        : typeof message?.content === 'string'
+          ? [{ type: 'text', text: message.content }]
+          : [];
+
     console.log('Converting message:', {
       role: message.role,
-      parts: message.parts,
-      partsLength: message.parts.length,
+      contentLength: contentBlocks.length,
     });
 
     return {
       role: message.role,
-      content: message.parts,
+      content: contentBlocks,
     };
   });
 
