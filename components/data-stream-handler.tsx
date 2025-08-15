@@ -64,6 +64,12 @@ export function DataStreamHandler() {
               status: 'streaming',
             };
 
+          case 'data-textDelta':
+            return {
+              ...draftArtifact,
+              content: draftArtifact.content + delta.data,
+            };
+
           case 'data-finish':
             return {
               ...draftArtifact,
