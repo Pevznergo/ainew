@@ -284,50 +284,88 @@ export default function ProfilePage() {
   const initials = (email || 'U').slice(0, 1).toUpperCase();
 
   return (
-    <div className="font-geist font-sans bg-[#0b0b0f] min-h-screen flex flex-col text-neutral-100">
-      {/* Header */}
+    <div className="font-geist font-sans min-h-screen bg-[#0b0b0f] text-neutral-100">
+      {/* Header (matches main) */}
       <header className="sticky top-0 z-40 backdrop-blur bg-[#0b0b0f]/70 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
+          <Link href="/" className="text-white font-semibold">
+            Aporto
+          </Link>
+          <nav className="hidden md:flex items-center gap-1">
             <Link
               href="/"
-              className="flex items-center text-indigo-400 hover:text-indigo-300 font-medium text-lg"
+              className="px-3 py-2 rounded-lg text-sm text-neutral-200 hover:bg-white/10 transition-colors"
             >
-              <svg
-                width="22"
-                height="22"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              В чат
+              Главная
             </Link>
-          </div>
-          <div className="flex items-center gap-3">
             <Link
-              href="/"
-              className="flex items-center font-bold text-3xl text-white tracking-tight"
+              href="/chat"
+              className="px-3 py-2 rounded-lg text-sm text-neutral-200 hover:bg-white/10 transition-colors"
             >
-              Aporto
+              Чат
             </Link>
-          </div>
+          </nav>
           <div>
-            {session?.user?.type === 'guest' && (
+            {session?.user?.type === 'guest' ? (
               <Link href="/login" className="modern-btn-cta">
-                Войти
+                Вход
+              </Link>
+            ) : (
+              <Link
+                href="/chat"
+                className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-4 md:px-5 py-2.5 text-sm font-semibold shadow-lg shadow-indigo-600/20 hover:opacity-95 transition"
+              >
+                В чат
               </Link>
             )}
           </div>
         </div>
       </header>
 
-      <main className="flex-1 w-full flex flex-col items-center py-12 px-6">
-        <div className="w-full max-w-4xl space-y-8">
+      {/* Hero (matches main tone) */}
+      <section className="relative overflow-hidden border-b border-white/10">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.15),transparent_50%)]" />
+        <div className="max-w-7xl mx-auto px-6 py-12 md:py-16 relative">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 md:p-8 backdrop-blur">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div>
+                <div className="text-indigo-400 text-sm font-semibold uppercase tracking-wider">
+                  Профиль
+                </div>
+                <h1 className="mt-2 text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+                  Ваш аккаунт Aporto
+                </h1>
+                <p className="mt-3 text-neutral-300 max-w-2xl">
+                  Управляйте подпиской, балансом токенов и платежами. Все
+                  настройки в одном месте.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-5 py-3 text-sm font-semibold shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
+                  onClick={() => setShowProModal(true)}
+                >
+                  Оформить ПРО
+                </button>
+                <button
+                  type="button"
+                  className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 hover:bg-white/10 px-5 py-3 text-sm font-semibold transition-colors"
+                  onClick={() => {
+                    const el = document.getElementById('balance');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  Пополнить баланс
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main className="flex-1 w-full">
+        <div className="w-full max-w-7xl mx-auto px-6 py-12 space-y-8">
           {/* Профиль пользователя */}
           <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col md:flex-row items-center gap-8">
             <div className="flex flex-col items-center md:items-start gap-4 min-w-[220px]">
@@ -391,19 +429,22 @@ export default function ProfilePage() {
               </div>
               <div className="text-neutral-400 text-base mt-2">
                 Подпишись на ПРО и получай <b>1000 токенов</b> в месяц всего за{' '}
-                <b>199 рублей</b> (0.2 ₽ за 1 токен).
+                <b>199 ₽</b> (≈0.2 ₽ за токен).
               </div>
             </div>
           </section>
 
           {/* Баланс */}
-          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col md:flex-row items-center gap-8">
+          <section
+            id="balance"
+            className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col md:flex-row items-center gap-8"
+          >
             <div className="flex-1 flex flex-col gap-4">
               <div className="font-bold text-xl text-white mb-2">
                 Баланс токенов
               </div>
               <div className="flex items-center gap-6 mb-4">
-                <span className="text-3xl font-extrabold text-indigo-400 rounded-xl border border-white/10 bg-white/[0.02] px-7 py-3 shadow">
+                <span className="text-3xl font-extrabold text-white rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 px-8 py-4 shadow-lg shadow-indigo-600/20">
                   {balance}
                 </span>
               </div>
@@ -412,70 +453,28 @@ export default function ProfilePage() {
                 балансом, чтобы всегда иметь к ним доступ.
               </div>
               <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                {/* Кастомный dropdown */}
-                <div className="relative w-full max-w-md" ref={dropdownRef}>
-                  <button
-                    type="button"
-                    className="flex justify-between items-center w-full rounded-xl border border-white/10 bg-white/[0.02] px-5 py-3 text-white text-base focus:ring-2 focus:ring-indigo-600 transition cursor-pointer"
-                    onClick={() => setOpen((v) => !v)}
-                    aria-haspopup="listbox"
-                    aria-expanded={open}
-                    style={{ minWidth: 360 }}
-                  >
-                    <span className="truncate">
-                      {selected.label}{' '}
-                      <span className="text-neutral-400 text-xs">
-                        ({selected.pricePer} ₽/токен)
-                      </span>
-                    </span>
-                    <svg
-                      className={`ml-2 size-5 transition-transform ${open ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  {open && (
-                    <ul
-                      className="absolute z-20 w-full rounded-xl border border-white/10 bg-white/[0.02] backdrop-blur shadow-lg max-h-60 overflow-auto bottom-full mb-2"
-                      tabIndex={-1}
-                      style={{ minWidth: 320 }}
-                    >
-                      {packages.map((pkg) => (
-                        <li
-                          key={pkg.label}
-                          className={`px-5 py-3 cursor-pointer hover:bg-white/10 transition flex justify-between items-center ${
-                            selected.label === pkg.label
-                              ? 'bg-indigo-600 text-white'
-                              : 'text-white'
-                          }`}
-                          onClick={() => {
-                            setSelected(pkg);
-                            setOpen(false);
-                          }}
-                        >
-                          <span>{pkg.label}</span>
-                          <span className="text-xs text-neutral-400 ml-2">
-                            {pkg.pricePer} ₽/токен
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                <select
+                  className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 px-4 py-3 min-w-[260px]"
+                  value={selected.label}
+                  onChange={(e) =>
+                    setSelected(
+                      packages.find((p) => p.label === e.target.value) ||
+                        packages[0],
+                    )
+                  }
+                >
+                  {packages.map((p) => (
+                    <option key={p.label} value={p.label}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
-                  className={`text-lg px-6 py-3 w-auto min-w-[200px] transition font-semibold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap ${
+                  className={`text-lg px-6 py-3 w-auto min-w-[200px] transition font-semibold rounded-xl flex items-center justify-center gap-2 whitespace-nowrap shadow-lg ${
                     isProcessingCoinsPayment
                       ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
-                      : 'modern-btn-outline'
+                      : 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-indigo-600/20 hover:opacity-95'
                   }`}
                   onClick={handleCoinsPurchase}
                   disabled={isProcessingCoinsPayment}
@@ -743,28 +742,30 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <footer className="mt-12 pb-4">
-        <nav className="flex flex-wrap gap-6 justify-center items-center text-sm mb-2">
-          <Link href="/privacy" className="text-indigo-400 hover:underline">
-            Политика конфиденциальности
-          </Link>
-          <Link href="/tos" className="text-indigo-400 hover:underline">
-            Пользовательское соглашение
-          </Link>
-          <Link
-            href="/tos-subscription"
-            className="text-indigo-400 hover:underline"
-          >
-            Соглашение с подпиской
-          </Link>
-          <a
-            href="mailto:hey@aporto.tech"
-            className="text-indigo-400 hover:underline"
-          >
-            Связаться с нами
-          </a>
-        </nav>
-        <div className="text-center text-neutral-500 text-sm"> 2025</div>
+      <footer className="mt-12 border-t border-white/10 bg-white/[0.02]">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <nav className="flex flex-wrap gap-6 justify-center items-center text-sm mb-3">
+            <Link href="/privacy" className="text-neutral-300 hover:text-indigo-300 hover:underline">
+              Политика конфиденциальности
+            </Link>
+            <Link href="/tos" className="text-neutral-300 hover:text-indigo-300 hover:underline">
+              Пользовательское соглашение
+            </Link>
+            <Link
+              href="/tos-subscription"
+              className="text-neutral-300 hover:text-indigo-300 hover:underline"
+            >
+              Соглашение с подпиской
+            </Link>
+            <a
+              href="mailto:hey@aporto.tech"
+              className="text-neutral-300 hover:text-indigo-300 hover:underline"
+            >
+              Связаться с нами
+            </a>
+          </nav>
+          <div className="text-center text-neutral-400 text-xs">© 2025 Aporto</div>
+        </div>
       </footer>
     </div>
   );
