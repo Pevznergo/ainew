@@ -1,5 +1,3 @@
-import Form from 'next/form';
-
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 
@@ -15,7 +13,16 @@ export function AuthForm({
   defaultEmail?: string;
 }) {
   return (
-    <Form action={action} className="flex flex-col gap-4 px-4 sm:px-16">
+    <form
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (typeof action === 'function') {
+          action(new FormData(e.currentTarget));
+        }
+      }}
+      className="flex flex-col gap-4 px-4 sm:px-16"
+    >
       <div className="flex flex-col gap-2">
         <Label
           htmlFor="email"
@@ -55,6 +62,6 @@ export function AuthForm({
       </div>
 
       {children}
-    </Form>
+    </form>
   );
 }

@@ -39,7 +39,10 @@ export default function Page() {
   // Prefill invite code from localStorage or cookies
   useEffect(() => {
     try {
-      const lsCode = typeof window !== 'undefined' ? localStorage.getItem('referralCode') : null;
+      const lsCode =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('referralCode')
+          : null;
       let cookieCode: string | null = null;
       if (typeof document !== 'undefined') {
         const match = document.cookie.match(/(?:^|; )referralCode=([^;]+)/);
@@ -72,7 +75,10 @@ export default function Page() {
 
     // Инвайт-код из поля формы, затем из localStorage/cookie как fallback
     const formInvite = (formData.get('inviteCode') as string) || '';
-    const lsInvite = typeof window !== 'undefined' ? localStorage.getItem('referralCode') : null;
+    const lsInvite =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('referralCode')
+        : null;
     let cookieInvite: string | null = null;
     if (typeof document !== 'undefined') {
       const match = document.cookie.match(/(?:^|; )referralCode=([^;]+)/);
@@ -85,7 +91,9 @@ export default function Page() {
     // Инвайт-код обязателен
     setInviteError(null);
     if (!referralCode || referralCode.trim() === '') {
-      setInviteError('Инвайт код обязателен');
+      setInviteError(
+        'Для регистрации необходим инвайт, его можно получить у друзей/блогеров, от которых вы о нас узнали.',
+      );
       return;
     }
 
@@ -145,7 +153,9 @@ export default function Page() {
           setInviteError('По данному коду нет доступных инвайтов');
         }
         if (data.error === 'invite_required') {
-          setInviteError('Инвайт код обязателен');
+          setInviteError(
+            'для регистрации необходим инвайт, его можно получить у друзей/блогеров, от которых вы о нас узнали.',
+          );
         }
       }
     } catch (error) {
@@ -224,7 +234,10 @@ export default function Page() {
         <AuthForm action={handleSubmit} defaultEmail={email}>
           {/* Инвайт код */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="inviteCode" className="text-zinc-600 font-normal dark:text-zinc-400">
+            <label
+              htmlFor="inviteCode"
+              className="text-zinc-600 font-normal dark:text-zinc-400"
+            >
               Инвайт код
             </label>
             <input
@@ -232,8 +245,7 @@ export default function Page() {
               name="inviteCode"
               className="bg-muted text-md md:text-sm rounded-md border px-3 py-2 dark:bg-zinc-900 dark:border-zinc-800"
               type="text"
-              placeholder="Введите инвайт код (если есть)"
-              required
+              placeholder="Введите инвайт код"
               value={inviteCode}
               onChange={(e) => {
                 setInviteCode(e.target.value);

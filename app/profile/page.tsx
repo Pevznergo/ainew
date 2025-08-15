@@ -743,7 +743,7 @@ export default function ProfilePage() {
       )}
 
       <footer className="mt-12 border-t border-white/10 bg-white/[0.02]">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto p-6">
           <nav className="flex flex-wrap gap-6 justify-center items-center text-sm mb-3">
             <Link href="/privacy" className="text-neutral-300 hover:text-indigo-300 hover:underline">
               Политика конфиденциальности
