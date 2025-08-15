@@ -52,6 +52,7 @@ export function Chat({
 
   const [input, setInput] = useState<string>('');
   const [currentModel, setCurrentModel] = useState(initialChatModel);
+  const [forceReady, setForceReady] = useState(false);
 
   // Обновляем модель при изменении initialChatModel
   useEffect(() => {
@@ -74,27 +75,132 @@ export function Chat({
     id,
     experimental_throttle: 100,
     generateId: generateUUID,
-    onError: (error) => {
+    onError: async (error) => {
       console.error('Chat error:', error);
+      try {
+        // Завершаем любой текущий стрим запроса, чтобы снять блокировку ввода
+        (chatHelpers as any).stop?.();
+      } catch (e) {
+        console.warn('stop() after error failed:', e);
+      }
+      // Разблокируем ввод до следующей попытки
+      setForceReady(true);
+
+      const ensureAssistantMessage = (assistantMessage: any, assistantText: string) => {
+        const appendIfMissing = () =>
+          setMessages((prev: any[]) => {
+            const last = prev[prev.length - 1] as any;
+            const lastText = Array.isArray(last?.parts)
+              ? last.parts
+                  .filter((p: any) => p && p.type === 'text' && typeof p.text === 'string')
+                  .map((p: any) => p.text)
+                  .join('\n\n')
+              : typeof last?.content === 'string'
+                ? last.content
+                : '';
+            if (last?.role === 'assistant' && lastText === assistantText) return prev; // already appended
+            return [...prev, assistantMessage];
+          });
+
+        // Try immediate append
+        try { appendIfMissing(); } catch {}
+        // Re-assert after brief delay in case SDK overwrote state post-error
+        setTimeout(() => {
+          try { appendIfMissing(); } catch {}
+        }, 50);
+      };
 
       if (error.message.includes('Guest message limit exceeded')) {
-        toast({
-          type: 'error',
-          description:
-            'Достигнут лимит сообщений для гостевого пользователя. Пожалуйста, зарегистрируйтесь.',
-        });
-      } else if (error.message.includes('Недостаточно токенов')) {
-        toast({
-          type: 'error',
-          description:
-            'Недостаточно токенов для отправки сообщения. Пополните баланс.',
-        });
+        // Отображаем как ответ ассистента в чат вместо системного уведомления
+        let assistantText = 'Достигнут лимит сообщений для гостевого пользователя. Пожалуйста, зарегистрируйтесь.';
+        try {
+          const parsed = JSON.parse(error.message);
+          if (parsed?.message && typeof parsed.message === 'string') {
+            assistantText = parsed.message;
+          }
+        } catch {}
+        // Превращаем "зарегистрируйтесь" в ссылку
+        assistantText = assistantText.replace(/зарегистрируйтесь/gi, '[зарегистрируйтесь](/register)');
+        const assistantMessage = {
+          id: generateUUID(),
+          role: 'assistant' as const,
+          parts: [{ type: 'text' as const, text: assistantText }],
+          content: assistantText,
+          attachments: [] as any[],
+        } as any;
+        try {
+          ensureAssistantMessage(assistantMessage, assistantText);
+        } catch (e) {
+          console.error('Failed to append guest limit message to UI:', e);
+        }
+        // Пишем в историю
+        try {
+          await fetchWithErrorHandlers('/api/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chatId: id,
+              message: {
+                id: (assistantMessage as any).id,
+                role: 'assistant',
+                content: assistantText,
+              },
+            }),
+          });
+        } catch (e) {
+          console.error('Failed to persist guest limit message:', e);
+        }
+      } else if (
+        typeof error?.message === 'string' &&
+        (error.message.includes('Недостаточно') ||
+          error.message.includes('Insufficient') ||
+          error.message.includes('402'))
+      ) {
+        // Отобразим сообщение ассистента прямо в чате, даже если поток не пришел
+        let assistantText = 'Недостаточно токенов для отправки сообщения. Пополните баланс.';
+        try {
+          const parsed = JSON.parse(error.message);
+          if (parsed?.message && typeof parsed.message === 'string') {
+            assistantText = parsed.message;
+          }
+        } catch {}
+        // Превращаем "Пополните баланс" в ссылку на профиль
+        assistantText = assistantText.replace(/Пополните баланс/gi, '[Пополните баланс](/profile)');
+        const assistantMessage = {
+          id: generateUUID(),
+          role: 'assistant' as const,
+          parts: [{ type: 'text' as const, text: assistantText }],
+          content: assistantText,
+          attachments: [] as any[],
+        } as any;
+        try {
+          ensureAssistantMessage(assistantMessage, assistantText);
+        } catch (e) {
+          console.error('Failed to append assistant error message to UI:', e);
+        }
       } else {
-        toast({
-          type: 'error',
-          description:
-            error.message || 'Произошла ошибка при отправке сообщения',
-        });
+        toast({ type: 'error', description: error.message || 'Произошла ошибка при отправке сообщения' });
+        // На всякий случай показываем ассистентское сообщение, если это тоже ошибка 402, но текст другой
+        if (
+          typeof error?.message === 'string' &&
+          (error.message.includes('Insufficient') || error.message.includes('402'))
+        ) {
+          const assistantMessage = {
+            id: generateUUID(),
+            role: 'assistant' as const,
+            parts: [{ type: 'text' as const, text: 'Недостаточно токенов для отправки сообщения. Пополните баланс.' }],
+            content: 'Недостаточно токенов для отправки сообщения. Пополните баланс.',
+            attachments: [] as any[],
+          } as any;
+          try {
+            ensureAssistantMessage(
+              assistantMessage,
+              'Недостаточно токенов для отправки сообщения. Пополните баланс.',
+            );
+          } catch (e) {
+            console.error('Failed to append assistant error message to UI:', e);
+          }
+        }
       }
     },
     onFinish: async () => {
@@ -157,6 +263,13 @@ export function Chat({
     stop,
     reload,
   } = chatHelpers as any;
+
+  // Как только базовый статус снова станет ready, снимаем форсированную разблокировку
+  useEffect(() => {
+    if (status === 'ready' && forceReady) {
+      setForceReady(false);
+    }
+  }, [status, forceReady]);
 
   // Keep the ref updated with the latest messages array
   useEffect(() => {
@@ -316,7 +429,7 @@ export function Chat({
               chatId={id}
               input={input}
               setInput={setInput}
-              status={status}
+              status={forceReady ? 'ready' : status}
               stop={stop}
               attachments={attachments}
               setAttachments={setAttachments}

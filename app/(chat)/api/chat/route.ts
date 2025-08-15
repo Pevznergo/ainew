@@ -304,15 +304,54 @@ export async function POST(request: Request) {
       console.log('Entitlements check passed');
     } catch (error) {
       console.error('Entitlements check failed:', error);
+      // Вместо JSON-ошибки — вернём поток с сообщением ассистента в чат
+      const errorText =
+        error instanceof Error
+          ? error.message
+          : 'Недостаточно токенов для отправки сообщения. Пополните баланс.';
+
+      // Гарантируем, что чат существует (как в основной ветке ниже)
+      try {
+        const existingChat = await getChatById({ id });
+        if (!existingChat) {
+          const title = await generateTitleFromUserMessage({ message: userMessage });
+          await saveChat({
+            id,
+            userId: session.user.id,
+            title,
+            visibility: selectedVisibilityType,
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to ensure chat exists before error stream:', e);
+      }
+
+      const assistantMessage = {
+        id: generateUUID(),
+        chatId: id,
+        role: 'assistant' as const,
+        parts: [{ type: 'text' as const, text: errorText }],
+        attachments: [],
+        createdAt: new Date(),
+      };
+
+      // Сохраняем сообщение ассистента в БД, чтобы отображалось в истории
+      try {
+        await saveMessages({
+          messages: [assistantMessage],
+        });
+      } catch (e) {
+        console.error('Failed to save assistant error message:', e);
+        // Продолжаем стримить даже если сохранение не удалось
+      }
+
+      // Возвращаем JSON-ошибку, чтобы onError хука useChat отработал и добавил сообщение в чат
       return new Response(
         JSON.stringify({
           error: 'Insufficient balance',
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Недостаточно токенов для отправки сообщения. Пополните баланс.',
+          message: errorText,
         }),
-        { status: 403, headers: { 'Content-Type': 'application/json' } },
+        { status: 402, headers: { 'Content-Type': 'application/json' } },
       );
     }
 

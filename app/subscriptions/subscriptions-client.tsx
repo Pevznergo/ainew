@@ -28,7 +28,10 @@ const plans: Plan[] = [
     features: [
       { text: 'Чат с нейросетью', available: true },
       { text: 'Цифровое видение', available: true },
-      { text: 'GPT-4 mini, Gemini 2 Flash', available: true },
+      {
+        text: 'GPT‑4o Mini, GPT‑5 Mini, Qwen3 235B, GLM‑4.5 Air, Mistral Medium 3.1, MiniMax M1, Gemini 2.5 FL',
+        available: true,
+      },
       { text: '1000 токенов ежемесячно', available: false },
       { text: 'Приоритетная поддержка', available: false },
       { text: 'Запросы на новые функции', available: false },
@@ -49,7 +52,7 @@ const plans: Plan[] = [
       { text: 'Чат с нейросетью', available: true },
       { text: 'Цифровое видение', available: true },
       {
-        text: 'ChatGPT, Claude, DeepSeek, Grok, Gemini и др.',
+        text: 'GPT‑4.1, GPT‑5 Chat, GPT o3, GPT o3‑mini, GPT o1‑mini, GPT o4‑mini, Claude Sonnet 4, Claude 3.7 Sonnet, Gemini 2.5 PRO, Gemini 2.5 Flash, Grok 3, Grok 3 Mini, Grok 4',
         available: true,
       },
       { text: '1000 токенов ежемесячно', available: true },

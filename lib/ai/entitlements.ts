@@ -106,7 +106,7 @@ export async function checkUserEntitlements(user: User, modelId: string) {
 
   if (user.balance < model.cost) {
     throw new Error(
-      `Недостаточно токенов. Необходимо: ${model.cost}, доступно: ${user.balance}`,
+      `Недостаточно токенов. Необходимо: ${model.cost}, доступно: ${user.balance}. Пополните баланс в профиле`,
     );
   }
 
