@@ -100,6 +100,7 @@ export default function ProfilePage() {
     recurring: false,
     privacy: false,
   });
+  const [avatarError, setAvatarError] = useState(false);
 
   const handleConsentChange = (type: keyof typeof consents) => {
     setConsents((prev) => ({
@@ -277,6 +278,10 @@ export default function ProfilePage() {
   const email = session.user?.email || '';
   const balance = session.user?.balance ?? 0;
   const subscriptionActive = session.user?.subscription_active ?? false;
+  const avatarSrc = !avatarError
+    ? session.user?.image || '/images/profile.png'
+    : '';
+  const initials = (email || 'U').slice(0, 1).toUpperCase();
 
   return (
     <div className="font-geist font-sans bg-[#0b0b0f] min-h-screen flex flex-col text-neutral-100">
@@ -326,13 +331,20 @@ export default function ProfilePage() {
           {/* Профиль пользователя */}
           <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col md:flex-row items-center gap-8">
             <div className="flex flex-col items-center md:items-start gap-4 min-w-[220px]">
-              <Image
-                src="/images/profile.png"
-                alt="Аватар"
-                width={112}
-                height={112}
-                className="size-28 rounded-full border-4 border-indigo-600 shadow-lg object-cover"
-              />
+              {!avatarError && avatarSrc ? (
+                <Image
+                  src={avatarSrc}
+                  alt="Аватар"
+                  width={112}
+                  height={112}
+                  className="size-28 rounded-full border-4 border-indigo-600 shadow-lg object-cover"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <div className="size-28 rounded-full border-4 border-indigo-600 shadow-lg bg-indigo-900/40 flex items-center justify-center text-3xl font-bold text-indigo-200 select-none">
+                  {initials}
+                </div>
+              )}
               <div className="text-center md:text-left">
                 <div className="font-extrabold text-2xl text-white">
                   {email}

@@ -285,11 +285,7 @@ export function Chat({
   const safeAppend = useCallback(
     async (message: any) => {
       console.log('[Chat.safeAppend] incoming message:', message);
-      console.log('[Chat.safeAppend] using function:', {
-        hasAppend: typeof (chatHelpers as any).append,
-        hasSendMessage: typeof (chatHelpers as any).sendMessage,
-        hasAppendMessage: typeof (chatHelpers as any).appendMessage,
-      });
+      console.log('[Chat.safeAppend] append function available:', typeof appendRaw === 'function');
       if (typeof appendRaw === 'function') {
         // Normalize to SDK message shape used in this app: { role, parts }
         const normalized = (() => {
