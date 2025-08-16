@@ -1,9 +1,8 @@
 import type { MetadataRoute } from 'next';
-import { db } from '@/lib/db';
-import { chat } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
 import fs from 'node:fs';
 import path from 'node:path';
+
+export const runtime = 'nodejs';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://aporto.tech';
@@ -55,15 +54,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // ignore if /my does not exist
   }
 
-  const chats = await db
-    .select({ id: chat.id, updatedAt: chat.createdAt })
-    .from(chat)
-    .where(eq(chat.visibility, 'public'));
+  // Collect public chats if the database is available. This is optional and
+  // must never break the sitemap in case of DB/network errors.
+  let chatRoutes: MetadataRoute.Sitemap = [];
+  try {
+    if (process.env.POSTGRES_URL) {
+      const [{ db }, { chat }, { eq }] = await Promise.all([
+        import('@/lib/db'),
+        import('@/lib/db/schema'),
+        import('drizzle-orm'),
+      ]);
 
-  const chatRoutes = chats.map((c) => ({
-    url: `${baseUrl}/chat/${c.id}`,
-    lastModified: c.updatedAt,
-  }));
+      const chats = await db
+        .select({ id: chat.id, updatedAt: chat.createdAt })
+        .from(chat)
+        .where(eq(chat.visibility, 'public'));
+
+      chatRoutes = chats.map((c) => ({
+        url: `${baseUrl}/chat/${c.id}`,
+        lastModified: c.updatedAt,
+      }));
+    }
+  } catch {
+    // ignore DB errors to avoid 5xx for sitemap
+  }
 
   return [...staticRoutes, ...myRoutes, ...chatRoutes];
 }
