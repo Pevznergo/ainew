@@ -23,6 +23,7 @@ import type {
   Attachment,
 } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { AuthCallToAction } from './auth-call-to-action';
 
 export function Chat({
   id,
@@ -421,7 +422,9 @@ export function Chat({
         />
 
         <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
-          {!isReadonly && (
+          {isReadonly ? (
+            <AuthCallToAction />
+          ) : (
             <MultimodalInput
               chatId={id}
               input={input}
