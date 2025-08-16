@@ -652,10 +652,15 @@ export async function updateChatVisiblityById({
   visibility: 'private' | 'public';
 }) {
   try {
-    return await db
+    const updated = await db
       .update(chat)
       .set({ visibility } as any)
-      .where(eq(chat.id, chatId));
+      .where(eq(chat.id, chatId))
+      .returning({ id: chat.id, visibility: chat.visibility });
+    if (!updated || updated.length === 0) {
+      throw new ChatSDKError('not_found:chat');
+    }
+    return updated;
   } catch (error) {
     throw new ChatSDKError('bad_request:database');
   }

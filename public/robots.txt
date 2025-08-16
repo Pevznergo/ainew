@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ainew.io/sitemap.xml
+Sitemap: https://aporto.tech/sitemap.xml

@@ -68,7 +68,7 @@ export async function updateChatVisibility({
   chatId: string;
   visibility: VisibilityType;
 }) {
-  await updateChatVisiblityById({ chatId, visibility });
+  return await updateChatVisiblityById({ chatId, visibility });
 }
 
 export async function createNewChat({

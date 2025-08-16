@@ -28,8 +28,13 @@ export function ShareButton({ chatId }: { chatId: string }) {
     }
     const shareUrl = `${window.location.origin}/chat/${chatId}?ref=${referralCode}`;
     try {
+      // 1) First, persist visibility to DB
+      const updated = await updateChatVisibility({ chatId, visibility: 'public' });
+      if (!updated || !Array.isArray(updated) || updated.length === 0) {
+        throw new Error('Chat visibility update returned no rows');
+      }
+      // 2) Then copy the link
       await navigator.clipboard.writeText(shareUrl);
-      await updateChatVisibility({ chatId, visibility: 'public' });
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
