@@ -24,7 +24,6 @@ import {
   suggestion,
   message,
   vote,
-  type DBMessage,
   type Chat,
   stream,
   demo, // Add this import
@@ -33,7 +32,6 @@ import {
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
 import { generateHashedPassword } from './utils';
-import type { VisibilityType } from '@/components/visibility-selector';
 import { ChatSDKError } from '../errors';
 
 // Optionally, if not using email/pass login, you can
@@ -221,12 +219,10 @@ export async function saveChat({
   id,
   userId,
   title,
-  visibility,
 }: {
   id: string;
   userId: string;
   title: string;
-  visibility: string;
 }) {
   console.log('saveChat called with id:', id);
 
@@ -236,7 +232,6 @@ export async function saveChat({
       id,
       userId,
       title,
-      visibility,
       createdAt: new Date(),
     } as any)
     .returning();

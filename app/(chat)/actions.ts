@@ -7,11 +7,27 @@ import {
   getMessageById,
   updateChatVisiblityById,
   saveChat,
+  getUserReferralCode,
 } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { openai } from '@ai-sdk/openai';
 import { generateUUID } from '@/lib/utils';
 import { auth } from '@/app/(auth)/auth';
+
+export async function getReferralCode(): Promise<string | null> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    console.error('User not authenticated');
+    return null;
+  }
+  try {
+    const code = await getUserReferralCode(session.user.id);
+    return code;
+  } catch (error) {
+    console.error('Failed to get referral code:', error);
+    return null;
+  }
+}
 
 export async function saveChatModelAsCookie(model: string) {
   const cookieStore = await cookies();
@@ -57,10 +73,8 @@ export async function updateChatVisibility({
 
 export async function createNewChat({
   modelId,
-  visibility = 'private',
 }: {
   modelId: string;
-  visibility?: VisibilityType;
 }) {
   const session = await auth();
   if (!session?.user) {
@@ -68,13 +82,12 @@ export async function createNewChat({
   }
 
   const id = generateUUID();
-  const title = 'Новый чат'; // Можно сделать умнее, если нужно
+  const title = 'Новый чат';
 
   await saveChat({
     id,
     userId: session.user.id,
     title,
-    visibility,
   });
 
   return { id };

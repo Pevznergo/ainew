@@ -403,9 +403,10 @@ export function Chat({
         <ChatHeader
           chatId={id}
           selectedModelId={currentModel}
-          selectedVisibilityType={initialVisibilityType}
+          selectedVisibilityType={visibilityType}
           isReadonly={isReadonly}
           session={session}
+          messages={messages as any}
         />
 
         <Messages

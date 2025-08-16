@@ -1,25 +1,24 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWindowSize } from 'usehooks-ts';
 
 import { ModelSelector } from '@/components/model-selector';
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, VercelIcon, LoaderIcon } from './icons';
-import type { Session, User } from 'next-auth';
+import { PlusIcon } from './icons';
+import type { Session } from 'next-auth';
 import { useSidebar } from './ui/sidebar';
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { type VisibilityType, VisibilitySelector } from './visibility-selector';
-import { toast } from './toast';
-import { signOut, useSession } from 'next-auth/react';
+import type { VisibilityType } from './visibility-selector';
+import { useSession } from 'next-auth/react';
 import { guestRegex } from '@/lib/constants';
 
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
-import { generateUUID } from '@/lib/utils';
 import { useModel } from '@/contexts/model-context';
+import { ShareButton } from './share-button';
+import type { UIMessage } from 'ai';
 
 function PureChatHeader({
   chatId,
@@ -27,12 +26,14 @@ function PureChatHeader({
   selectedVisibilityType,
   isReadonly,
   session,
+  messages,
 }: {
   chatId: string;
   selectedModelId: string;
   selectedVisibilityType: VisibilityType;
   isReadonly: boolean;
   session: Session;
+  messages: UIMessage[];
 }) {
   const router = useRouter();
   const { open } = useSidebar();
@@ -91,15 +92,23 @@ function PureChatHeader({
         />
       )}
 
-      <div className="ml-auto order-4 md:order-3">
+      <div className="ml-auto order-4 md:order-3 flex flex-col items-end">
         <div className="w-auto md:w-[250px]">
           {session.user && <SidebarUserNav session={session} />}
         </div>
+        {messages.length > 1 && (
+          <div className="mt-2">
+            <ShareButton chatId={chatId} />
+          </div>
+        )}
       </div>
     </header>
   );
 }
 
 export const ChatHeader = memo(PureChatHeader, (prevProps, nextProps) => {
-  return prevProps.selectedModelId === nextProps.selectedModelId;
+  return (
+    prevProps.selectedModelId === nextProps.selectedModelId &&
+    prevProps.messages.length === nextProps.messages.length
+  );
 });
