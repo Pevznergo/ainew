@@ -219,10 +219,12 @@ export async function saveChat({
   id,
   userId,
   title,
+  visibility,
 }: {
   id: string;
   userId: string;
   title: string;
+  visibility?: 'private' | 'public';
 }) {
   console.log('saveChat called with id:', id);
 
@@ -233,6 +235,7 @@ export async function saveChat({
       userId,
       title,
       createdAt: new Date(),
+      ...(visibility ? { visibility } : {}),
     } as any)
     .returning();
 
