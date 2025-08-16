@@ -88,16 +88,10 @@ export default function Page() {
 
     console.log('Submitting registration with:', { email, referralCode });
 
-    // Инвайт-код обязателен
+    // Инвайт-код необязателен
     setInviteError(null);
-    if (!referralCode || referralCode.trim() === '') {
-      setInviteError(
-        'Для регистрации необходим инвайт, его можно получить у друзей/блогеров, от которых вы о нас узнали.',
-      );
-      return;
-    }
 
-    // Проверяем доступность инвайта
+    // Проверяем доступность инвайта только если он указан
     if (referralCode) {
       try {
         setIsCheckingInvite(true);
@@ -152,11 +146,7 @@ export default function Page() {
         if (data.error === 'invite_unavailable') {
           setInviteError('По данному коду нет доступных инвайтов');
         }
-        if (data.error === 'invite_required') {
-          setInviteError(
-            'для регистрации необходим инвайт, его можно получить у друзей/блогеров, от которых вы о нас узнали.',
-          );
-        }
+        
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -238,14 +228,14 @@ export default function Page() {
               htmlFor="inviteCode"
               className="text-zinc-600 font-normal dark:text-zinc-400"
             >
-              Инвайт код
+              Инвайт код (необязательно)
             </label>
             <input
               id="inviteCode"
               name="inviteCode"
               className="bg-muted text-md md:text-sm rounded-md border px-3 py-2 dark:bg-zinc-900 dark:border-zinc-800"
               type="text"
-              placeholder="Введите инвайт код"
+              placeholder="Введите инвайт код (необязательно)"
               value={inviteCode}
               onChange={(e) => {
                 setInviteCode(e.target.value);

@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
 import { getUserReferralCode } from '@/lib/db/queries';
 
@@ -10,7 +9,7 @@ export async function GET() {
 
   const referralCode = await getUserReferralCode(session.user.id);
   // Исправляем ссылку - она должна вести на /main с реферальным кодом
-  const referralLink = `https://aporto.tech/ai?ref=${referralCode}`;
+  const referralLink = `https://aporto.tech/main?ref=${referralCode}`;
 
   return Response.json({ referralLink });
 }

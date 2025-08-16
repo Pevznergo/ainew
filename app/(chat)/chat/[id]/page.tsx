@@ -7,12 +7,19 @@ import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 import { DataStreamHandler } from '@/components/data-stream-handler';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { convertToUIMessages } from '@/lib/utils';
+import { SetRefCookie } from '@/components/set-ref-cookie';
 
 type VisibilityType = 'public' | 'private';
 
-export default async function Page(props: { params: Promise<{ id: string }> }) {
+export default async function Page(props: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ ref?: string }>;
+}) {
   const params = await props.params;
+  const searchParams = props.searchParams ? await props.searchParams : undefined;
   const { id } = params;
+  // Referral cookie is set client-side by SetRefCookie component
+
   const chat = await getChatById({ id });
 
   if (!chat) {
@@ -47,6 +54,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   if (!chatModelFromCookie) {
     return (
       <>
+        <SetRefCookie />
         <Chat
           id={chat.id}
           initialMessages={uiMessages}
@@ -67,6 +75,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
   return (
     <>
+      <SetRefCookie />
       <Chat
         id={chat.id}
         initialMessages={uiMessages}

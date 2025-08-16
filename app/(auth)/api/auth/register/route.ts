@@ -17,13 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Invite code is required for registration
-    if (!referralCode || typeof referralCode !== 'string' || referralCode.trim() === '') {
-      return new Response(
-        JSON.stringify({ error: 'invite_required', message: 'Инвайт код обязателен' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } },
-      );
-    }
+    // Referral code is optional
 
     // If referral code provided, validate there is available invite
     if (referralCode) {
