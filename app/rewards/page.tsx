@@ -82,7 +82,7 @@ export default function RewardsPage() {
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 sm:p-10 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur max-w-3xl mx-auto">
           {/* Eyebrow */}
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/70">
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <div className="size-1.5 rounded-full bg-emerald-400" />
             Новая программа вознаграждений
           </div>
 
@@ -162,7 +162,7 @@ export default function RewardsPage() {
                           >
                             {loading ? (
                               <span className="inline-flex items-center gap-2">
-                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                                 Отправляем...
                               </span>
                             ) : (
@@ -191,7 +191,7 @@ export default function RewardsPage() {
                       </AlertDialogHeader>
                       <div className="mt-4 flex items-center justify-center">
                         <motion.div
-                          className="h-12 w-12 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
+                          className="size-12 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
                           initial={{ scale: 0.8, opacity: 0.8 }}
                           animate={{ scale: [0.9, 1.05, 1], opacity: 1 }}
                           transition={{ duration: 0.6, ease: 'easeOut' }}
