@@ -27,8 +27,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Исключаем главную страницу и все страницы в директории /my
-  if (pathname === '/main' || pathname.startsWith('/my/')) {
+  // Исключаем главную страницу, страницу наград, чат и все страницы в директории /my
+  if (
+    pathname === '/main' ||
+    pathname === '/rewards' ||
+    pathname === '/chat' ||
+    pathname.startsWith('/chat/') ||
+    pathname.startsWith('/my/')
+  ) {
     return NextResponse.next();
   }
 
