@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -49,9 +50,36 @@ export default function RewardsPage() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] bg-[#0b0b0f]">
-      <section className="relative mx-auto max-w-3xl px-4 py-24 sm:py-28 md:py-32">
+      {/* Header (как на странице main) */}
+      <header className="sticky top-0 z-40 backdrop-blur bg-[#0b0b0f]/70 border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <Link href="#" className="text-white font-semibold">
+            Aporto
+          </Link>
+          <nav className="hidden md:flex items-center gap-1">
+            <Link
+              href="/login"
+              className="px-3 py-2 rounded-lg text-sm text-neutral-200 hover:bg-white/10"
+            >
+              Вход
+            </Link>
+            <Link
+              href="/register"
+              className="ml-2 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-4 py-2 text-sm shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
+            >
+              Попробовать бесплатно
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <section className="relative mx-auto max-w-7xl px-4 py-24 sm:py-28 md:py-32">
+        {/* Top headline */}
+        <h1 className="text-balance bg-gradient-to-b from-white to-white/70 bg-clip-text text-3xl sm:text-5xl md:text-6xl font-extrabold leading-tight text-transparent mb-10 max-w-6xl mx-auto text-center">
+          ChatGPT бесплатно на русском языке без VPN и иностранного номера телефона
+        </h1>
         {/* Glass card */}
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 sm:p-10 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 sm:p-10 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur max-w-3xl mx-auto">
           {/* Eyebrow */}
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/70">
             <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
