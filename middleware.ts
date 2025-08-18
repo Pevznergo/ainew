@@ -15,6 +15,11 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Allow crawlers to access sitemap and robots without auth/redirects
+  if (pathname === '/sitemap.xml' || pathname === '/robots.txt') {
+    return NextResponse.next();
+  }
+
   /*
    * Playwright starts the dev server and requires a 200 status to
    * begin the tests, so this ensures that the tests can start
@@ -71,7 +76,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Исключите API routes
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // Исключите API routes и файлы индексации
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 };
