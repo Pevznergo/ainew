@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import type { Metadata } from 'next';
 
 import { auth } from '@/app/(auth)/auth';
 import { Chat } from '@/components/chat';
@@ -10,6 +11,69 @@ import { convertToUIMessages } from '@/lib/utils';
 import { SetRefCookie } from '@/components/set-ref-cookie';
 
 type VisibilityType = 'public' | 'private';
+
+export async function generateMetadata(props: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const params = await props.params;
+  const { id } = params;
+
+  try {
+    const chat = await getChatById({ id });
+    if (!chat) return { title: 'Чат не найден' };
+
+    // For private chats, only index if the requester is the owner; otherwise, noindex
+    if (chat.visibility === 'private') {
+      const session = await auth();
+      const isOwner = !!session?.user && session.user.id === chat.userId;
+      if (!isOwner) {
+        return {
+          title: 'Приватный чат',
+          robots: { index: false, follow: false },
+        };
+      }
+    }
+
+    const messages = await getMessagesByChatId({ id });
+    // Find first user message text
+    const firstUserText = messages
+      .filter((m) => m.role === 'user')
+      .flatMap((m) => m.parts || [])
+      .filter((p: any) => p && p.type === 'text' && typeof p.text === 'string')
+      .map((p: any) => p.text)
+      .join('\n')
+      .slice(0, 300);
+
+    const title = chat.title || 'Чат';
+    const description = firstUserText || 'Диалог в Aporto AI';
+    const origin = process.env.APP_ORIGIN || 'https://aporto.tech';
+    const url = `${origin}/chat/${id}`;
+
+    const robots = chat.visibility === 'public'
+      ? { index: true, follow: true }
+      : { index: false, follow: false };
+
+    return {
+      title,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        title,
+        description,
+        url,
+        type: 'article',
+      },
+      twitter: {
+        card: 'summary',
+        title,
+        description,
+      },
+      robots,
+    };
+  } catch {
+    return { title: 'Чат' };
+  }
+}
 
 export default async function Page(props: {
   params: Promise<{ id: string }>;
