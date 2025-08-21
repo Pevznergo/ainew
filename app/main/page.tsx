@@ -1,9 +1,5 @@
-import dynamic from 'next/dynamic';
 import type { Metadata } from 'next';
-
-const MainPageClient = dynamic(() => import('./main-client'), {
-  ssr: false,
-});
+import MainPageClient from './main-client';
 
 export const metadata: Metadata = {
   title:
