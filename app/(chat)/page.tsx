@@ -10,11 +10,11 @@ import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title:
-    'Aporto AI — Все лучшие нейросети на одной платформе: GPT‑5, Claude, Gemini, Midjourney',
+    'Aporto — Все лучшие нейросети на одной платформе: GPT‑5, Claude, Gemini, Midjourney',
   description:
     'Доступ к GPT‑5, Claude, Gemini, DALL·E 3 и Midjourney в одном месте. Чаты, изображения, аудио‑в‑текст и reasoning‑модели. Без VPN. Бесплатный старт и ПРО‑тариф.',
   metadataBase: new URL('https://aporto.tech'),
-  applicationName: 'Aporto AI',
+  applicationName: 'Aporto',
   category: 'technology',
   creator: 'Aporto',
   publisher: 'Aporto',
@@ -44,21 +44,25 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: '/' },
   openGraph: {
-    title:
-      'Aporto AI — Все лучшие нейросети: GPT‑5, Claude, Gemini, Midjourney',
+    title: 'Aporto — Все лучшие нейросети: GPT‑5, Claude, Gemini, Midjourney',
     description:
       'Одна платформа — десятки нейросетей: GPT‑5, Claude, Gemini, DALL·E 3, Midjourney и др. Чаты, изображения, аудио‑в‑текст, reasoning‑модели. Без VPN. Бесплатно попробуйте.',
     url: 'https://aporto.tech/',
     type: 'website',
-    siteName: 'Aporto AI',
+    siteName: 'Aporto',
     locale: 'ru_RU',
     images: [
-      { url: '/images/demo.png', width: 1200, height: 630, alt: 'Aporto AI — демо интерфейса' },
+      {
+        url: '/images/demo.png',
+        width: 1200,
+        height: 630,
+        alt: 'Aporto — демо интерфейса',
+      },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Aporto AI — Все лучшие нейросети на одной платформе',
+    title: 'Aporto — Все лучшие нейросети на одной платформе',
     description:
       'GPT‑5, Claude, Gemini, Midjourney, DALL·E 3. Чаты, изображения, аудио‑в‑текст и reasoning‑модели. Без VPN. Бесплатный старт.',
     images: ['/images/demo.png'],
@@ -88,16 +92,16 @@ export default async function Page() {
   const orgJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Aporto AI',
+    name: 'Aporto ',
     url: 'https://aporto.tech',
     logo: 'https://aporto.tech/images/logo.png',
-    sameAs: ['https://t.me/aportoai'],
+    sameAs: ['https://t.me/aportotech'],
   } as const;
 
   const websiteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'Aporto AI',
+    name: 'Aporto ',
     url: 'https://aporto.tech',
     inLanguage: 'ru-RU',
     potentialAction: {
