@@ -85,12 +85,44 @@ export default async function Page() {
 
   const id = generateUUID();
 
+  const orgJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Aporto AI',
+    url: 'https://aporto.tech',
+    logo: 'https://aporto.tech/images/logo.png',
+    sameAs: ['https://t.me/aportoai'],
+  } as const;
+
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Aporto AI',
+    url: 'https://aporto.tech',
+    inLanguage: 'ru-RU',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://aporto.tech/search?q={search_term_string}',
+      'query-input': 'required name=search_term_string',
+    },
+  } as const;
+
   const cookieStore = await cookies();
   const modelIdFromCookie = cookieStore.get('chat-model');
 
   if (!modelIdFromCookie) {
     return (
       <>
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <Chat
           key={id}
           id={id}
@@ -108,6 +140,16 @@ export default async function Page() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
       <Chat
         key={id}
         id={id}
