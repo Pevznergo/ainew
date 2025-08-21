@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import MainPageClient from './main-client';
 
 export const metadata: Metadata = {
@@ -110,7 +111,9 @@ export default function MainPage() {
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
-      <MainPageClient />
+      <Suspense fallback={null}>
+        <MainPageClient />
+      </Suspense>
     </>
   );
 }
