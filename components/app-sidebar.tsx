@@ -3,7 +3,7 @@
 import type { User, Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 
-import { PlusIcon } from '@/components/icons';
+import { PlusIcon, MessageIcon, UploadIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+ 
 
 export function AppSidebar({
   user,
@@ -29,10 +29,10 @@ export function AppSidebar({
   const { setOpenMobile } = useSidebar();
 
   return (
-    <Sidebar className="group-data-[side=left]:border-r-0">
+    <Sidebar collapsible="icon" className="group-data-[side=left]:border-r-0">
       <SidebarHeader>
         <SidebarMenu>
-          <div className="flex flex-row justify-between items-center">
+          <div className="flex flex-col gap-2">
             <Link
               href="/"
               onClick={() => {
@@ -40,31 +40,64 @@ export function AppSidebar({
               }}
               className="flex flex-row gap-3 items-center"
             >
-              <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
+              <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer group-data-[collapsible=icon]:hidden">
                 Aporto
               </span>
             </Link>
-            <Tooltip>
-              <TooltipTrigger asChild>
+            <div className="flex flex-col items-start gap-2 group-data-[collapsible=icon]:items-center">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   type="button"
-                  className="p-2 h-fit"
+                  className="p-2 h-fit justify-start gap-2"
                   onClick={() => {
                     setOpenMobile(false);
                     router.push('/');
                     router.refresh();
                   }}
+                  aria-label="Новый чат"
                 >
                   <PlusIcon />
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Новый чат</span>
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent align="end">New Chat</TooltipContent>
-            </Tooltip>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="p-2 h-fit justify-start gap-2"
+                  onClick={() => {
+                    setOpenMobile(false);
+                    router.push('/feed');
+                  }}
+                  aria-label="Лента"
+                >
+                  <MessageIcon />
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Лента</span>
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="p-2 h-fit justify-start gap-2"
+                  onClick={() => {
+                    setOpenMobile(false);
+                    router.push('/invite');
+                  }}
+                  aria-label="Поделиться"
+                >
+                  <UploadIcon />
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Поделиться</span>
+                </Button>
+              </div>
+            </div>
           </div>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="group-data-[collapsible=icon]:hidden">
         <SidebarHistory user={user} />
       </SidebarContent>
       <SidebarFooter>

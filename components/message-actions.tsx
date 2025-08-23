@@ -1,3 +1,4 @@
+ 'use client';
 import { useSWRConfig } from 'swr';
 import { useCopyToClipboard } from 'usehooks-ts';
 
@@ -15,6 +16,7 @@ import { memo } from 'react';
 import equal from 'fast-deep-equal';
 import { toast } from 'sonner';
 import type { ChatMessage } from '@/lib/types';
+import { useUser } from '@/contexts/user-context';
 
 export function PureMessageActions({
   chatId,
@@ -29,6 +31,7 @@ export function PureMessageActions({
 }) {
   const { mutate } = useSWRConfig();
   const [_, copyToClipboard] = useCopyToClipboard();
+  const { user } = useUser();
 
   if (isLoading) return null;
   if (message.role === 'user') return null;
@@ -96,6 +99,7 @@ export function PureMessageActions({
                           ...votesWithoutCurrent,
                           {
                             chatId,
+                            userId: vote?.userId ?? ((user as any)?.id ?? ''),
                             messageId: message.id,
                             isUpvoted: true,
                           },
@@ -149,6 +153,7 @@ export function PureMessageActions({
                           ...votesWithoutCurrent,
                           {
                             chatId,
+                            userId: vote?.userId ?? ((user as any)?.id ?? ''),
                             messageId: message.id,
                             isUpvoted: false,
                           },

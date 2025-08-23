@@ -463,29 +463,32 @@ export async function getMessagesByChatId({ id }: { id: string }) {
 export async function voteMessage({
   chatId,
   messageId,
+  userId,
   type,
 }: {
   chatId: string;
   messageId: string;
+  userId: string;
   type: 'up' | 'down';
 }) {
   try {
     const [existingVote] = await db
       .select()
       .from(vote)
-      .where(and(eq(vote.messageId, messageId)));
+      .where(and(eq(vote.chatId, chatId), eq(vote.userId, userId)));
 
     if (existingVote) {
       return await db
         .update(vote)
-        .set({ isUpvoted: type === 'up' })
-        .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
+        .set({ isUpvoted: type === 'up' } as any)
+        .where(and(eq(vote.chatId, chatId), eq(vote.userId, userId)));
     }
     return await db.insert(vote).values({
       chatId,
       messageId,
+      userId,
       isUpvoted: type === 'up',
-    });
+    } as any);
   } catch (error) {
     throw new ChatSDKError('bad_request:database');
   }

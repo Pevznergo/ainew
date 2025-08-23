@@ -64,11 +64,14 @@ export const vote = pgTable(
     messageId: text('messageId')
       .notNull()
       .references(() => message.id),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id),
     isUpvoted: boolean('isUpvoted').notNull(),
   },
   (table) => {
     return {
-      pk: primaryKey({ columns: [table.chatId, table.messageId] }),
+      pk: primaryKey({ columns: [table.chatId, table.userId] }),
     };
   },
 );

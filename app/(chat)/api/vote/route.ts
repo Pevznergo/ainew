@@ -1,5 +1,8 @@
 import { auth } from '@/app/(auth)/auth';
-import { getChatById, getVotesByChatId, voteMessage } from '@/lib/db/queries';
+import { db } from '@/lib/db/queries';
+import { vote } from '@/lib/db/schema';
+import { and, count, eq } from 'drizzle-orm';
+import { getChatById, voteMessage } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
 
 export async function GET(request: Request) {
@@ -12,9 +15,7 @@ export async function GET(request: Request) {
 
   const session = await auth();
 
-  if (!session?.user) {
-    return new ChatSDKError('unauthorized:vote').toResponse();
-  }
+  // session may be null for guests; we still return counts
 
   const chat = await getChatById({ id: chatId });
 
@@ -22,13 +23,26 @@ export async function GET(request: Request) {
     return new ChatSDKError('not_found:chat').toResponse();
   }
 
-  if (chat.userId !== session.user.id) {
-    return new ChatSDKError('forbidden:vote').toResponse();
+  // Anyone authenticated can view vote state
+  const [{ upvotes }] = await db
+    .select({ upvotes: count(vote.messageId) })
+    .from(vote)
+    .where(and(eq(vote.chatId, chatId), eq(vote.isUpvoted, true)));
+
+  let isUpvotedByMe = false;
+  if (session?.user?.id) {
+    const [myVote] = await db
+      .select({ isUpvoted: vote.isUpvoted })
+      .from(vote)
+      .where(and(eq(vote.chatId, chatId), eq(vote.userId, session.user.id)))
+      .limit(1);
+    isUpvotedByMe = Boolean(myVote?.isUpvoted);
   }
 
-  const votes = await getVotesByChatId({ id: chatId });
-
-  return Response.json(votes, { status: 200 });
+  return Response.json(
+    { upvotes: Number(upvotes) || 0, isUpvotedByMe },
+    { status: 200 },
+  );
 }
 
 export async function PATCH(request: Request) {
@@ -55,13 +69,11 @@ export async function PATCH(request: Request) {
     return new ChatSDKError('not_found:vote').toResponse();
   }
 
-  if (chat.userId !== session.user.id) {
-    return new ChatSDKError('forbidden:vote').toResponse();
-  }
-
+  // Any authenticated user can vote once per chat
   await voteMessage({
     chatId,
     messageId,
+    userId: session.user.id,
     type: type,
   });
 
