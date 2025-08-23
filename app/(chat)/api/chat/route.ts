@@ -208,7 +208,12 @@ export async function POST(request: Request) {
     }
 
     // useChat отправляет { messages, id }
-    const { messages, id } = body;
+    const { messages } = body as any;
+    // Нормализуем chatId: если отсутствует/пустой — генерируем
+    const chatId: string =
+      typeof (body as any)?.id === 'string' && (body as any).id.trim()
+        ? (body as any).id
+        : generateUUID();
 
     if (!messages || !Array.isArray(messages)) {
       console.error('Invalid messages format:', messages);
@@ -312,11 +317,11 @@ export async function POST(request: Request) {
 
       // Гарантируем, что чат существует (как в основной ветке ниже)
       try {
-        const existingChat = await getChatById({ id });
+        const existingChat = await getChatById({ id: chatId });
         if (!existingChat) {
           const title = await generateTitleFromUserMessage({ message: userMessage });
           await saveChat({
-            id,
+            id: chatId,
             userId: session.user.id,
             title,
             visibility: selectedVisibilityType,
@@ -328,7 +333,7 @@ export async function POST(request: Request) {
 
       const assistantMessage = {
         id: generateUUID(),
-        chatId: id,
+        chatId: chatId,
         role: 'assistant' as const,
         parts: [{ type: 'text' as const, text: errorText }],
         attachments: [],
@@ -356,9 +361,9 @@ export async function POST(request: Request) {
     }
 
     // Получаем или создаем чат
-    const chat = await getChatById({ id });
+    const chat = await getChatById({ id: chatId });
     if (!chat) {
-      console.log('Chat not found, creating new chat with id:', id);
+      console.log('Chat not found, creating new chat with id:', chatId);
       const title = await generateTitleFromUserMessage({
         message: userMessage,
       });
@@ -366,24 +371,37 @@ export async function POST(request: Request) {
       console.log('Generated title:', title);
       try {
         await saveChat({
-          id,
+          id: chatId,
           userId: session.user.id,
           title,
           visibility: selectedVisibilityType,
         });
         console.log('Chat saved successfully');
-      } catch (error) {
-        console.error('Error saving chat:', error);
-        return new Response(
-          JSON.stringify({
-            error: 'Bad request',
-            message: 'Invalid request data',
-          }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          },
-        );
+      } catch (error: any) {
+        console.error('Error saving chat (1st attempt):', error);
+        // Fallback: try with a safe static title
+        try {
+          await saveChat({
+            id: chatId,
+            userId: session.user.id,
+            title: 'Новый чат',
+            visibility: selectedVisibilityType,
+          });
+          console.log('Chat saved successfully with fallback title');
+        } catch (error2: any) {
+          console.error('Error saving chat (fallback failed):', error2);
+          return new Response(
+            JSON.stringify({
+              error: 'Bad request',
+              message: 'Invalid request data',
+              details: error2?.message || String(error2),
+            }),
+            {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
+        }
       }
     } else {
       if (chat.userId !== session.user.id) {
@@ -402,7 +420,7 @@ export async function POST(request: Request) {
     }
 
     // Получаем сообщения из БД и добавляем новое
-    const messagesFromDb = await getMessagesByChatId({ id });
+    const messagesFromDb = await getMessagesByChatId({ id: chatId });
     const uiMessages = [...convertToUIMessages(messagesFromDb), userMessage];
 
     const { longitude, latitude, city, country } = geolocation(request);
@@ -413,7 +431,7 @@ export async function POST(request: Request) {
       country,
     };
 
-    console.log('About to save messages with chatId:', id);
+    console.log('About to save messages with chatId:', chatId);
     try {
       // Normalize userMessage into text parts regardless of SDK shape
       const userTextFromContent = Array.isArray((userMessage as any)?.content)
@@ -436,16 +454,17 @@ export async function POST(request: Request) {
       const existingMessage = await db
         .select()
         .from(message)
-        .where(eq(message.id, userMessage.id))
+        .where(eq(message.id, (userMessage as any)?.id ?? ''))
         .limit(1);
 
       if (existingMessage.length === 0) {
+        const ensuredUserMessageId = (userMessage as any)?.id || generateUUID();
         if (userNormalizedText.trim().length > 0) {
           await saveMessages({
             messages: [
               {
-                chatId: id,
-                id: userMessage.id,
+                chatId,
+                id: ensuredUserMessageId,
                 role: 'user',
                 parts: [{ type: 'text', text: userNormalizedText }],
                 attachments: [],
@@ -460,7 +479,7 @@ export async function POST(request: Request) {
       } else {
         console.log('Message already exists, skipping save');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving messages:', error);
       if (
         !(error instanceof Error && error.message.includes('duplicate key'))
@@ -469,6 +488,7 @@ export async function POST(request: Request) {
           JSON.stringify({
             error: 'Bad request',
             message: 'Invalid request data',
+            details: error?.message || String(error),
           }),
           {
             status: 400,
@@ -479,7 +499,7 @@ export async function POST(request: Request) {
     }
 
     const streamId = generateUUID();
-    await createStreamId({ streamId, chatId: id });
+    await createStreamId({ streamId, chatId });
 
     // Debug path: bypass UI stream and return raw provider stream directly
     if (debugRaw) {

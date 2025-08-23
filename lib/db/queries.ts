@@ -24,7 +24,6 @@ import {
   suggestion,
   message,
   vote,
-  type Chat,
   stream,
   demo, // Add this import
   invites,
@@ -33,6 +32,15 @@ import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
 import { generateHashedPassword } from './utils';
 import { ChatSDKError } from '../errors';
+
+// A lightweight chat shape that excludes optional/new columns like `hashtags`.
+type ChatBasic = {
+  id: string;
+  createdAt: Date;
+  title: string;
+  userId: string;
+  visibility: string;
+};
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -237,7 +245,7 @@ export async function saveChat({
       createdAt: new Date(),
       ...(visibility ? { visibility } : {}),
     } as any)
-    .returning();
+    .returning({ id: chat.id, userId: chat.userId, title: chat.title, createdAt: chat.createdAt, visibility: chat.visibility });
 
   console.log('saveChat result:', result);
   return result[0];
@@ -282,7 +290,7 @@ export async function getChatsByUserId({
 
     const query = (whereCondition?: SQL<any>) =>
       db
-        .select()
+        .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility })
         .from(chat)
         .where(
           whereCondition
@@ -292,11 +300,11 @@ export async function getChatsByUserId({
         .orderBy(desc(chat.createdAt))
         .limit(extendedLimit);
 
-    let filteredChats: Array<Chat> = [];
+    let filteredChats: Array<ChatBasic> = [];
 
     if (startingAfter) {
       const [selectedChat] = await db
-        .select()
+        .select({ id: chat.id, createdAt: chat.createdAt })
         .from(chat)
         .where(eq(chat.id, startingAfter))
         .limit(1);
@@ -308,7 +316,7 @@ export async function getChatsByUserId({
       filteredChats = await query(gt(chat.createdAt, selectedChat.createdAt));
     } else if (endingBefore) {
       const [selectedChat] = await db
-        .select()
+        .select({ id: chat.id, createdAt: chat.createdAt })
         .from(chat)
         .where(eq(chat.id, endingBefore))
         .limit(1);
@@ -327,7 +335,7 @@ export async function getChatsByUserId({
     return {
       chats: hasMore ? filteredChats.slice(0, limit) : filteredChats,
       hasMore,
-    };
+    } as { chats: ChatBasic[]; hasMore: boolean };
   } catch (error) {
     console.error('getChatsByUserId error:', error);
     throw new ChatSDKError('bad_request:database');
@@ -336,8 +344,60 @@ export async function getChatsByUserId({
 
 export async function getChatById({ id }: { id: string }) {
   try {
-    const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
+    const [selectedChat] = await db
+      .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility })
+      .from(chat)
+      .where(eq(chat.id, id));
     return selectedChat;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database');
+  }
+}
+
+export async function setChatHashtags({
+  chatId,
+  hashtags,
+}: {
+  chatId: string;
+  hashtags: string[];
+}) {
+  try {
+    // Normalize: unique, lowercase, max length 64, non-empty
+    const normalized = Array.from(
+      new Set(
+        (hashtags || [])
+          .map((t) => String(t || '').trim().toLowerCase())
+          .filter((t) => t.length > 0)
+          .map((t) => (t.length > 64 ? t.slice(0, 64) : t)),
+      ),
+    );
+
+    await db
+      .update(chat)
+      .set({ hashtags: normalized as any })
+      .where(eq(chat.id, chatId));
+
+    return true;
+  } catch (err) {
+    // If column is missing or any other issue occurs, log and continue silently
+    console.warn('setChatHashtags failed:', err);
+    return false;
+  }
+}
+
+export async function getFirstUserMessageByChatId({
+  chatId,
+}: {
+  chatId: string;
+}) {
+  try {
+    const msgs = await db
+      .select()
+      .from(message)
+      .where(and(eq(message.chatId, chatId), eq(message.role, 'user')))
+      .orderBy(asc(message.createdAt))
+      .limit(1);
+    return msgs[0];
   } catch (error) {
     throw new ChatSDKError('bad_request:database');
   }

@@ -36,6 +36,7 @@ export const chat = pgTable('Chat', {
     .notNull()
     .references(() => user.id),
   visibility: text('visibility').notNull().default('public'),
+  hashtags: varchar('hashtags', { length: 64 }).array(),
 });
 
 export type Chat = InferSelectModel<typeof chat>;

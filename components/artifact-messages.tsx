@@ -53,11 +53,8 @@ function PureArtifactMessages({
           key={message.id}
           message={message}
           isLoading={status === 'streaming' && index === messages.length - 1}
-          vote={
-            votes
-              ? votes.find((vote) => vote.messageId === message.id)
-              : undefined
-          }
+          vote={undefined}
+          enableVoting={false}
           setMessages={setMessages}
           reload={reload}
           isReadonly={isReadonly}

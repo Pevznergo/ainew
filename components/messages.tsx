@@ -1,7 +1,6 @@
 import { PreviewMessage, ThinkingMessage } from './message';
 import { Greeting } from './greeting';
 import { memo } from 'react';
-import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import { motion } from 'framer-motion';
 import { useMessages } from '@/hooks/use-messages';
@@ -13,7 +12,6 @@ import type { Dispatch, SetStateAction } from 'react';
 interface Props {
   chatId: string;
   status: 'submitted' | 'streaming' | 'ready' | 'error';
-  votes?: Vote[];
   messages: UIMessage<MessageMetadata, CustomUIDataTypes>[]; // Changed from ChatMessage[]
   setMessages: Dispatch<
     SetStateAction<UIMessage<MessageMetadata, CustomUIDataTypes>[]>
@@ -26,7 +24,6 @@ interface Props {
 function PureMessages({
   chatId,
   status,
-  votes,
   messages,
   setMessages,
   reload,
@@ -88,11 +85,8 @@ function PureMessages({
           chatId={chatId}
           message={message as any} // Temporary fix
           isLoading={status === 'streaming' && normalizedMessages.length - 1 === index}
-          vote={
-            votes
-              ? votes.find((vote) => vote.messageId === message.id)
-              : undefined
-          }
+          vote={undefined}
+          enableVoting={false}
           setMessages={setMessages as any} // Temporary fix
           reload={reload}
           isReadonly={isReadonly}
@@ -122,7 +116,6 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
   if (prevProps.messages.length !== nextProps.messages.length) return false;
   if (!equal(prevProps.messages, nextProps.messages)) return false;
-  if (!equal(prevProps.votes, nextProps.votes)) return false;
 
   return false;
 });

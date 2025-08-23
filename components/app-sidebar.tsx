@@ -52,45 +52,62 @@ export function AppSidebar({
                   className="p-2 h-fit justify-start gap-2"
                   onClick={() => {
                     setOpenMobile(false);
+                    router.push('/feed');
+                  }}
+                  aria-label="Главная"
+                >
+                  <MessageIcon />
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Главная</span>
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="p-2 h-fit justify-start gap-2"
+                  onClick={() => {
+                    setOpenMobile(false);
+                    router.push('/channel');
+                  }}
+                  aria-label="Мой канал"
+                >
+                  <MessageIcon />
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Мой канал</span>
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="p-2 h-fit justify-start gap-2"
+                  onClick={() => {
+                    setOpenMobile(false);
+                    router.push('/profile');
+                  }}
+                  aria-label="Профиль"
+                >
+                  <UploadIcon />
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Профиль</span>
+                </Button>
+              </div>
+
+              {/* Новый чат перемещен ниже Профиля с небольшим отступом */}
+              <div className="flex items-center gap-2 mt-2">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="p-2 h-fit justify-start gap-2 border border-green-600/40 bg-green-500/10 text-green-300 hover:bg-green-500/20"
+                  onClick={() => {
+                    setOpenMobile(false);
                     router.push('/');
                     router.refresh();
                   }}
                   aria-label="Новый чат"
                 >
                   <PlusIcon />
-                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Новый чат</span>
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className="p-2 h-fit justify-start gap-2"
-                  onClick={() => {
-                    setOpenMobile(false);
-                    router.push('/feed');
-                  }}
-                  aria-label="Лента"
-                >
-                  <MessageIcon />
-                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Лента</span>
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className="p-2 h-fit justify-start gap-2"
-                  onClick={() => {
-                    setOpenMobile(false);
-                    router.push('/invite');
-                  }}
-                  aria-label="Поделиться"
-                >
-                  <UploadIcon />
-                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Поделиться</span>
+                  <span className="text-sm group-data-[collapsible=icon]:hidden">Новый чат</span>
                 </Button>
               </div>
             </div>

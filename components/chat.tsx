@@ -413,7 +413,6 @@ export function Chat({
         <Messages
           chatId={id}
           status={status}
-          votes={votes}
           messages={messages as any}
           setMessages={setMessages as any}
           reload={reload}

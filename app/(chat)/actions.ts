@@ -8,6 +8,9 @@ import {
   updateChatVisiblityById,
   saveChat,
   getUserReferralCode,
+  getChatById,
+  getFirstUserMessageByChatId,
+  setChatHashtags,
 } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { openai } from '@ai-sdk/openai';
@@ -68,7 +71,50 @@ export async function updateChatVisibility({
   chatId: string;
   visibility: VisibilityType;
 }) {
-  return await updateChatVisiblityById({ chatId, visibility });
+  const updated = await updateChatVisiblityById({ chatId, visibility });
+
+  try {
+    if (visibility === 'public') {
+      const chat = await getChatById({ id: chatId });
+      const existing = (chat as any)?.hashtags as string[] | undefined;
+      if (!existing || existing.length === 0) {
+        const firstMsg = await getFirstUserMessageByChatId({ chatId });
+        const textParts = Array.isArray((firstMsg as any)?.parts)
+          ? (firstMsg as any).parts
+          : [];
+        const firstText = (() => {
+          for (const p of textParts) {
+            if (p?.type === 'text' && typeof p.text === 'string' && p.text.trim()) return p.text.trim();
+          }
+          return '';
+        })();
+
+        if (firstText) {
+          const { text } = await generateText({
+            model: openai('gpt-4o-mini-2024-07-18'),
+            system:
+              'Сгенерируй 5 коротких релевантных хештегов по этому сообщению. Только сами хештеги без #, через запятую. На русском, без пробелов внутри одного тега.',
+            prompt: firstText,
+          });
+
+          const tags = String(text)
+            .split(/[,\n]/)
+            .map((s) => s.trim().replace(/^#/, ''))
+            .filter(Boolean)
+            .slice(0, 5)
+            .map((s) => s.toLowerCase());
+
+          if (tags.length > 0) {
+            await setChatHashtags({ chatId, hashtags: tags });
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to generate hashtags:', e);
+  }
+
+  return updated;
 }
 
 export async function createNewChat({

@@ -31,6 +31,7 @@ const PurePreviewMessage = ({
   reload,
   isReadonly,
   requiresScrollPadding,
+  enableVoting = true,
 }: {
   chatId: string;
   message: ChatMessage;
@@ -40,6 +41,7 @@ const PurePreviewMessage = ({
   reload: () => void;
   isReadonly: boolean;
   requiresScrollPadding: boolean;
+  enableVoting?: boolean;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
@@ -241,6 +243,7 @@ const PurePreviewMessage = ({
                 message={message}
                 vote={vote}
                 isLoading={isLoading}
+                enableVoting={enableVoting}
               />
             )}
           </div>

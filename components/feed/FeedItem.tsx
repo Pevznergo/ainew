@@ -55,6 +55,7 @@ export function FeedItem({
   imageUrl,
   initialUpvotes,
   commentsCount,
+  hashtags = [],
 }: {
   chatId: string;
   firstMessageId: string | null;
@@ -63,6 +64,7 @@ export function FeedItem({
   imageUrl?: string | null;
   initialUpvotes: number;
   commentsCount?: number;
+  hashtags?: string[];
 }) {
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [liked, setLiked] = useState(false);
@@ -165,9 +167,9 @@ export function FeedItem({
 
   return (
     <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 text-white">
-      <div className="flex gap-3">
+      <div className="sm:flex sm:gap-3">
         {/* Avatar placeholder */}
-        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10" />
+        <div className="mb-2 h-10 w-10 shrink-0 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10 sm:mb-0" />
 
         <div className="min-w-0 flex-1">
           {/* Header (Twitter-like) */}
@@ -222,6 +224,25 @@ export function FeedItem({
               <span className="italic text-white/60">(без текста)</span>
             )}
           </div>
+
+          {/* Hashtags */}
+          {Array.isArray(hashtags) && hashtags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {hashtags.map((t) => {
+                const tag = String(t || '').toLowerCase();
+                if (!tag) return null;
+                return (
+                  <Link
+                    key={tag}
+                    href={`/feed?tag=${encodeURIComponent(tag)}`}
+                    className="text-xs rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-white/70 hover:text-white/90"
+                  >
+                    #{tag}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
 
           {/* Image */}
           {imageUrl && (
