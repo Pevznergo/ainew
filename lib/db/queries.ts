@@ -345,7 +345,7 @@ export async function getChatsByUserId({
 export async function getChatById({ id }: { id: string }) {
   try {
     const [selectedChat] = await db
-      .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility })
+      .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility, hashtags: chat.hashtags as any })
       .from(chat)
       .where(eq(chat.id, id));
     return selectedChat;
@@ -362,19 +362,69 @@ export async function setChatHashtags({
   hashtags: string[];
 }) {
   try {
-    // Normalize: unique, lowercase, max length 64, non-empty
+    // Helper: transliterate Cyrillic (ru) to Latin and slugify to ASCII
+    const translitMap: Record<string, string> = {
+      а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y',
+      к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',
+      х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+    };
+    // Best-effort translator to English using DeepL if available
+    const translateToEnglish = async (inputs: string[]): Promise<string[]> => {
+      const key = process.env.DEEPL_API_KEY;
+      if (!key || inputs.length === 0) return inputs;
+      try {
+        const form = new URLSearchParams();
+        for (const t of inputs) form.append('text', String(t || ''));
+        form.append('target_lang', 'EN');
+        const res = await fetch('https://api-free.deepl.com/v2/translate', {
+          method: 'POST',
+          headers: { 'Authorization': `DeepL-Auth-Key ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: form.toString(),
+          // Small timeout via AbortController could be added if needed
+        });
+        if (!res.ok) return inputs;
+        const data = (await res.json()) as any;
+        const translated = Array.isArray(data?.translations)
+          ? data.translations.map((t: any) => String(t?.text || ''))
+          : inputs;
+        return translated;
+      } catch {
+        return inputs;
+      }
+    };
+    const toEnglishSlug = (input: string) => {
+      const lower = String(input || '').trim().toLowerCase();
+      // Cyrillic transliteration
+      const transliterated = lower
+        .split('')
+        .map((ch) => (translitMap[ch] !== undefined ? translitMap[ch] : ch))
+        .join('');
+      // Remove diacritics and non-ASCII, keep letters, numbers and '-'
+      const ascii = transliterated
+        .normalize('NFD')
+        .replace(/\p{M}+/gu, '')
+        .replace(/[\s_]+/g, '-')
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      const trimmed = ascii.length > 64 ? ascii.slice(0, 64) : ascii;
+      return trimmed;
+    };
+
+    // If possible, translate tags to English first, then slugify
+    const translated = await translateToEnglish(hashtags || []);
+    // Normalize: english text -> slug -> unique, non-empty
     const normalized = Array.from(
       new Set(
-        (hashtags || [])
-          .map((t) => String(t || '').trim().toLowerCase())
-          .filter((t) => t.length > 0)
-          .map((t) => (t.length > 64 ? t.slice(0, 64) : t)),
+        (translated || [])
+          .map((t) => toEnglishSlug(t))
+          .filter((t) => t.length > 0),
       ),
     );
 
     await db
       .update(chat)
-      .set({ hashtags: normalized as any })
+      .set({ hashtags: normalized as any } as any)
       .where(eq(chat.id, chatId));
 
     return true;

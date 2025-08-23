@@ -1,8 +1,7 @@
 import { auth } from '@/app/(auth)/auth';
-import { db } from '@/lib/db/queries';
+import { db, getChatById, voteMessage } from '@/lib/db/queries';
 import { vote } from '@/lib/db/schema';
 import { and, count, eq } from 'drizzle-orm';
-import { getChatById, voteMessage } from '@/lib/db/queries';
 import { ChatSDKError } from '@/lib/errors';
 
 export async function GET(request: Request) {

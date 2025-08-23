@@ -169,7 +169,7 @@ export function FeedItem({
     <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 text-white">
       <div className="sm:flex sm:gap-3">
         {/* Avatar placeholder */}
-        <div className="mb-2 h-10 w-10 shrink-0 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10 sm:mb-0" />
+        <div className="mb-2 size-10 shrink-0 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10 sm:mb-0" />
 
         <div className="min-w-0 flex-1">
           {/* Header (Twitter-like) */}
@@ -268,7 +268,7 @@ export function FeedItem({
               aria-pressed={liked}
             >
               <Heart
-                className={`h-5 w-5 ${liked ? 'fill-rose-500/30 text-rose-400' : 'text-white/60 group-hover:text-white/80'}`}
+                className={`size-5 ${liked ? 'fill-rose-500/30 text-rose-400' : 'text-white/60 group-hover:text-white/80'}`}
               />
               <span className={`${liked ? 'text-rose-300' : ''}`}>{upvotes}</span>
             </button>
@@ -277,7 +277,7 @@ export function FeedItem({
               href={`/chat/${chatId}#comments`}
               className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white/60 hover:bg-white/[0.06] hover:text-white/80 border border-transparent"
             >
-              <MessageCircle className="h-5 w-5" />
+              <MessageCircle className="size-5" />
               <span className="flex items-center gap-1">
                 Комментарии
                 {typeof commentsCount === 'number' && commentsCount > 0 && (
@@ -301,7 +301,7 @@ export function FeedItem({
               className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white/60 hover:bg-white/[0.06] hover:text-white/80"
               onClick={() => navigator?.share?.({ url: location.href }).catch(() => {})}
             >
-              <Share2 className="h-5 w-5" />
+              <Share2 className="size-5" />
             </button>
           </div>
 
