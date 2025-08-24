@@ -38,6 +38,23 @@ function LoadingSkeleton() {
             </div>
           </section>
 
+          {/* Описание профиля */}
+          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04]">
+            <div className="flex items-start justify-between gap-8">
+              <div className="flex-1">
+                <div className="w-32 h-6 bg-neutral-700 rounded animate-pulse mb-2" />
+                <div className="w-80 h-4 bg-neutral-700/80 rounded animate-pulse mb-4" />
+                <div className="flex flex-col gap-2">
+                  <div className="w-full h-28 rounded-xl bg-neutral-700 animate-pulse" />
+                  <div className="flex items-center justify-between">
+                    <div className="w-20 h-4 bg-neutral-700 rounded animate-pulse" />
+                    <div className="w-28 h-10 bg-neutral-700 rounded-xl animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Никнейм — скрываем в скелетоне */}
 
           {/* Баланс skeleton */}
@@ -106,6 +123,9 @@ export default function ProfilePage() {
   const [nickname, setNickname] = useState('');
   const [nickSaving, setNickSaving] = useState(false);
   const [nickMsg, setNickMsg] = useState<string | null>(null);
+  const [bio, setBio] = useState('');
+  const [bioSaving, setBioSaving] = useState(false);
+  const [bioMsg, setBioMsg] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -117,6 +137,30 @@ export default function ProfilePage() {
       ...prev,
       [type]: !prev[type],
     }));
+  };
+
+  const saveBio = async () => {
+    setBioMsg(null);
+    try {
+      setBioSaving(true);
+      const res = await fetch('/api/profile/bio', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 400 && data?.error === 'bio_too_long') setBioMsg('Слишком длинное описание (макс. 200 символов)');
+        else setBioMsg('Ошибка сохранения, попробуйте позже');
+        return;
+      }
+      setBio(String(data?.bio ?? bio));
+      setBioMsg('Сохранено');
+    } catch (e) {
+      setBioMsg('Ошибка сети, попробуйте позже');
+    } finally {
+      setBioSaving(false);
+    }
   };
 
   const savePassword = async () => {
@@ -324,6 +368,19 @@ export default function ProfilePage() {
     }
   }, [session?.user?.nickname, session?.user?.name, session?.user?.email]);
 
+  // Load bio
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/profile/bio');
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        if (typeof data?.bio === 'string') setBio(data.bio);
+      } catch {}
+    };
+    if (status === 'authenticated') load();
+  }, [status]);
+
   // Показываем скелетон пока загружаемся
   if (status === 'loading') {
     return <LoadingSkeleton />;
@@ -347,6 +404,8 @@ export default function ProfilePage() {
     ? session.user?.image || '/images/profile.png'
     : '';
   const initials = (email || 'U').slice(0, 1).toUpperCase();
+  // Client-side nickname validation: disallow uppercase
+  const hasUppercaseInNickname = nickname !== nickname.toLowerCase();
 
   const saveNickname = async () => {
     setNickMsg(null);
@@ -357,6 +416,10 @@ export default function ProfilePage() {
     }
     if (value.length > 64) {
       setNickMsg('Никнейм слишком длинный (макс. 64)');
+      return;
+    }
+    if (value !== value.toLowerCase()) {
+      setNickMsg('Никнейм должен быть в нижнем регистре (без заглавных)');
       return;
     }
     try {
@@ -370,6 +433,7 @@ export default function ProfilePage() {
       if (!res.ok) {
         if (res.status === 409) setNickMsg('Такой ник уже занят');
         else if (res.status === 400 && data?.error === 'nickname_empty') setNickMsg('Введите никнейм');
+        else if (res.status === 400 && data?.error === 'nickname_uppercase') setNickMsg('Никнейм должен быть в нижнем регистре (без заглавных)');
         else setNickMsg('Ошибка сохранения, попробуйте позже');
         return;
       }
@@ -553,7 +617,7 @@ export default function ProfilePage() {
                   <button
                     type="button"
                     onClick={saveNickname}
-                    disabled={nickSaving}
+                    disabled={nickSaving || hasUppercaseInNickname}
                     className={`rounded-xl px-5 py-3 text-sm font-semibold transition ${
                       nickSaving
                         ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
@@ -563,6 +627,11 @@ export default function ProfilePage() {
                     {nickSaving ? 'Сохранение...' : 'Сохранить'}
                   </button>
                 </div>
+                {hasUppercaseInNickname && (
+                  <div className="mt-2 text-sm text-red-400">
+                    Никнейм должен быть в нижнем регистре (без заглавных)
+                  </div>
+                )}
                 {nickMsg && (
                   <div className="mt-2 text-sm text-neutral-300">{nickMsg}</div>
                 )}

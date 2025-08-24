@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { and, asc, desc, eq, inArray, lt, count } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, count, or } from 'drizzle-orm';
 import { db } from '@/lib/db/queries';
 import { chat, message, vote, user, repost } from '@/lib/db/schema';
-import { getUserChannelPath } from '@/lib/paths';
 
 function extractTextFromParts(parts: any): string {
   if (!Array.isArray(parts)) return '';
@@ -30,7 +29,8 @@ function extractFirstImageUrl(msg: any): string | null {
   return null;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: Request, { params }: { params: { slug: string } }) {
+  const { slug } = params;
   const { searchParams } = new URL(request.url);
   const before = searchParams.get('before');
   const sortParam = searchParams.get('sort');
@@ -40,21 +40,36 @@ export async function GET(request: Request) {
   const LIMIT = Math.min(Math.max(Number(limitParam) || 50, 1), 100);
   const sort: 'rating' | 'date' = sortParam === 'date' ? 'date' : 'rating';
 
+  // Resolve user by nickname or id
+  const u = await db
+    .select({ id: user.id, email: user.email, nickname: user.nickname as any })
+    .from(user)
+    .where(or(eq(user.nickname, slug), eq(user.id, slug)))
+    .limit(1)
+    .then((rows) => rows[0]);
+
+  if (!u) {
+    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  }
+
   const beforeDate = before ? new Date(before) : null;
-  const publicChats = await db
+  const userChats = await db
     .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility, hashtags: chat.hashtags as any })
     .from(chat)
-    .where(beforeDate ? and(eq(chat.visibility, 'public'), lt(chat.createdAt, beforeDate)) : eq(chat.visibility, 'public'))
+    .where(
+      beforeDate
+        ? and(eq(chat.userId, u.id), eq(chat.visibility, 'public'), lt(chat.createdAt, beforeDate))
+        : and(eq(chat.userId, u.id), eq(chat.visibility, 'public')),
+    )
     .orderBy(desc(chat.createdAt))
     .limit(LIMIT);
 
-  if (!publicChats || publicChats.length === 0) {
+  if (!userChats || userChats.length === 0) {
     return NextResponse.json({ items: [], nextBefore: null });
   }
 
-  const chatIds = publicChats.map((c) => c.id);
+  const chatIds = userChats.map((c) => c.id);
 
-  // Load the first user message per chat
   const msgs = await db
     .select()
     .from(message)
@@ -68,8 +83,7 @@ export async function GET(request: Request) {
     userMsgCountByChat.set(m.chatId, (userMsgCountByChat.get(m.chatId) ?? 0) + 1);
   }
 
-  // Apply tag and q filtering using first message text, title, and hashtags
-  let filtered = publicChats;
+  let filtered = userChats;
   if (tag) {
     filtered = (filtered as any).filter(
       (c: any) => Array.isArray(c?.hashtags) && c.hashtags.some((t: string) => String(t).toLowerCase() === tag),
@@ -86,7 +100,6 @@ export async function GET(request: Request) {
     });
   }
 
-  // Upvotes per chat for filtered set
   const filteredIds = filtered.map((c) => c.id);
   const voteRows = await db
     .select({ chatId: vote.chatId, upvotes: count(vote.messageId) })
@@ -95,7 +108,6 @@ export async function GET(request: Request) {
     .groupBy(vote.chatId);
   const upvotesByChat = new Map<string, number>(voteRows.map((v) => [v.chatId, Number(v.upvotes)]));
 
-  // Reposts per chat
   const repostRows = await db
     .select({ chatId: repost.chatId, reposts: count(repost.userId) })
     .from(repost)
@@ -103,39 +115,21 @@ export async function GET(request: Request) {
     .groupBy(repost.chatId);
   const repostsByChat = new Map<string, number>(repostRows.map((r) => [r.chatId, Number(r.reposts)]));
 
-  const chatsForRender = (() => {
+  const items = (sort === 'rating' ? [...filtered] : filtered).sort((a, b) => {
     if (sort === 'rating') {
-      return [...filtered].sort((a, b) => {
-        const ua = upvotesByChat.get(a.id) ?? 0;
-        const ub = upvotesByChat.get(b.id) ?? 0;
-        if (ub !== ua) return ub - ua;
-        return new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime();
-      });
+      const ua = upvotesByChat.get(a.id) ?? 0;
+      const ub = upvotesByChat.get(b.id) ?? 0;
+      if (ub !== ua) return ub - ua;
+      return new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime();
     }
-    return filtered;
-  })();
-
-  // Load authors for attribution
-  const authorUserIds = Array.from(new Set(chatsForRender.map((c: any) => c.userId))) as string[];
-  const authors = authorUserIds.length
-    ? await db
-        .select({ id: user.id, email: user.email, nickname: user.nickname as any })
-        .from(user)
-        .where(inArray(user.id, authorUserIds))
-    : [];
-  const authorById = new Map(authors.map((u: any) => [u.id, u]));
-
-  const items = chatsForRender.map((c: any) => {
+    return 0;
+  }).map((c: any) => {
     const first = firstMsgByChat.get(c.id);
     const text = first ? extractTextFromParts(first.parts as any) : '';
     const imageUrl = first ? extractFirstImageUrl(first) : null;
     const upvotes = upvotesByChat.get(c.id) ?? 0;
-    const reposts = repostsByChat.get(c.id) ?? 0;
-    const au = authorById.get(c.userId as any) as any;
-    const author = au
-      ? (String(au.nickname || '').trim() || `User-${String(au.id || '').slice(0, 6)}`)
-      : 'Пользователь';
-    const authorHref = au ? getUserChannelPath(au.nickname as any, au.id) : null;
+    const rp = repostsByChat.get(c.id) ?? 0;
+    const author = String(u.nickname || '').trim() || String(u.email || '').trim() || 'Пользователь';
     return {
       chatId: c.id,
       firstMessageId: first?.id ?? null,
@@ -143,17 +137,16 @@ export async function GET(request: Request) {
       text,
       imageUrl,
       upvotes,
-      reposts,
+      reposts: rp,
       commentsCount: Math.max(0, (userMsgCountByChat.get(c.id) ?? 0) - (first ? 1 : 0)),
       hashtags: Array.isArray((c as any).hashtags) ? (c as any).hashtags : [],
       author,
-      authorHref,
     };
   });
 
-  const hasMore = publicChats.length === LIMIT;
-  const lastCreatedAt = publicChats[publicChats.length - 1]?.createdAt as any;
+  const hasMore = userChats.length === LIMIT;
+  const lastCreatedAt = userChats[userChats.length - 1]?.createdAt as any;
   const nextBefore = hasMore && lastCreatedAt ? new Date(lastCreatedAt).toISOString() : null;
 
-  return NextResponse.json({ items, nextBefore });
+  return NextResponse.json({ items, nextBefore, author: { nickname: u.nickname, email: u.email, id: u.id } });
 }

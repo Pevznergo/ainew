@@ -33,12 +33,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // Исключаем главную страницу, страницу наград, чат и все страницы в директории /my
+  // Также ПУБЛИЧНЫЕ страницы каналов пользователей в /u/* — доступны без авторизации и индексируются
   if (
     pathname === '/main' ||
     pathname === '/rewards' ||
     pathname === '/chat' ||
     pathname.startsWith('/chat/') ||
-    pathname.startsWith('/my/')
+    pathname.startsWith('/my/') ||
+    pathname === '/u' ||
+    pathname.startsWith('/u/')
   ) {
     return NextResponse.next();
   }

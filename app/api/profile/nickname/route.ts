@@ -18,6 +18,9 @@ export async function PATCH(req: Request) {
     if (nickname.length > 64) {
       return NextResponse.json({ error: 'nickname_too_long' }, { status: 400 });
     }
+    if (nickname !== nickname.toLowerCase()) {
+      return NextResponse.json({ error: 'nickname_uppercase' }, { status: 400 });
+    }
 
     const updated = await updateUserNickname(session.user.id, nickname);
     return NextResponse.json({ id: updated.id, nickname: updated.nickname });
@@ -32,6 +35,9 @@ export async function PATCH(req: Request) {
     }
     if (msg.includes('bad_request:nickname_too_long')) {
       return NextResponse.json({ error: 'nickname_too_long' }, { status: 400 });
+    }
+    if (msg.includes('bad_request:nickname_uppercase')) {
+      return NextResponse.json({ error: 'nickname_uppercase' }, { status: 400 });
     }
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }

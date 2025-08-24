@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FeedItem } from './FeedItem';
 
-export type FeedItemData = {
+export type ChannelItemData = {
   chatId: string;
   firstMessageId: string | null;
   createdAt: string;
@@ -14,23 +14,22 @@ export type FeedItemData = {
   commentsCount?: number;
   hashtags?: string[];
   author: string;
-  authorHref?: string | null;
 };
 
-export function FeedListClient({
+export function ChannelListClient({
   initialItems,
   initialNextBefore,
   sort,
   tag,
   q,
 }: {
-  initialItems: FeedItemData[];
+  initialItems: ChannelItemData[];
   initialNextBefore: string | null;
   sort: 'rating' | 'date';
   tag?: string | null;
   q?: string | null;
 }) {
-  const [items, setItems] = useState<FeedItemData[]>(initialItems || []);
+  const [items, setItems] = useState<ChannelItemData[]>(initialItems || []);
   const [nextBefore, setNextBefore] = useState<string | null>(initialNextBefore);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +37,7 @@ export function FeedListClient({
 
   useEffect(() => {
     if (!sentinelRef.current) return;
-    if (!nextBefore) return; // no more
-
+    if (!nextBefore) return;
     const el = sentinelRef.current;
     const obs = new IntersectionObserver(
       (entries) => {
@@ -60,22 +58,25 @@ export function FeedListClient({
     setLoading(true);
     setError(null);
     try {
-      const url = new URL('/api/feed', location.origin);
+      const url = new URL('/api/channel', location.origin);
       url.searchParams.set('before', nextBefore);
       url.searchParams.set('sort', sort);
       url.searchParams.set('limit', '50');
       if (tag) url.searchParams.set('tag', tag);
       if (q) url.searchParams.set('q', q);
       const res = await fetch(url.toString());
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}`);
+      }
       const data = (await res.json()) as {
-        items: FeedItemData[];
+        items: ChannelItemData[];
         nextBefore: string | null;
       };
       setItems((prev) => [...prev, ...data.items]);
       setNextBefore(data.nextBefore);
     } catch (e: any) {
-      setError(e?.message || 'Не удалось загрузить ленту');
+      setError(e?.message || 'Не удалось загрузить канал');
     } finally {
       setLoading(false);
     }
@@ -96,19 +97,12 @@ export function FeedListClient({
           commentsCount={it.commentsCount}
           hashtags={it.hashtags || []}
           author={it.author}
-          authorHref={it.authorHref || undefined}
         />
       ))}
 
-      {/* Status / loader */}
-      {error && (
-        <div className="text-center text-sm text-destructive">{error}</div>
-      )}
-      {loading && (
-        <div className="text-center text-sm text-muted-foreground">Загрузка…</div>
-      )}
+      {error && <div className="text-center text-sm text-destructive">{error}</div>}
+      {loading && <div className="text-center text-sm text-muted-foreground">Загрузка…</div>}
 
-      {/* Sentinel for infinite scroll */}
       <div ref={sentinelRef} className="h-8" />
       {!nextBefore && (
         <div className="py-4 text-center text-xs text-muted-foreground">Больше постов нет</div>

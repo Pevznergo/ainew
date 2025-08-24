@@ -517,6 +517,10 @@ export async function updateUserNickname(userId: string, nickname: string) {
   const value = String(nickname || '').trim();
   if (!value) throw new ChatSDKError('bad_request:nickname_empty');
   if (value.length > 64) throw new ChatSDKError('bad_request:nickname_too_long');
+  // Disallow uppercase letters
+  if (value !== value.toLowerCase()) {
+    throw new ChatSDKError('bad_request:nickname_uppercase');
+  }
   // If unchanged, return early
   const [current] = await db
     .select({ id: user.id, nickname: user.nickname as any })
@@ -540,6 +544,28 @@ export async function updateUserNickname(userId: string, nickname: string) {
     .set({ nickname: value } as any)
     .where(eq(user.id, userId))
     .returning({ id: user.id, nickname: user.nickname as any });
+  return updated;
+}
+
+export async function getUserBio(userId: string) {
+  const [foundUser] = await db
+    .select({ bio: user.bio })
+    .from(user)
+    .where(eq(user.id, userId));
+  return foundUser?.bio || '';
+}
+
+export async function updateUserBio(userId: string, bio: string) {
+  const value = String(bio ?? '');
+  // Optional: enforce max length (200 chars)
+  if (value.length > 200) {
+    throw new ChatSDKError('bad_request:bio_too_long');
+  }
+  const [updated] = await db
+    .update(user)
+    .set({ bio: value } as any)
+    .where(eq(user.id, userId))
+    .returning({ id: user.id, bio: user.bio as any });
   return updated;
 }
 
