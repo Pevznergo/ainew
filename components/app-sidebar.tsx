@@ -63,7 +63,7 @@ export function AppSidebar({
                     alt="Логотип" 
                     width={16} 
                     height={16} 
-                    className="rounded-full object-cover w-4 h-4" 
+                    className="rounded-full object-cover size-4" 
                     unoptimized
                   />
                   <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Главная</span>

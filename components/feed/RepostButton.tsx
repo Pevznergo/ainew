@@ -54,7 +54,7 @@ export function RepostButton({ chatId, isReposted = false }: { chatId: string; i
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="w-4 h-4"
+        className="size-4"
       >
         <path d="m17 2 4 4-4 4" />
         <path d="M3 11v-1a4 4 0 0 1 4-4h14" />

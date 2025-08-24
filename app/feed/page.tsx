@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
 
-import { db } from '@/lib/db/queries';
+import { db, getUserSubscriptionStatus } from '@/lib/db/queries';
 import { chat, message, user, vote, repost } from '@/lib/db/schema';
 import { FeedItem } from '@/components/feed/FeedItem';
 import { FeedListClient } from '@/components/feed/FeedListClient';
@@ -11,7 +11,6 @@ import SidebarProviderClient from '@/components/feed/SidebarProviderClient';
 import { auth } from '@/app/(auth)/auth';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { getUserSubscriptionStatus } from '@/lib/db/queries';
 import { ModelProvider } from '@/contexts/model-context';
 import { DataStreamProvider } from '@/components/data-stream-provider';
 import { cookies } from 'next/headers';

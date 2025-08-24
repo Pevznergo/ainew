@@ -1,12 +1,11 @@
 import { and, asc, desc, eq, inArray, lt, count, or } from 'drizzle-orm';
 import Link from 'next/link';
-import Image from 'next/image';
 import { BioEditModal } from '@/components/channel/BioEditModal';
 import { Avatar } from '@/components/ui/avatar';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { db } from '@/lib/db/queries';
+import { db, getUserSubscriptionStatus } from '@/lib/db/queries';
 import { chat, message, user, vote } from '@/lib/db/schema';
 import type { InferModel } from 'drizzle-orm';
 import { FeedItem } from '@/components/feed/FeedItem';
@@ -16,7 +15,6 @@ import { getUserChannelPath } from '@/lib/paths';
 import { auth } from '@/app/(auth)/auth';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { getUserSubscriptionStatus } from '@/lib/db/queries';
 import { ModelProvider } from '@/contexts/model-context';
 import { DataStreamProvider } from '@/components/data-stream-provider';
 import { cookies } from 'next/headers';
@@ -302,7 +300,7 @@ export default async function UserChannelPage({
                   <div className="-mt-8 flex items-end gap-3">
                     {/* Avatar */}
                     <div className="size-16 rounded-full ring-2 ring-background border border-border overflow-hidden">
-                      <Avatar name={authorText} size="lg" className="w-full h-full" />
+                      <Avatar name={authorText} size="lg" className="size-full" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-base font-semibold text-foreground truncate">{authorText}</div>
