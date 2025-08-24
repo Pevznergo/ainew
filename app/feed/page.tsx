@@ -9,7 +9,7 @@ import { FeedListClient } from '@/components/feed/FeedListClient';
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
 import SidebarProviderClient from '@/components/feed/SidebarProviderClient';
 import { auth } from '@/app/(auth)/auth';
-import { PlusIcon, HomeIcon, MessageIcon, UserIcon } from '@/components/icons';
+import { HomeIcon, MessageIcon, PlusIcon, UserIcon } from '@/components/icons';
 import FeedMobileNav from '@/components/feed/FeedMobileNav';
 import { getUserChannelPath } from '@/lib/paths';
 
@@ -305,6 +305,24 @@ export default async function FeedPage({
 
             {/* Right sidebar */}
             <aside className="hidden md:block sticky top-4 self-start space-y-4">
+              <div className="rounded-2xl border border-border bg-muted/40 p-4">
+                <form action="/feed" method="GET">
+                  <input
+                    type="text"
+                    name="q"
+                    defaultValue={q || ''}
+                    placeholder="Поиск в ленте..."
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  />
+                  <input type="hidden" name="sort" value={sort} />
+                  {tag && <input type="hidden" name="tag" value={tag} />}
+                </form>
+              </div>
+              <div className="rounded-2xl border border-green-600/30 bg-green-500/5 p-4">
+                <div className="mb-2 text-sm font-medium text-foreground">Активируй ПРО подписку</div>
+                <p className="mb-3 text-xs text-muted-foreground">Открой доступ к расширенным возможностям и большему лимиту токенов.</p>
+                <Link href="/profile" className="inline-block rounded-xl border border-green-600/40 bg-green-500/10 px-3 py-1.5 text-xs text-green-300 hover:bg-green-500/20">Перейти в профиль</Link>
+              </div>
               <div className="rounded-2xl border border-border bg-muted/40 p-3">
                 <div className="mb-2 px-1 text-xs font-medium text-muted-foreground">Популярные теги</div>
                 <div className="flex flex-wrap gap-2">
@@ -321,11 +339,6 @@ export default async function FeedPage({
                     </Link>
                   ))}
                 </div>
-              </div>
-              <div className="rounded-2xl border border-green-600/30 bg-green-500/5 p-4">
-                <div className="mb-2 text-sm font-medium text-foreground">Активируй ПРО подписку</div>
-                <p className="mb-3 text-xs text-muted-foreground">Открой доступ к расширенным возможностям и большему лимиту токенов.</p>
-                <Link href="/profile" className="inline-block rounded-xl border border-green-600/40 bg-green-500/10 px-3 py-1.5 text-xs text-green-300 hover:bg-green-500/20">Перейти в профиль</Link>
               </div>
             </aside>
           </div>

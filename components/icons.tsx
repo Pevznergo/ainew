@@ -1120,6 +1120,23 @@ export const FullscreenIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
+export const SearchIcon = ({ size = 16 }: { size?: number }) => (
+  <svg
+    height={size}
+    strokeLinejoin="round"
+    viewBox="0 0 16 16"
+    width={size}
+    style={{ color: 'currentcolor' }}
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M7.5 1.5C4.18629 1.5 1.5 4.18629 1.5 7.5C1.5 10.8137 4.18629 13.5 7.5 13.5C8.86131 13.5 10.1119 13.0142 11.0836 12.214L13.2803 14.4091L13.3409 14.4697C13.5978 14.7039 13.9989 14.6873 14.2339 14.4304C14.4689 14.1734 14.4523 13.7723 14.1954 13.5373L14.1348 13.4767L11.9371 11.2806C12.7331 10.309 13.2169 9.0613 13.2169 7.7026C13.2169 4.38889 10.8281 2 7.51438 2H7.5V1.5ZM7.5 3C5.29086 3 3.5 4.79086 3.5 7C3.5 9.20914 5.29086 11 7.5 11C9.70914 11 11.5 9.20914 11.5 7C11.5 4.79086 9.70914 3 7.5 3Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
 export const DownloadIcon = ({ size = 16 }: { size?: number }) => (
   <svg
     height={size}
