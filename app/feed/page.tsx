@@ -193,7 +193,7 @@ export default async function FeedPage({
                       <span>Главная</span>
                     </span>
                   </Link>
-                  <Link href="/channel" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
+                  <Link href={`/u/${session?.user?.nickname || session?.user?.id}`} className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
                     <span className="inline-flex items-center gap-2">
                       <HomeIcon size={16} />
                       <span>Мой канал</span>

@@ -33,6 +33,7 @@ declare module 'next-auth' {
     id?: string;
     email?: string | null;
     type: UserType;
+    nickname?: string | null;
   }
 }
 

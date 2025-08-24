@@ -68,7 +68,7 @@ export function AppSidebar({
                   className="p-2 h-fit justify-start gap-2"
                   onClick={() => {
                     setOpenMobile(false);
-                    router.push('/channel');
+                    router.push(`/u/${session?.user?.nickname || session?.user?.id || user.id}`);
                   }}
                   aria-label="Мой канал"
                 >

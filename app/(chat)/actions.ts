@@ -71,6 +71,7 @@ export async function updateChatVisibility({
   chatId: string;
   visibility: VisibilityType;
 }) {
+  console.log('updateChatVisibility called with:', { chatId, visibility });
   const updated = await updateChatVisiblityById({ chatId, visibility });
 
   try {
@@ -78,34 +79,61 @@ export async function updateChatVisibility({
       const chat = await getChatById({ id: chatId });
       const existing = (chat as any)?.hashtags as string[] | undefined;
       if (!existing || existing.length === 0) {
+        console.log('Starting hashtag generation for chat:', chatId);
         const firstMsg = await getFirstUserMessageByChatId({ chatId });
-        const textParts = Array.isArray((firstMsg as any)?.parts)
-          ? (firstMsg as any).parts
-          : [];
-        const firstText = (() => {
-          for (const p of textParts) {
-            if (p?.type === 'text' && typeof p.text === 'string' && p.text.trim()) return p.text.trim();
+        console.log('First message raw:', JSON.stringify(firstMsg, null, 2));
+        
+        let firstText = '';
+        
+        // Try different ways to extract text from the message
+        if (firstMsg) {
+          // Case 1: Check if parts is an array with text content
+          if (Array.isArray(firstMsg.parts)) {
+            for (const p of firstMsg.parts) {
+              if (p?.type === 'text' && typeof p.text === 'string' && p.text.trim()) {
+                firstText = p.text.trim();
+                console.log('Found text in parts:', firstText);
+                break;
+              }
+            }
           }
-          return '';
-        })();
+          
+          // Case 2: Check if there's a single text part in the message
+          if (!firstText && Array.isArray(firstMsg.parts) && firstMsg.parts.length === 1 && 
+              firstMsg.parts[0]?.type === 'text' && typeof firstMsg.parts[0]?.text === 'string') {
+            firstText = firstMsg.parts[0].text.trim();
+            console.log('Found text in single part:', firstText);
+          }
+          
+          // Case 3: Check if message has a data field with content
+          if (!firstText && typeof (firstMsg as any)?.data?.content === 'string') {
+            firstText = (firstMsg as any).data.content.trim();
+            console.log('Found text in data.content:', firstText);
+          }
+        }
+        
 
         if (firstText) {
-          const { text } = await generateText({
-            model: openai('gpt-4o-mini-2024-07-18'),
-            system:
-              'Generate 5 short, relevant hashtags for this message. Output only the hashtags without #, comma-separated. In English, no spaces inside a single tag.',
-            prompt: firstText,
-          });
+          try {
+            const { text } = await generateText({
+              model: openai('gpt-4o-mini-2024-07-18'),
+              system:
+                'Generate exactly 5 single English words that best describe the main topics of this message. Each word must be 3-12 characters long, lowercase, and contain only English letters a-z. Separate words with commas, no other symbols. Example output: economy,games,money,investments,strategies. Do not include any special characters, numbers, or symbols in the output. Always respond in English, even if the input is in another language.',
+              prompt: firstText,
+            });
 
-          const tags = String(text)
-            .split(/[,\n]/)
-            .map((s) => s.trim().replace(/^#/, ''))
-            .filter(Boolean)
-            .slice(0, 5)
-            .map((s) => s.toLowerCase());
+            const tags = String(text)
+              .split(/[,\n]/)
+              .map((s) => s.trim().replace(/^#/, '').toLowerCase())
+              .filter(s => /^[a-z]{3,12}$/.test(s)) // Only keep English words with 3-12 letters
+              .slice(0, 5);
 
-          if (tags.length > 0) {
-            await setChatHashtags({ chatId, hashtags: tags });
+            if (tags.length > 0) {
+              await setChatHashtags({ chatId, hashtags: tags });
+              // Tags saved successfully
+            }
+          } catch (error) {
+            console.error('Error generating hashtags:', error);
           }
         }
       }
