@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { and, asc, desc, eq, inArray, lt, count, or } from 'drizzle-orm';
 import { db } from '@/lib/db/queries';
 import { chat, message, vote, user, repost } from '@/lib/db/schema';
@@ -51,7 +52,7 @@ type ApiResponse = {
 } | { error: string };
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   context: { params: { slug: string } }
 ): Promise<NextResponse<ApiResponse>> {
   const { params } = context;
