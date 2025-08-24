@@ -17,18 +17,19 @@ import { auth } from '@/app/(auth)/auth';
 // @ts-ignore - Workaround for Next.js internal type checking
 const Page = async ({
   params,
-  searchParams = new URLSearchParams(),
+  searchParams,
 }: {
-  params: { slug: string };
-  searchParams: URLSearchParams;
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) => {
   const session = await auth();
-  const { slug } = params;
+  const { slug } = await params;
+  const searchParamsObj = await searchParams;
   const LIMIT = 50;
   const sort = 'date' as const;
-  const tag = (searchParams.get('tag') || '').toLowerCase().trim();
-  const q = (searchParams.get('q') || '').toLowerCase().trim();
-  const before = searchParams.get('before') || undefined;
+  const tag = ((searchParamsObj.tag as string) || '').toLowerCase().trim();
+  const q = ((searchParamsObj.q as string) || '').toLowerCase().trim();
+  const before = searchParamsObj.before as string | undefined;
 
   // Resolve user by slug (nickname or id)
   const u = await db
@@ -68,8 +69,8 @@ const Page = async ({
 // @ts-ignore - Workaround for Next.js internal type checking
 Page.generateMetadata = async ({
   params,
-}: { params: { slug: string } }): Promise<Metadata> => {
-  const { slug } = params;
+}: { params: Promise<{ slug: string }> }): Promise<Metadata> => {
+  const { slug } = await params;
   const u = await db
     .select({
       id: user.id,
