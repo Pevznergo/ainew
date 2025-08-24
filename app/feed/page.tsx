@@ -46,7 +46,8 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Лента — Aporto AI',
-  description: 'Публичные посты пользователей и ответы ИИ. Лента обновляется по мере прокрутки.',
+  description:
+    'Публичные посты пользователей и ответы ИИ. Лента обновляется по мере прокрутки.',
   robots: {
     index: true,
     follow: true,
@@ -59,7 +60,12 @@ export const metadata: Metadata = {
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ before?: string; sort?: 'rating' | 'date'; tag?: string; q?: string }>;
+  searchParams?: Promise<{
+    before?: string;
+    sort?: 'rating' | 'date';
+    tag?: string;
+    q?: string;
+  }>;
 }) {
   const session = await auth();
   const LIMIT = 50;
@@ -73,7 +79,14 @@ export default async function FeedPage({
   // 1) Get latest public chats
   const beforeDate = params?.before ? new Date(params.before) : null;
   const publicChats = await db
-    .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility, hashtags: chat.hashtags as any })
+    .select({
+      id: chat.id,
+      createdAt: chat.createdAt,
+      title: chat.title,
+      userId: chat.userId,
+      visibility: chat.visibility,
+      hashtags: chat.hashtags as any,
+    })
     .from(chat)
     .where(
       beforeDate
@@ -92,17 +105,22 @@ export default async function FeedPage({
     .orderBy(asc(message.createdAt));
 
   // 3) Take the first user message per chat
-  const firstMsgByChat = new Map<string, typeof msgs[number]>();
+  const firstMsgByChat = new Map<string, (typeof msgs)[number]>();
   const userMsgCountByChat = new Map<string, number>();
   for (const m of msgs) {
     if (!firstMsgByChat.has(m.chatId)) firstMsgByChat.set(m.chatId, m);
-    userMsgCountByChat.set(m.chatId, (userMsgCountByChat.get(m.chatId) ?? 0) + 1);
+    userMsgCountByChat.set(
+      m.chatId,
+      (userMsgCountByChat.get(m.chatId) ?? 0) + 1,
+    );
   }
 
   // 4) Now apply tag and query filters using chat + first message content
   let filteredChats = tag
     ? (publicChats as any).filter(
-        (c: any) => Array.isArray(c?.hashtags) && c.hashtags.some((t: string) => String(t).toLowerCase() === tag),
+        (c: any) =>
+          Array.isArray(c?.hashtags) &&
+          c.hashtags.some((t: string) => String(t).toLowerCase() === tag),
       )
     : publicChats;
 
@@ -110,10 +128,22 @@ export default async function FeedPage({
     const qlc = q;
     filteredChats = (filteredChats as any).filter((c: any) => {
       const first = firstMsgByChat.get(c.id);
-      const body = first ? extractTextFromParts((first as any).parts).toLowerCase() : '';
+      const body = first
+        ? extractTextFromParts((first as any).parts).toLowerCase()
+        : '';
       const title = String((c as any).title || '').toLowerCase();
-      const tags = Array.isArray((c as any).hashtags) ? ((c as any).hashtags as string[]) : [];
-      return body.includes(qlc) || title.includes(qlc) || tags.some((t) => String(t || '').toLowerCase().includes(qlc));
+      const tags = Array.isArray((c as any).hashtags)
+        ? ((c as any).hashtags as string[])
+        : [];
+      return (
+        body.includes(qlc) ||
+        title.includes(qlc) ||
+        tags.some((t) =>
+          String(t || '')
+            .toLowerCase()
+            .includes(qlc),
+        )
+      );
     });
   }
 
@@ -128,7 +158,9 @@ export default async function FeedPage({
   const chatIds = filteredChats.map((c) => c.id);
 
   // 5) Load users for attribution (optional)
-  const userIds = Array.from(new Set(filteredChats.map((c) => c.userId))) as string[];
+  const userIds = Array.from(
+    new Set(filteredChats.map((c) => c.userId)),
+  ) as string[];
   const users = await db
     .select({ id: user.id, email: user.email, nickname: user.nickname as any })
     .from(user)
@@ -141,7 +173,9 @@ export default async function FeedPage({
     .from(vote)
     .where(and(inArray(vote.chatId, chatIds), eq(vote.isUpvoted, true)))
     .groupBy(vote.chatId);
-  const upvotesByChat = new Map<string, number>(voteRows.map((v) => [v.chatId, Number(v.upvotes)]));
+  const upvotesByChat = new Map<string, number>(
+    voteRows.map((v) => [v.chatId, Number(v.upvotes)]),
+  );
 
   // sort by rating (default) or date
   const chatsForRender = (() => {
@@ -150,7 +184,10 @@ export default async function FeedPage({
         const ua = upvotesByChat.get(a.id) ?? 0;
         const ub = upvotesByChat.get(b.id) ?? 0;
         if (ub !== ua) return ub - ua;
-        return new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime();
+        return (
+          new Date(b.createdAt as any).getTime() -
+          new Date(a.createdAt as any).getTime()
+        );
       });
     }
     return filteredChats;
@@ -158,14 +195,17 @@ export default async function FeedPage({
 
   const hasMore = publicChats.length === LIMIT; // pagination by date only
   const lastCreatedAt = publicChats[publicChats.length - 1]?.createdAt as any;
-  const initialNextBefore = hasMore && lastCreatedAt && sort === 'date'
-    ? new Date(lastCreatedAt).toISOString()
-    : null;
+  const initialNextBefore =
+    hasMore && lastCreatedAt && sort === 'date'
+      ? new Date(lastCreatedAt).toISOString()
+      : null;
 
   // Compute simple popular tags list from currently loaded chats
   const tagCounts = new Map<string, number>();
   for (const c of filteredChats) {
-    const tags = Array.isArray((c as any).hashtags) ? ((c as any).hashtags as string[]) : [];
+    const tags = Array.isArray((c as any).hashtags)
+      ? ((c as any).hashtags as string[])
+      : [];
     for (const t of tags) {
       const key = String(t || '').toLowerCase();
       if (!key) continue;
@@ -188,31 +228,52 @@ export default async function FeedPage({
             <aside className="hidden md:block sticky top-4 self-start">
               <div className="flex h-[calc(100vh-2rem)] flex-col justify-between">
                 <nav className="flex flex-col gap-2 text-sm">
-                  <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
+                  <Link
+                    href="/feed"
+                    className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground"
+                  >
                     <span className="inline-flex items-center gap-2">
-                      <Image src="/images/logo.png" alt="Главная" width={16} height={16} className="rounded-full object-cover" />
+                      <Image
+                        src="/images/logo.png"
+                        alt="Главная"
+                        width={16}
+                        height={16}
+                        className="rounded-full object-cover"
+                      />
                       <span>Главная</span>
                     </span>
                   </Link>
-                  <Link href={`/u/${session?.user?.nickname || session?.user?.id}`} className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
+                  <Link
+                    href={`/u/${session?.user?.nickname || session?.user?.id}`}
+                    className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground"
+                  >
                     <span className="inline-flex items-center gap-2">
                       <HomeIcon size={16} />
                       <span>Мой канал</span>
                     </span>
                   </Link>
-                  <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
+                  <Link
+                    href="/feed"
+                    className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground"
+                  >
                     <span className="inline-flex items-center gap-2">
                       <MessageIcon size={16} />
                       <span>Лента</span>
                     </span>
                   </Link>
-                  <Link href="/profile" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
+                  <Link
+                    href="/profile"
+                    className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground"
+                  >
                     <span className="inline-flex items-center gap-2">
                       <UserIcon />
                       <span>Профиль</span>
                     </span>
                   </Link>
-                  <Link href="/" className="mt-2 block rounded-xl px-3 py-2 border border-green-600/40 bg-green-500/10 text-green-600 dark:text-green-300 hover:bg-green-500/20">
+                  <Link
+                    href="/"
+                    className="mt-2 block rounded-xl px-3 py-2 border border-green-600/40 bg-green-500/10 text-green-600 dark:text-green-300 hover:bg-green-500/20"
+                  >
                     <span className="inline-flex items-center gap-2">
                       <PlusIcon />
                       <span>Новый чат</span>
@@ -242,7 +303,9 @@ export default async function FeedPage({
                 </Link>
                 {tag && (
                   <div className="ml-2 flex items-center gap-2">
-                    <span className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">Тег: #{tag}</span>
+                    <span className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
+                      Тег: #{tag}
+                    </span>
                     <Link
                       href={`/feed?sort=${sort}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
                       className="text-muted-foreground hover:text-foreground underline underline-offset-4"
@@ -253,7 +316,9 @@ export default async function FeedPage({
                 )}
                 {q && (
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">Поиск: “{q}”</span>
+                    <span className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">
+                      Поиск: “{q}”
+                    </span>
                     <Link
                       href={`/feed?sort=${sort}${tag ? `&tag=${encodeURIComponent(tag)}` : ''}`}
                       className="text-muted-foreground hover:text-foreground underline underline-offset-4"
@@ -266,26 +331,41 @@ export default async function FeedPage({
 
               {chatsForRender.map((c) => {
                 const first = firstMsgByChat.get(c.id);
-                const text = first ? extractTextFromParts(first.parts as any) : '';
+                const text = first
+                  ? extractTextFromParts(first.parts as any)
+                  : '';
                 const imageUrl = first ? extractFirstImageUrl(first) : null;
                 const upvotes = upvotesByChat.get(c.id) ?? 0;
                 const u = userById.get(c.userId as any) as any;
                 const author = u
-                  ? (String(u.nickname || '').trim() || `User-${String(u.id || '').slice(0, 6)}`)
+                  ? String(u.nickname || '').trim() ||
+                    `User-${String(u.id || '').slice(0, 6)}`
                   : 'Пользователь';
-                const authorHref = u ? getUserChannelPath(u.nickname as any, u.id) : undefined;
+                const authorHref = u
+                  ? getUserChannelPath(u.nickname as any, u.id)
+                  : undefined;
                 return (
                   <FeedItem
                     key={c.id}
                     chatId={c.id}
                     firstMessageId={first?.id ?? null}
-                    createdAt={(c.createdAt as any)?.toISOString?.() ?? new Date(c.createdAt as any).toISOString()}
+                    createdAt={
+                      (c.createdAt as any)?.toISOString?.() ??
+                      new Date(c.createdAt as any).toISOString()
+                    }
                     text={text}
                     imageUrl={imageUrl}
                     initialUpvotes={upvotes}
                     initialReposts={0}
-                    commentsCount={Math.max(0, (userMsgCountByChat.get(c.id) ?? 0) - (first ? 1 : 0))}
-                    hashtags={Array.isArray((c as any).hashtags) ? ((c as any).hashtags as string[]) : []}
+                    commentsCount={Math.max(
+                      0,
+                      (userMsgCountByChat.get(c.id) ?? 0) - (first ? 1 : 0),
+                    )}
+                    hashtags={
+                      Array.isArray((c as any).hashtags)
+                        ? ((c as any).hashtags as string[])
+                        : []
+                    }
                     author={author}
                     authorHref={authorHref}
                   />
@@ -293,15 +373,13 @@ export default async function FeedPage({
               })}
 
               {/* Infinite scroll after initial SSR items */}
-              {sort === 'date' && (
-                <FeedListClient
-                  initialItems={[]}
-                  initialNextBefore={initialNextBefore}
-                  sort={sort}
-                  tag={tag || undefined}
-                  q={q || undefined}
-                />
-              )}
+              <FeedListClient
+                initialItems={[]}
+                initialNextBefore={initialNextBefore}
+                sort={sort}
+                tag={tag || undefined}
+                q={q || undefined}
+              />
             </main>
 
             {/* Right sidebar */}
@@ -320,15 +398,29 @@ export default async function FeedPage({
                 </form>
               </div>
               <div className="rounded-2xl border border-green-600/30 bg-green-500/5 p-4">
-                <div className="mb-2 text-sm font-medium text-foreground">Активируй ПРО подписку</div>
-                <p className="mb-3 text-xs text-muted-foreground">Открой доступ к расширенным возможностям и большему лимиту токенов.</p>
-                <Link href="/profile" className="inline-block rounded-xl border border-green-600/40 bg-green-500/10 px-3 py-1.5 text-xs text-green-300 hover:bg-green-500/20">Перейти в профиль</Link>
+                <div className="mb-2 text-sm font-medium text-foreground">
+                  Активируй ПРО подписку
+                </div>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Открой доступ к расширенным возможностям и большему лимиту
+                  токенов.
+                </p>
+                <Link
+                  href="/profile"
+                  className="inline-block rounded-xl border border-green-600/40 bg-green-500/10 px-3 py-1.5 text-xs text-green-300 hover:bg-green-500/20"
+                >
+                  Перейти в профиль
+                </Link>
               </div>
               <div className="rounded-2xl border border-border bg-muted/40 p-3">
-                <div className="mb-2 px-1 text-xs font-medium text-muted-foreground">Популярные теги</div>
+                <div className="mb-2 px-1 text-xs font-medium text-muted-foreground">
+                  Популярные теги
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {popularTags.length === 0 && (
-                    <div className="px-1 text-xs text-muted-foreground">Пока нет тегов</div>
+                    <div className="px-1 text-xs text-muted-foreground">
+                      Пока нет тегов
+                    </div>
                   )}
                   {popularTags.map((t) => (
                     <Link
