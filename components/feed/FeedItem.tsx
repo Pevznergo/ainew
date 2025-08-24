@@ -168,28 +168,28 @@ export function FeedItem({
   }
 
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 text-white">
+    <article className="rounded-3xl border border-border bg-card p-4 text-card-foreground">
       <div className="sm:flex sm:gap-3">
         {/* Avatar placeholder */}
-        <div className="mb-2 size-10 shrink-0 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10 sm:mb-0" />
+        <div className="mb-2 size-10 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border sm:mb-0" />
 
         <div className="min-w-0 flex-1">
           {/* Header (Twitter-like) */}
-          <div className="mb-1 flex items-center gap-2 text-sm text-white/70">
-            <span className="font-medium text-white/90">{author}</span>
-            <span className="text-white/40">·</span>
-            <time dateTime={createdAt} className="text-white/50">
+          <div className="mb-1 flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{author}</span>
+            <span className="text-muted-foreground">·</span>
+            <time dateTime={createdAt} className="text-muted-foreground">
               {dateLabel}
             </time>
             {modelName && (
-              <span className="ml-auto truncate rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[11px] text-white/70">
+              <span className="ml-auto truncate rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
                 {modelName}
               </span>
             )}
           </div>
 
           {/* Content */}
-          <div className="text-[15px] leading-relaxed text-white/90 whitespace-pre-wrap">
+          <div className="text-[15px] leading-relaxed text-foreground whitespace-pre-wrap">
             {text ? (
               <div className="relative">
                 {expanded ? (
@@ -199,7 +199,7 @@ export function FeedItem({
                       <button
                         type="button"
                         onClick={toggleExpanded}
-                        className="text-xs text-white/70 underline decoration-white/30 hover:text-white/90"
+                        className="text-xs text-muted-foreground underline decoration-border hover:text-foreground"
                         aria-expanded={expanded}
                       >
                         Свернуть
@@ -213,7 +213,7 @@ export function FeedItem({
                       <button
                         type="button"
                         onClick={toggleExpanded}
-                        className="ml-1 align-baseline text-xs text-white/70 underline decoration-white/30 hover:text-white/90"
+                        className="ml-1 align-baseline text-xs text-muted-foreground underline decoration-border hover:text-foreground"
                         aria-expanded={expanded}
                       >
                         Показать полностью
@@ -223,7 +223,7 @@ export function FeedItem({
                 )}
               </div>
             ) : (
-              <span className="italic text-white/60">(без текста)</span>
+              <span className="italic text-muted-foreground">(без текста)</span>
             )}
           </div>
 
@@ -237,7 +237,7 @@ export function FeedItem({
                   <Link
                     key={tag}
                     href={`/feed?tag=${encodeURIComponent(tag)}`}
-                    className="text-xs rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-white/70 hover:text-white/90"
+                    className="text-xs rounded-full border border-border bg-muted px-2 py-0.5 text-muted-foreground hover:text-foreground"
                   >
                     #{tag}
                   </Link>
@@ -248,7 +248,7 @@ export function FeedItem({
 
           {/* Image */}
           {imageUrl && (
-            <div className="mt-3 overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+            <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageUrl}
@@ -260,30 +260,28 @@ export function FeedItem({
           )}
 
           {/* Actions */}
-          <div className="mt-3 flex items-center justify-between text-white/60">
+          <div className="mt-3 flex items-center justify-between text-muted-foreground">
             <button
               type="button"
               onClick={toggleLike}
               className={`group inline-flex items-center gap-2 rounded-full px-3 py-1 transition-colors ${
-                liked ? 'text-rose-400' : 'hover:bg-white/[0.06]'
+                liked ? 'text-rose-500' : 'hover:bg-muted'
               }`}
               aria-pressed={liked}
             >
-              <Heart
-                className={`size-5 ${liked ? 'fill-rose-500/30 text-rose-400' : 'text-white/60 group-hover:text-white/80'}`}
-              />
-              <span className={`${liked ? 'text-rose-300' : ''}`}>{upvotes}</span>
+              <Heart className={`size-5 ${liked ? 'fill-rose-500/20 text-rose-500' : 'text-muted-foreground group-hover:text-foreground'}`} />
+              <span className={`${liked ? 'text-rose-500' : ''}`}>{upvotes}</span>
             </button>
 
             <Link
               href={`/chat/${chatId}#comments`}
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white/60 hover:bg-white/[0.06] hover:text-white/80 border border-transparent"
+              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
             >
               <MessageCircle className="size-5" />
               <span className="flex items-center gap-1">
                 Комментарии
                 {typeof commentsCount === 'number' && commentsCount > 0 && (
-                  <span className="ml-0.5 text-white/80">{commentsCount}</span>
+                  <span className="ml-0.5 text-foreground/80">{commentsCount}</span>
                 )}
               </span>
             </Link>
@@ -292,7 +290,7 @@ export function FeedItem({
               href={`/chat/${chatId}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white/60 hover:bg-white/[0.06] hover:text-white/80 border border-transparent"
+              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
             >
               <span>Посмотреть ответ ИИ</span>
             </Link>
@@ -300,14 +298,14 @@ export function FeedItem({
             <button
               type="button"
               aria-label="Поделиться"
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-white/60 hover:bg-white/[0.06] hover:text-white/80"
+              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-muted-foreground hover:bg-muted hover:text-foreground"
               onClick={() => navigator?.share?.({ url: location.href }).catch(() => {})}
             >
               <Share2 className="size-5" />
             </button>
           </div>
 
-          {error && <div className="mt-2 text-[11px] text-red-300">{error}</div>}
+          {error && <div className="mt-2 text-[11px] text-destructive">{error}</div>}
         </div>
       </div>
     </article>

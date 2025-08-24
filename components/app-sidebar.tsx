@@ -3,7 +3,7 @@
 import type { User, Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 
-import { PlusIcon, MessageIcon, UploadIcon } from '@/components/icons';
+import { PlusIcon, HomeIcon, MessageIcon, UserIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
 import { Button } from '@/components/ui/button';
@@ -56,7 +56,7 @@ export function AppSidebar({
                   }}
                   aria-label="Главная"
                 >
-                  <MessageIcon />
+                  <img src="/images/logo.png" alt="Главная" className="h-4 w-4 rounded-full object-cover" />
                   <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Главная</span>
                 </Button>
               </div>
@@ -72,8 +72,24 @@ export function AppSidebar({
                   }}
                   aria-label="Мой канал"
                 >
-                  <MessageIcon />
+                  <HomeIcon size={16} />
                   <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Мой канал</span>
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="p-2 h-fit justify-start gap-2"
+                  onClick={() => {
+                    setOpenMobile(false);
+                    router.push('/feed');
+                  }}
+                  aria-label="Лента"
+                >
+                  <MessageIcon size={16} />
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Лента</span>
                 </Button>
               </div>
 
@@ -88,7 +104,7 @@ export function AppSidebar({
                   }}
                   aria-label="Профиль"
                 >
-                  <UploadIcon />
+                  <UserIcon />
                   <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Профиль</span>
                 </Button>
               </div>

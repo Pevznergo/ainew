@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { MenuIcon, MessageIcon, UploadIcon, PlusIcon } from "@/components/icons";
+import { MenuIcon, PlusIcon, HomeIcon, MessageIcon, UserIcon } from "@/components/icons";
 import { SidebarUserNav } from "@/components/sidebar-user-nav";
 import type { Session } from "next-auth";
 
@@ -20,19 +20,25 @@ export default function FeedMobileNav({ session }: { session: Session | null }) 
               <nav className="flex flex-col gap-2 text-sm">
                 <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
                   <span className="inline-flex items-center gap-2">
-                    <MessageIcon />
+                    <img src="/images/logo.png" alt="Главная" className="h-4 w-4 rounded-full object-cover" />
                     <span>Главная</span>
                   </span>
                 </Link>
                 <Link href="/channel" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
                   <span className="inline-flex items-center gap-2">
-                    <MessageIcon />
+                    <HomeIcon size={16} />
                     <span>Мой канал</span>
+                  </span>
+                </Link>
+                <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
+                  <span className="inline-flex items-center gap-2">
+                    <MessageIcon size={16} />
+                    <span>Лента</span>
                   </span>
                 </Link>
                 <Link href="/profile" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
                   <span className="inline-flex items-center gap-2">
-                    <UploadIcon />
+                    <UserIcon />
                     <span>Профиль</span>
                   </span>
                 </Link>

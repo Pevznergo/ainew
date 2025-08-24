@@ -26,9 +26,9 @@ export const metadata: Metadata = {
     'AI Chatbot',
   ],
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: '/images/favicon.ico',
+    shortcut: '/images/favicon.ico',
+    apple: '/images/favicon.ico',
   },
   openGraph: {
     title: 'Чат | AI Chatbot',

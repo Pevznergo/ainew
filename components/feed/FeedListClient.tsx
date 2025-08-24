@@ -98,16 +98,16 @@ export function FeedListClient({
 
       {/* Status / loader */}
       {error && (
-        <div className="text-center text-sm text-red-300">{error}</div>
+        <div className="text-center text-sm text-destructive">{error}</div>
       )}
       {loading && (
-        <div className="text-center text-sm text-white/60">Загрузка…</div>
+        <div className="text-center text-sm text-muted-foreground">Загрузка…</div>
       )}
 
       {/* Sentinel for infinite scroll */}
       <div ref={sentinelRef} className="h-8" />
       {!nextBefore && (
-        <div className="py-4 text-center text-xs text-white/40">Больше постов нет</div>
+        <div className="py-4 text-center text-xs text-muted-foreground">Больше постов нет</div>
       )}
     </>
   );

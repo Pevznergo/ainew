@@ -9,7 +9,7 @@ import { FeedListClient } from '@/components/feed/FeedListClient';
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
 import SidebarProviderClient from '@/components/feed/SidebarProviderClient';
 import { auth } from '@/app/(auth)/auth';
-import { PlusIcon, MessageIcon, UploadIcon } from '@/components/icons';
+import { PlusIcon, HomeIcon, MessageIcon, UserIcon } from '@/components/icons';
 import FeedMobileNav from '@/components/feed/FeedMobileNav';
 
 function extractTextFromParts(parts: any): string {
@@ -188,19 +188,25 @@ export default async function FeedPage({
                 <nav className="flex flex-col gap-2 text-sm">
                   <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
                     <span className="inline-flex items-center gap-2">
-                      <MessageIcon />
+                      <img src="/images/logo.png" alt="Главная" className="h-4 w-4 rounded-full object-cover" />
                       <span>Главная</span>
                     </span>
                   </Link>
                   <Link href="/channel" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
                     <span className="inline-flex items-center gap-2">
-                      <MessageIcon />
+                      <HomeIcon size={16} />
                       <span>Мой канал</span>
+                    </span>
+                  </Link>
+                  <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
+                    <span className="inline-flex items-center gap-2">
+                      <MessageIcon size={16} />
+                      <span>Лента</span>
                     </span>
                   </Link>
                   <Link href="/profile" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
                     <span className="inline-flex items-center gap-2">
-                      <UploadIcon />
+                      <UserIcon />
                       <span>Профиль</span>
                     </span>
                   </Link>
