@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { and, asc, desc, eq, inArray, lt, count } from 'drizzle-orm';
 import { db } from '@/lib/db/queries';
-import { chat, message, vote } from '@/lib/db/schema';
+import { chat, message, vote, user } from '@/lib/db/schema';
 
 function extractTextFromParts(parts: any): string {
   if (!Array.isArray(parts)) return '';
@@ -106,11 +106,23 @@ export async function GET(request: Request) {
     return filtered;
   })();
 
+  // Load authors for attribution
+  const authorUserIds = Array.from(new Set(chatsForRender.map((c: any) => c.userId))) as string[];
+  const authors = authorUserIds.length
+    ? await db
+        .select({ id: user.id, email: user.email, nickname: user.nickname as any })
+        .from(user)
+        .where(inArray(user.id, authorUserIds))
+    : [];
+  const authorById = new Map(authors.map((u: any) => [u.id, u]));
+
   const items = chatsForRender.map((c: any) => {
     const first = firstMsgByChat.get(c.id);
     const text = first ? extractTextFromParts(first.parts as any) : '';
     const imageUrl = first ? extractFirstImageUrl(first) : null;
     const upvotes = upvotesByChat.get(c.id) ?? 0;
+    const au = authorById.get(c.userId as any) as any;
+    const author = au ? (String(au.nickname || '').trim() || String(au.email || '').trim() || 'Пользователь') : 'Пользователь';
     return {
       chatId: c.id,
       firstMessageId: first?.id ?? null,
@@ -120,6 +132,7 @@ export async function GET(request: Request) {
       upvotes,
       commentsCount: Math.max(0, (userMsgCountByChat.get(c.id) ?? 0) - (first ? 1 : 0)),
       hashtags: Array.isArray((c as any).hashtags) ? (c as any).hashtags : [],
+      author,
     };
   });
 

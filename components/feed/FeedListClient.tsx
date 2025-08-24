@@ -12,6 +12,7 @@ export type FeedItemData = {
   upvotes: number;
   commentsCount?: number;
   hashtags?: string[];
+  author: string;
 };
 
 export function FeedListClient({
@@ -91,6 +92,7 @@ export function FeedListClient({
           initialUpvotes={it.upvotes}
           commentsCount={it.commentsCount}
           hashtags={it.hashtags || []}
+          author={it.author}
         />
       ))}
 
