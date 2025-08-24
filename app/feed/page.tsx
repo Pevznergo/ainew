@@ -7,10 +7,14 @@ import { db } from '@/lib/db/queries';
 import { chat, message, user, vote } from '@/lib/db/schema';
 import { FeedItem } from '@/components/feed/FeedItem';
 import { FeedListClient } from '@/components/feed/FeedListClient';
-import { SidebarUserNav } from '@/components/sidebar-user-nav';
 import SidebarProviderClient from '@/components/feed/SidebarProviderClient';
 import { auth } from '@/app/(auth)/auth';
-import { HomeIcon, MessageIcon, PlusIcon, UserIcon } from '@/components/icons';
+import { AppSidebar } from '@/components/app-sidebar';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { getUserSubscriptionStatus } from '@/lib/db/queries';
+import { ModelProvider } from '@/contexts/model-context';
+import { DataStreamProvider } from '@/components/data-stream-provider';
+import { cookies } from 'next/headers';
 import FeedMobileNav from '@/components/feed/FeedMobileNav';
 import { getUserChannelPath } from '@/lib/paths';
 
@@ -177,60 +181,25 @@ export default async function FeedPage({
     .slice(0, 10)
     .map(([name]) => name);
 
+  const cookieStore = cookies();
+  const isCollapsed = (await cookieStore).get('sidebar:state')?.value !== 'true';
+  const chatModelFromCookie = (await cookieStore).get('chat-model');
+  const userId = session?.user?.id;
+  let subscriptionStatus = null;
+  
+  if (userId) {
+    subscriptionStatus = await getUserSubscriptionStatus(userId);
+  }
+
   return (
-    <SidebarProviderClient>
-      <div className="w-full flex-1">
-        {/* Mobile top bar with hamburger */}
-        <FeedMobileNav session={session} />
-        <div className="mx-auto max-w-7xl px-4 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-[280px,1fr,320px] gap-6">
-            {/* Left sidebar */}
-            <aside className="hidden md:block sticky top-4 self-start">
-              <div className="flex h-[calc(100vh-2rem)] flex-col justify-between">
-                <nav className="flex flex-col gap-2 text-sm">
-                  <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
-                    <span className="inline-flex items-center gap-2">
-                      <Image 
-                        src="/images/logo.png" 
-                        alt="Логотип" 
-                        width={16} 
-                        height={16} 
-                        className="rounded-full object-cover w-4 h-4" 
-                        unoptimized
-                      />
-                      <span>Главная</span>
-                    </span>
-                  </Link>
-                  <Link href={`/u/${session?.user?.nickname || session?.user?.id}`} className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
-                    <span className="inline-flex items-center gap-2">
-                      <HomeIcon size={16} />
-                      <span>Мой канал</span>
-                    </span>
-                  </Link>
-                  <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
-                    <span className="inline-flex items-center gap-2">
-                      <MessageIcon size={16} />
-                      <span>Лента</span>
-                    </span>
-                  </Link>
-                  <Link href="/profile" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
-                    <span className="inline-flex items-center gap-2">
-                      <UserIcon />
-                      <span>Профиль</span>
-                    </span>
-                  </Link>
-                  <Link href="/" className="mt-2 block rounded-xl px-3 py-2 border border-green-600/40 bg-green-500/10 text-green-600 dark:text-green-300 hover:bg-green-500/20">
-                    <span className="inline-flex items-center gap-2">
-                      <PlusIcon />
-                      <span>Новый чат</span>
-                    </span>
-                  </Link>
-                </nav>
-                <div className="pt-4">
-                  {session && <SidebarUserNav session={session} />}
-                </div>
-              </div>
-            </aside>
+    <div className="flex h-screen overflow-hidden">
+      <SidebarProvider defaultOpen={!isCollapsed}>
+        <DataStreamProvider>
+          <ModelProvider initialModel={chatModelFromCookie?.value}>
+            {session && <AppSidebar user={session.user} session={session} />}
+            <SidebarInset className="flex-1 overflow-auto">
+              <div className="mx-auto max-w-7xl px-4 py-6">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6">
 
             {/* Center feed */}
             <main className="space-y-4">
@@ -312,6 +281,45 @@ export default async function FeedPage({
             </main>
 
             {/* Right sidebar */}
+            <aside className="hidden lg:block sticky top-4 self-start space-y-4">
+              <div className="rounded-2xl border border-border bg-muted/40 p-3">
+                <form action="/feed" method="GET">
+                  <input
+                    type="text"
+                    name="q"
+                    defaultValue={q || ''}
+                    placeholder="Поиск в ленте..."
+                    className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  />
+                  <input type="hidden" name="sort" value={sort} />
+                  {tag && <input type="hidden" name="tag" value={tag} />}
+                </form>
+              </div>
+              <div className="rounded-2xl border border-green-600/30 bg-green-500/5 p-4">
+                <div className="mb-2 text-sm font-medium text-foreground">Активируй ПРО подписку</div>
+                <p className="mb-3 text-xs text-muted-foreground">Открой доступ к расширенным возможностям и большему лимиту токенов.</p>
+                <Link href="/profile" className="inline-block rounded-xl border border-green-600/40 bg-green-500/10 px-3 py-1.5 text-xs text-green-600 dark:text-green-300 hover:bg-green-500/20">Перейти в профиль</Link>
+              </div>
+              <div className="rounded-2xl border border-border bg-muted/40 p-3">
+                <div className="mb-2 px-1 text-xs font-medium text-muted-foreground">Популярные теги</div>
+                <div className="flex flex-wrap gap-2">
+                  {popularTags.length === 0 && (
+                    <div className="px-1 text-xs text-muted-foreground">Пока нет тегов</div>
+                  )}
+                  {popularTags.map((t) => (
+                    <Link
+                      key={t}
+                      href={`/feed?sort=${sort}&tag=${encodeURIComponent(t)}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+                      className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground hover:bg-accent"
+                    >
+                      #{t}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </aside>
+
+            {/* Right sidebar */}
             <aside className="hidden md:block sticky top-4 self-start space-y-4">
               <div className="rounded-2xl border border-border bg-muted/40 p-4">
                 <form action="/feed" method="GET">
@@ -349,9 +357,12 @@ export default async function FeedPage({
                 </div>
               </div>
             </aside>
-          </div>
-        </div>
-      </div>
-    </SidebarProviderClient>
+                </div>
+              </div>
+            </SidebarInset>
+          </ModelProvider>
+        </DataStreamProvider>
+      </SidebarProvider>
+    </div>
   );
 }
