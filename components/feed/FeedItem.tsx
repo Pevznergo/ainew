@@ -212,8 +212,14 @@ export function FeedItem({
   return (
     <article className="rounded-3xl border border-border bg-card p-4 text-card-foreground">
       <div className="sm:flex sm:gap-3">
-        {/* Avatar placeholder */}
-        <div className="mb-2 size-10 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border sm:mb-0" />
+        {/* Avatar with link to user profile */}
+        {authorHref ? (
+          <Link href={authorHref} className="mb-2 block size-10 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border sm:mb-0">
+            <div className="size-full" />
+          </Link>
+        ) : (
+          <div className="mb-2 size-10 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border sm:mb-0" />
+        )}
 
         <div className="min-w-0 flex-1">
           {/* Header (Twitter-like) */}

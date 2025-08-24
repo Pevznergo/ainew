@@ -73,7 +73,7 @@ export default async function UserChannelPage({
   const slug = params.slug;
   const LIMIT = 50;
   const paramsObj = (await searchParams) || {};
-  const sort = (paramsObj?.sort === 'date' ? 'date' : 'rating') as 'rating' | 'date';
+  const sort = 'date' as const; // Always sort by date
   const tag = (paramsObj?.tag || '').toLowerCase().trim();
   const q = (paramsObj?.q || '').toLowerCase().trim();
 
@@ -154,17 +154,10 @@ export default async function UserChannelPage({
     .groupBy(vote.chatId);
   const upvotesByChat = new Map<string, number>(voteRows.map((v) => [v.chatId, Number(v.upvotes)]));
 
-  const chatsForRender = (() => {
-    if (sort === 'rating') {
-      return [...filteredChats].sort((a, b) => {
-        const ua = upvotesByChat.get(a.id) ?? 0;
-        const ub = upvotesByChat.get(b.id) ?? 0;
-        if (ub !== ua) return ub - ua;
-        return new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime();
-      });
-    }
-    return filteredChats;
-  })();
+  // Always sort by date
+  const chatsForRender = [...filteredChats].sort(
+    (a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime()
+  );
 
   const authorText = String(u.nickname || '').trim() || String(u.email || '').trim() || 'Пользователь';
   const handle = nick ? `@${nick}` : `@user-${String(u.id).slice(0, 6)}`;
@@ -181,8 +174,11 @@ export default async function UserChannelPage({
 
   const hasMore = userChats.length === LIMIT;
   const lastCreatedAt = userChats[userChats.length - 1]?.createdAt as any;
-  const initialNextBefore = hasMore && lastCreatedAt && sort === 'date' ? new Date(lastCreatedAt).toISOString() : null;
+  const initialNextBefore = hasMore && lastCreatedAt ? new Date(lastCreatedAt).toISOString() : null;
 
+  // Always sort by date
+  filteredChats.sort((a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime());
+  
   // Simple stats for header
   const postsCount = filteredChats.length;
   const totalUpvotes = Array.from(upvotesByChat.values()).reduce((a, b) => a + (b || 0), 0);
@@ -276,23 +272,11 @@ export default async function UserChannelPage({
               </section>
 
               <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <Link
-                  href={`${channelPath}?sort=rating${tag ? `&tag=${encodeURIComponent(tag)}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
-                  className={`rounded-full px-3 py-1 border ${sort === 'rating' ? 'bg-accent border-border' : 'bg-muted/50 border-border hover:bg-muted'}`}
-                >
-                  По рейтингу
-                </Link>
-                <Link
-                  href={`${channelPath}?sort=date${tag ? `&tag=${encodeURIComponent(tag)}` : ''}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
-                  className={`rounded-full px-3 py-1 border ${sort === 'date' ? 'bg-accent border-border' : 'bg-muted/50 border-border hover:bg-muted'}`}
-                >
-                  По дате
-                </Link>
                 {tag && (
                   <div className="ml-2 flex items-center gap-2">
                     <span className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">Тег: #{tag}</span>
                     <Link
-                      href={`${channelPath}?sort=${sort}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+                      href={`${channelPath}${q ? `?q=${encodeURIComponent(q)}` : ''}`}
                       className="text-muted-foreground hover:text-foreground underline underline-offset-4"
                     >
                       Сбросить тег
@@ -303,7 +287,7 @@ export default async function UserChannelPage({
                   <div className="flex items-center gap-2">
                     <span className="rounded-full border border-border bg-muted/60 px-3 py-1 text-xs text-muted-foreground">Поиск: “{q}”</span>
                     <Link
-                      href={`${channelPath}?sort=${sort}${tag ? `&tag=${encodeURIComponent(tag)}` : ''}`}
+                      href={`${channelPath}${tag ? `?tag=${encodeURIComponent(tag)}` : ''}`}
                       className="text-muted-foreground hover:text-foreground underline underline-offset-4"
                     >
                       Сбросить поиск
