@@ -261,26 +261,30 @@ export default async function FeedPage({
                 const imageUrl = first ? extractFirstImageUrl(first) : null;
                 const upvotes = upvotesByChat.get(c.id) ?? 0;
                 const u = userById.get(c.userId as any) as any;
-                let authorName = u
-                  ? (String(u.nickname || '').trim() || `User-${String(u.id || '').slice(0, 6)}`)
-                  : 'Unknown';
-                let authorLink = u ? `/channel/${u.id}` : '#';
-                
-                // Check if this is a repost
                 const isRepost = Boolean((c as any).originalChatId);
-                let repostedByName = null;
-                let repostedByLink = null;
                 
-                if (isRepost && u) {
-                  repostedByName = authorName;
-                  repostedByLink = authorLink;
-                  // If we have the original author info, use that for the main author display
-                  if ((c as any).originalAuthor) {
-                    const originalAuthor = (c as any).originalAuthor;
-                    authorName = (String(originalAuthor.nickname || '').trim() || 
-                                `User-${String(originalAuthor.id || '').slice(0, 6)}`);
-                    authorLink = `/channel/${originalAuthor.id}`;
-                  }
+                let authorName: string;
+                let authorLink: string;
+                let repostedByName: string | null = null;
+                let repostedByLink: string | null = null;
+                
+                if (isRepost && u && (c as any).originalAuthor) {
+                  // For reposts, show original author as main author
+                  const originalAuthor = (c as any).originalAuthor;
+                  authorName = (String(originalAuthor.nickname || '').trim() || 
+                              `User-${String(originalAuthor.id || '').slice(0, 6)}`);
+                  authorLink = getUserChannelPath(originalAuthor.nickname, originalAuthor.id);
+                  // Show who reposted it
+                  repostedByName = u ? (String(u.nickname || '').trim() || `User-${String(u.id || '').slice(0, 6)}`) : 'Unknown';
+                  repostedByLink = u ? getUserChannelPath(u.nickname, u.id) : '#';
+                } else if (u) {
+                  // Regular post
+                  authorName = String(u.nickname || '').trim() || `User-${String(u.id || '').slice(0, 6)}`;
+                  authorLink = getUserChannelPath(u.nickname, u.id);
+                } else {
+                  // Fallback if user data is missing
+                  authorName = 'Unknown';
+                  authorLink = '#';
                 }
 
                 return (
