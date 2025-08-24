@@ -49,9 +49,19 @@ export async function generateMetadata(props: {
     const origin = process.env.APP_ORIGIN || 'https://aporto.tech';
     const url = `${origin}/chat/${id}`;
 
-    const robots = chat.visibility === 'public'
-      ? { index: true, follow: true }
-      : { index: false, follow: false };
+    const robots =
+      chat.visibility === 'public'
+        ? {
+            index: true,
+            follow: true,
+            googleBot: {
+              index: true,
+              follow: true,
+              'max-snippet': -1,
+              'max-image-preview': 'large' as const,
+            },
+          }
+        : { index: false, follow: false };
 
     return {
       title,
@@ -62,6 +72,8 @@ export async function generateMetadata(props: {
         description,
         url,
         type: 'article',
+        siteName: 'Aporto',
+        locale: 'ru_RU',
       },
       twitter: {
         card: 'summary',
@@ -80,7 +92,9 @@ export default async function Page(props: {
   searchParams?: Promise<{ ref?: string }>;
 }) {
   const params = await props.params;
-  const searchParams = props.searchParams ? await props.searchParams : undefined;
+  const searchParams = props.searchParams
+    ? await props.searchParams
+    : undefined;
   const { id } = params;
   // Referral cookie is set client-side by SetRefCookie component
 

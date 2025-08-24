@@ -1,4 +1,19 @@
 User-agent: *
 Allow: /
+Allow: /u/
+Allow: /chat/
+Allow: /my/
+
+# Prevent crawling of API endpoints
+Disallow: /api/
+
+# Prevent crawling of auth pages for guests
+Disallow: /login
+Disallow: /register
+
+# Allow crawling of public content
+Allow: /main
+Allow: /feed
+Allow: /profile
 
 Sitemap: https://aporto.tech/sitemap.xml
