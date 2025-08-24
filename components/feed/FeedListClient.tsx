@@ -10,6 +10,7 @@ export type FeedItemData = {
   text: string;
   imageUrl?: string | null;
   upvotes: number;
+  reposts?: number;
   commentsCount?: number;
   hashtags?: string[];
   author: string;
@@ -90,6 +91,7 @@ export function FeedListClient({
           text={it.text}
           imageUrl={it.imageUrl}
           initialUpvotes={it.upvotes}
+          initialReposts={typeof it.reposts === 'number' ? it.reposts : 0}
           commentsCount={it.commentsCount}
           hashtags={it.hashtags || []}
           author={it.author}

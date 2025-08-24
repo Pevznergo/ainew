@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { and, asc, desc, eq, inArray, lt, count } from 'drizzle-orm';
 import { db } from '@/lib/db/queries';
-import { chat, message, vote, user } from '@/lib/db/schema';
+import { chat, message, vote, user, repost } from '@/lib/db/schema';
 
 function extractTextFromParts(parts: any): string {
   if (!Array.isArray(parts)) return '';
@@ -94,6 +94,14 @@ export async function GET(request: Request) {
     .groupBy(vote.chatId);
   const upvotesByChat = new Map<string, number>(voteRows.map((v) => [v.chatId, Number(v.upvotes)]));
 
+  // Reposts per chat
+  const repostRows = await db
+    .select({ chatId: repost.chatId, reposts: count(repost.userId) })
+    .from(repost)
+    .where(inArray(repost.chatId, filteredIds))
+    .groupBy(repost.chatId);
+  const repostsByChat = new Map<string, number>(repostRows.map((r) => [r.chatId, Number(r.reposts)]));
+
   const chatsForRender = (() => {
     if (sort === 'rating') {
       return [...filtered].sort((a, b) => {
@@ -121,6 +129,7 @@ export async function GET(request: Request) {
     const text = first ? extractTextFromParts(first.parts as any) : '';
     const imageUrl = first ? extractFirstImageUrl(first) : null;
     const upvotes = upvotesByChat.get(c.id) ?? 0;
+    const reposts = repostsByChat.get(c.id) ?? 0;
     const au = authorById.get(c.userId as any) as any;
     const author = au ? (String(au.nickname || '').trim() || String(au.email || '').trim() || 'Пользователь') : 'Пользователь';
     return {
@@ -130,6 +139,7 @@ export async function GET(request: Request) {
       text,
       imageUrl,
       upvotes,
+      reposts,
       commentsCount: Math.max(0, (userMsgCountByChat.get(c.id) ?? 0) - (first ? 1 : 0)),
       hashtags: Array.isArray((c as any).hashtags) ? (c as any).hashtags : [],
       author,

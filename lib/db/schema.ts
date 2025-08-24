@@ -220,3 +220,24 @@ export const invites = pgTable('invites', {
 });
 
 export type Invite = InferSelectModel<typeof invites>;
+
+// Reposts
+export const repost = pgTable(
+  'Repost',
+  {
+    chatId: text('chatId')
+      .notNull()
+      .references(() => chat.id),
+    userId: text('userId')
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamp('createdAt').notNull().defaultNow(),
+  },
+  (table) => {
+    return {
+      pk: primaryKey({ columns: [table.chatId, table.userId] }),
+    };
+  },
+);
+
+export type Repost = InferSelectModel<typeof repost>;

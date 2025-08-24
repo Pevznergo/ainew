@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
-import { Heart, MessageCircle, Share2 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Repeat2 } from 'lucide-react';
 import { chatModels } from '@/lib/ai/models';
 
 function getCookie(name: string) {
@@ -54,6 +54,7 @@ export function FeedItem({
   text,
   imageUrl,
   initialUpvotes,
+  initialReposts,
   commentsCount,
   hashtags = [],
   author,
@@ -64,12 +65,15 @@ export function FeedItem({
   text: string;
   imageUrl?: string | null;
   initialUpvotes: number;
+  initialReposts: number;
   commentsCount?: number;
   hashtags?: string[];
   author: string;
 }) {
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [liked, setLiked] = useState(false);
+  const [reposts, setReposts] = useState<number>(initialReposts || 0);
+  const [reposted, setReposted] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [modelName, setModelName] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -82,12 +86,16 @@ export function FeedItem({
     // 1) Instant local cache hydrate to avoid flicker on reload
     const likeKey = `feed_like:${chatId}`;
     const uvKey = `feed_uv:${chatId}`;
+    const rpKey = `feed_rp:${chatId}`;
     const exKey = `feed_expanded:${chatId}`;
     const cachedLike = lsGet<{ liked: boolean }>(likeKey);
     const cachedUv = lsGet<{ upvotes: number }>(uvKey);
+    const cachedRp = lsGet<{ reposted: boolean; reposts?: number }>(rpKey);
     const cachedEx = lsGet<{ expanded: boolean }>(exKey);
     if (cachedLike && typeof cachedLike.liked === 'boolean') setLiked(Boolean(cachedLike.liked));
     if (cachedUv && typeof cachedUv.upvotes === 'number') setUpvotes(Number(cachedUv.upvotes));
+    if (cachedRp && typeof cachedRp.reposted === 'boolean') setReposted(Boolean(cachedRp.reposted));
+    if (cachedRp && typeof cachedRp.reposts === 'number') setReposts(Number(cachedRp.reposts));
     if (cachedEx && typeof cachedEx.expanded === 'boolean') setExpanded(Boolean(cachedEx.expanded));
 
     // 2) Fetch server truth and reconcile
@@ -164,6 +172,38 @@ export function FeedItem({
       setError(e?.message || 'Ошибка голосования');
     } finally {
       // no-op: we don't block UI on network
+    }
+  }
+
+  async function doRepost() {
+    setError(null);
+    // If already reposted, avoid duplicate action
+    if (reposted) return;
+    const rpKey = `feed_rp:${chatId}`;
+
+    // optimistic update
+    setReposted(true);
+    setReposts((v) => v + 1);
+    lsSet(rpKey, { reposted: true, reposts: reposts + 1 });
+
+    try {
+      const res = await fetch('/api/repost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({} as any));
+        const msg = data?.error || 'Repost failed';
+        throw new Error(msg);
+      }
+      // success, keep optimistic state
+    } catch (e: any) {
+      // rollback on error
+      setReposted(false);
+      setReposts((v) => Math.max(0, v - 1));
+      lsSet(rpKey, { reposted: false, reposts: Math.max(0, reposts - 1) });
+      setError(e?.message || 'Ошибка репоста');
     }
   }
 
@@ -273,17 +313,25 @@ export function FeedItem({
               <span className={`${liked ? 'text-rose-500' : ''}`}>{upvotes}</span>
             </button>
 
+            <button
+              type="button"
+              onClick={doRepost}
+              className={`group inline-flex items-center gap-2 rounded-full px-3 py-1 transition-colors ${
+                reposted ? 'text-emerald-500' : 'hover:bg-muted'
+              }`}
+              aria-pressed={reposted}
+            >
+              <Repeat2 className={`size-5 ${reposted ? 'text-emerald-500' : 'text-muted-foreground group-hover:text-foreground'}`} />
+              <span className={`${reposted ? 'text-emerald-500' : ''}`}>{reposts}</span>
+            </button>
+
             <Link
               href={`/chat/${chatId}#comments`}
+              aria-label="Комментарии"
+              title="Комментарии"
               className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
             >
               <MessageCircle className="size-5" />
-              <span className="flex items-center gap-1">
-                Комментарии
-                {typeof commentsCount === 'number' && commentsCount > 0 && (
-                  <span className="ml-0.5 text-foreground/80">{commentsCount}</span>
-                )}
-              </span>
             </Link>
 
             <Link
@@ -292,7 +340,7 @@ export function FeedItem({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent"
             >
-              <span>Посмотреть ответ ИИ</span>
+              <span>Ответ ИИ</span>
             </Link>
 
             <button
@@ -303,6 +351,8 @@ export function FeedItem({
             >
               <Share2 className="size-5" />
             </button>
+
+            {/* duplicate repost button removed */}
           </div>
 
           {error && <div className="mt-2 text-[11px] text-destructive">{error}</div>}

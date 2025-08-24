@@ -278,6 +278,7 @@ export default async function FeedPage({
                     text={text}
                     imageUrl={imageUrl}
                     initialUpvotes={upvotes}
+                    initialReposts={0}
                     commentsCount={Math.max(0, (userMsgCountByChat.get(c.id) ?? 0) - (first ? 1 : 0))}
                     hashtags={Array.isArray((c as any).hashtags) ? ((c as any).hashtags as string[]) : []}
                     author={author}
