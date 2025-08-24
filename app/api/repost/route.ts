@@ -26,6 +26,11 @@ export async function POST(request: Request) {
     if (String(original.visibility) !== 'public') {
       return NextResponse.json({ error: 'Chat is not public' }, { status: 403 });
     }
+    
+    // Prevent users from reposting their own content
+    if (original.userId === session.user.id) {
+      return NextResponse.json({ error: 'You cannot repost your own content' }, { status: 400 });
+    }
 
     // Prevent duplicate reposts by same user
     const existing = await db

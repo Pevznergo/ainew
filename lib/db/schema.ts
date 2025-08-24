@@ -39,6 +39,9 @@ export const chat = pgTable('Chat', {
     .references(() => user.id),
   visibility: text('visibility').notNull().default('public'),
   hashtags: varchar('hashtags', { length: 64 }).array(),
+  isRepost: boolean('is_repost').notNull().default(false),
+  originalChatId: text('original_chat_id').references(() => chat.id, { onDelete: 'set null' }),
+  originalAuthorId: text('original_author_id').references(() => user.id, { onDelete: 'set null' }),
 });
 
 export type Chat = InferSelectModel<typeof chat>;

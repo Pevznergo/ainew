@@ -37,7 +37,19 @@ export async function GET(
   let chat: Chat;
 
   try {
-    chat = await getChatById({ id: chatId });
+    const chatData = await getChatById({ id: chatId });
+    // Create a new chat object with all required properties
+    chat = {
+      id: chatData.id,
+      createdAt: chatData.createdAt,
+      title: chatData.title,
+      userId: chatData.userId,
+      visibility: chatData.visibility,
+      hashtags: chatData.hashtags || [],
+      isRepost: false, // Default value for isRepost
+      originalChatId: null, // Default value for originalChatId
+      originalAuthorId: null, // Default value for originalAuthorId
+    };
   } catch {
     return new ChatSDKError('not_found:chat').toResponse();
   }

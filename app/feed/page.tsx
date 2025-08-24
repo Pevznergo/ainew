@@ -4,7 +4,7 @@ import Image from 'next/image';
 import type { Metadata } from 'next';
 
 import { db } from '@/lib/db/queries';
-import { chat, message, user, vote } from '@/lib/db/schema';
+import { chat, message, user, vote, repost } from '@/lib/db/schema';
 import { FeedItem } from '@/components/feed/FeedItem';
 import { FeedListClient } from '@/components/feed/FeedListClient';
 import SidebarProviderClient from '@/components/feed/SidebarProviderClient';
@@ -76,6 +76,21 @@ export default async function FeedPage({
 
   // 1) Get latest public chats
   const beforeDate = params?.before ? new Date(params.before) : null;
+  
+  // Get repost counts for all chats
+  const repostCounts = await db
+    .select({
+      chatId: repost.chatId,
+      count: count().as('count')
+    })
+    .from(repost)
+    .groupBy(repost.chatId);
+    
+  // Convert to Map for easy lookup
+  const repostsByChat = new Map(
+    repostCounts.map(rc => [rc.chatId, Number(rc.count)])
+  );
+
   const publicChats = await db
     .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility, hashtags: chat.hashtags as any })
     .from(chat)
@@ -246,24 +261,45 @@ export default async function FeedPage({
                 const imageUrl = first ? extractFirstImageUrl(first) : null;
                 const upvotes = upvotesByChat.get(c.id) ?? 0;
                 const u = userById.get(c.userId as any) as any;
-                const author = u
+                let authorName = u
                   ? (String(u.nickname || '').trim() || `User-${String(u.id || '').slice(0, 6)}`)
-                  : 'Пользователь';
-                const authorHref = u ? getUserChannelPath(u.nickname as any, u.id) : undefined;
+                  : 'Unknown';
+                let authorLink = u ? `/channel/${u.id}` : '#';
+                
+                // Check if this is a repost
+                const isRepost = Boolean((c as any).originalChatId);
+                let repostedByName = null;
+                let repostedByLink = null;
+                
+                if (isRepost && u) {
+                  repostedByName = authorName;
+                  repostedByLink = authorLink;
+                  // If we have the original author info, use that for the main author display
+                  if ((c as any).originalAuthor) {
+                    const originalAuthor = (c as any).originalAuthor;
+                    authorName = (String(originalAuthor.nickname || '').trim() || 
+                                `User-${String(originalAuthor.id || '').slice(0, 6)}`);
+                    authorLink = `/channel/${originalAuthor.id}`;
+                  }
+                }
+
                 return (
                   <FeedItem
                     key={c.id}
                     chatId={c.id}
-                    firstMessageId={first?.id ?? null}
-                    createdAt={(c.createdAt as any)?.toISOString?.() ?? new Date(c.createdAt as any).toISOString()}
+                    firstMessageId={first?.id || null}
+                    createdAt={c.createdAt as any}
                     text={text}
                     imageUrl={imageUrl}
                     initialUpvotes={upvotes}
-                    initialReposts={0}
-                    commentsCount={Math.max(0, (userMsgCountByChat.get(c.id) ?? 0) - (first ? 1 : 0))}
-                    hashtags={Array.isArray((c as any).hashtags) ? ((c as any).hashtags as string[]) : []}
-                    author={author}
-                    authorHref={authorHref}
+                    initialReposts={repostsByChat.get(c.id) ?? 0}
+                    commentsCount={userMsgCountByChat.get(c.id) - (first ? 1 : 0)}
+                    hashtags={Array.isArray((c as any).hashtags) ? (c as any).hashtags : []}
+                    author={authorName}
+                    authorHref={authorLink}
+                    isRepost={isRepost}
+                    repostedBy={repostedByName}
+                    repostedByHref={repostedByLink}
                   />
                 );
               })}

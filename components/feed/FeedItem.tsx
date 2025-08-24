@@ -60,6 +60,9 @@ export function FeedItem({
   hashtags = [],
   author,
   authorHref,
+  isRepost = false,
+  repostedBy = null,
+  repostedByHref = null,
 }: {
   chatId: string;
   firstMessageId: string | null;
@@ -72,14 +75,21 @@ export function FeedItem({
   hashtags?: string[];
   author: string;
   authorHref?: string;
+  isRepost?: boolean;
+  repostedBy?: string | null;
+  repostedByHref?: string | null;
 }) {
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [liked, setLiked] = useState(false);
   const [reposts, setReposts] = useState<number>(initialReposts || 0);
   const [reposted, setReposted] = useState<boolean>(false);
+  const [isReposting, setIsReposting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [modelName, setModelName] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [showRepostMenu, setShowRepostMenu] = useState(false);
+
+  const rpKey = `feed_rp:${chatId}`;
 
   useEffect(() => {
     setModelName(resolveModelName());
@@ -129,10 +139,10 @@ export function FeedItem({
     const MAX = 300;
     if (!text) return { displayText: '', isTruncated: false };
     const raw = String(text);
-    if (raw.length <= MAX) return { displayText: raw, isTruncated: false };
+    if (expanded || raw.length <= MAX) return { displayText: raw, isTruncated: false };
     const cut = raw.slice(0, MAX).trimEnd();
     return { displayText: `${cut}…`, isTruncated: true };
-  }, [text]);
+  }, [text, expanded]);
 
   function toggleExpanded() {
     const next = !expanded;
@@ -180,70 +190,90 @@ export function FeedItem({
 
   async function doRepost() {
     setError(null);
-    // If already reposted, avoid duplicate action
-    if (reposted) return;
-    const rpKey = `feed_rp:${chatId}`;
-
-    // optimistic update
-    setReposted(true);
-    setReposts((v) => v + 1);
-    lsSet(rpKey, { reposted: true, reposts: reposts + 1 });
-
+    if (isReposting) return;
+    setIsReposting(true);
+    
     try {
       const res = await fetch('/api/repost', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId }),
       });
+      
       if (!res.ok) {
         const data = await res.json().catch(() => ({} as any));
-        const msg = data?.error || 'Repost failed';
-        throw new Error(msg);
+        const errorMsg = data?.error || 'Ошибка репоста';
+        throw new Error(errorMsg);
       }
-      // success, keep optimistic state
-    } catch (e: any) {
-      // rollback on error
-      setReposted(false);
-      setReposts((v) => Math.max(0, v - 1));
-      lsSet(rpKey, { reposted: false, reposts: Math.max(0, reposts - 1) });
-      setError(e?.message || 'Ошибка репоста');
+      
+      // Update repost status and count
+      setReposted(true);
+      setReposts((v) => v + 1);
+      lsSet(rpKey, { reposted: true, reposts: reposts + 1 });
+      
+      // Show success message
+      setError('Пост успешно опубликован у вас в профиле');
+      
+      // Hide the menu after a short delay
+      setTimeout(() => {
+        setShowRepostMenu(false);
+      }, 2000);
+      
+    } catch (err: any) {
+      console.error('Repost error:', err);
+      setError(err?.message || 'Произошла ошибка');
+    } finally {
+      setIsReposting(false);
     }
   }
 
   return (
-    <article className="rounded-3xl border border-border bg-card p-4 text-card-foreground">
-      <div className="sm:flex sm:gap-3">
-        {/* Avatar with link to user profile */}
-        <div className="mb-2 shrink-0 sm:mb-0">
-          {authorHref ? (
-            <Link href={authorHref}>
-              <Avatar name={author} size="md" className="ring-1 ring-border" />
+    <article className="rounded-3xl border border-border bg-card text-card-foreground overflow-hidden">
+      {isRepost && repostedBy && (
+        <div className="flex items-center gap-2 px-4 pt-3 pb-1 text-xs text-muted-foreground">
+          <Repeat2 className="w-3.5 h-3.5" />
+          {repostedByHref ? (
+            <Link href={repostedByHref} className="hover:underline">
+              {repostedBy} репостнул(а)
             </Link>
           ) : (
-            <Avatar name={author} size="md" className="ring-1 ring-border" />
+            <span>{repostedBy} репостнул(а)</span>
           )}
         </div>
-
-        <div className="min-w-0 flex-1">
-          {/* Header (Twitter-like) */}
-          <div className="mb-1 flex items-center gap-2 text-sm text-muted-foreground">
+      )}
+      <div className={isRepost ? 'p-4 pt-2' : 'p-4'}>
+        <div className="sm:flex sm:gap-3">
+          {/* Avatar with link to user profile */}
+          <div className="mb-2 shrink-0 sm:mb-0">
             {authorHref ? (
-              <Link href={authorHref} className="font-medium text-foreground hover:underline underline-offset-4">
-                {author}
+              <Link href={authorHref}>
+                <Avatar name={author} size="md" className="ring-1 ring-border" />
               </Link>
             ) : (
-              <span className="font-medium text-foreground">{author}</span>
-            )}
-            <span className="text-muted-foreground">·</span>
-            <time dateTime={createdAt} className="text-muted-foreground">
-              {dateLabel}
-            </time>
-            {modelName && (
-              <span className="ml-auto truncate rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                {modelName}
-              </span>
+              <Avatar name={author} size="md" className="ring-1 ring-border" />
             )}
           </div>
+
+          <div className="min-w-0 flex-1">
+            {/* Header (Twitter-like) */}
+            <div className="mb-1 flex items-center gap-2 text-sm text-muted-foreground">
+              {authorHref ? (
+                <Link href={authorHref} className="font-medium text-foreground hover:underline underline-offset-4">
+                  {author}
+                </Link>
+              ) : (
+                <span className="font-medium text-foreground">{author}</span>
+              )}
+              <span className="text-muted-foreground">·</span>
+              <time dateTime={createdAt} className="text-muted-foreground">
+                {dateLabel}
+              </time>
+              {modelName && (
+                <span className="ml-auto truncate rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                  {modelName}
+                </span>
+              )}
+            </div>
 
           {/* Content */}
           <div className="text-[15px] leading-relaxed text-foreground whitespace-pre-wrap">
@@ -375,6 +405,7 @@ export function FeedItem({
           {error && <div className="mt-2 text-[11px] text-destructive">{error}</div>}
         </div>
       </div>
+    </div>
     </article>
   );
 }

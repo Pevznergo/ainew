@@ -48,7 +48,15 @@ const groupChatsByDate = (chats: Chat[]): GroupedChats => {
   const oneWeekAgo = subWeeks(now, 1);
   const oneMonthAgo = subMonths(now, 1);
 
-  return chats.reduce(
+  const initialGroups: GroupedChats = {
+    today: [],
+    yesterday: [],
+    lastWeek: [],
+    lastMonth: [],
+    older: [],
+  };
+
+  return chats.reduce<GroupedChats>(
     (groups, chat) => {
       const chatDate = new Date(chat.createdAt);
 
@@ -66,13 +74,7 @@ const groupChatsByDate = (chats: Chat[]): GroupedChats => {
 
       return groups;
     },
-    {
-      today: [],
-      yesterday: [],
-      lastWeek: [],
-      lastMonth: [],
-      older: [],
-    } as GroupedChats,
+    initialGroups
   );
 };
 
