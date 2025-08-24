@@ -170,6 +170,14 @@ export default async function UserChannelPage({
   const handle = nick ? `@${nick}` : `@user-${String(u.id).slice(0, 6)}`;
   const isOwner = Boolean(session?.user?.id && session.user.id === u.id);
   const userBio = String((u as any).bio || '').trim();
+  
+  console.log('User channel page:', { 
+    userId: u.id, 
+    sessionUserId: session?.user?.id, 
+    isOwner,
+    hasSession: !!session,
+    userBio
+  });
 
   const hasMore = userChats.length === LIMIT;
   const lastCreatedAt = userChats[userChats.length - 1]?.createdAt as any;

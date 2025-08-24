@@ -2,17 +2,8 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import * as Dialog from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
 
 export function BioEditModal({ initialBio }: { initialBio: string }) {
   const [open, setOpen] = useState(false);
@@ -21,7 +12,6 @@ export function BioEditModal({ initialBio }: { initialBio: string }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  // Keep local state in sync when server-provided bio changes after refresh
   useEffect(() => {
     setBio(initialBio || '');
   }, [initialBio]);
@@ -53,57 +43,69 @@ export function BioEditModal({ initialBio }: { initialBio: string }) {
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger asChild>
         <button
           type="button"
-          className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-xs text-foreground hover:bg-accent"
-          onClick={() => setOpen(true)}
+          className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-xs text-foreground hover:bg-accent transition-colors"
         >
           Редактировать
         </button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="relative max-w-xl rounded-3xl border border-white/10 bg-white/[0.06] backdrop-blur-xl shadow-2xl">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="text-white">Редактировать описание профиля</AlertDialogTitle>
-          <AlertDialogDescription className="text-neutral-400">
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-[#1a1a1f] p-6 shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <Dialog.Title className="text-lg font-semibold text-white">
+              Редактировать описание профиля
+            </Dialog.Title>
+            <Dialog.Close className="rounded-full p-1 hover:bg-white/10 text-gray-400 hover:text-white">
+              <X className="h-5 w-5" />
+            </Dialog.Close>
+          </div>
+          
+          <Dialog.Description className="mb-4 text-sm text-gray-400">
             Добавьте краткое описание. Оно будет отображаться в шапке вашего канала.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <div className="mt-2">
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            className="w-full min-h-[140px] rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-600"
-            placeholder="Добавьте описание (до 200 символов)"
-            maxLength={200}
-          />
-          <div className="mt-2 flex items-center justify-between text-xs text-neutral-400">
-            <span>{bio.length}/200</span>
-            {error && <span className="text-red-400">{error}</span>}
+          </Dialog.Description>
+          
+          <div className="mb-4">
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              className="w-full min-h-[120px] rounded-xl border border-white/10 bg-white/5 text-white px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder="Добавьте описание (до 200 символов)"
+              maxLength={200}
+            />
+            <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
+              <span>{bio.length}/200</span>
+              {error && <span className="text-red-400">{error}</span>}
+            </div>
           </div>
-        </div>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200">Отменить</AlertDialogCancel>
-          <AlertDialogAction
-            className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
-              isPending
-                ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-lg shadow-indigo-600/20 hover:opacity-95'
-            }`}
-            onClick={onSave}
-            disabled={isPending}
-          >
-            {isPending ? 'Сохранение...' : 'Сохранить'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-
-        {isPending && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-lg">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+          
+          <div className="flex justify-end space-x-3">
+            <Dialog.Close className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+              Отменить
+            </Dialog.Close>
+            <button
+              onClick={onSave}
+              disabled={isPending}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                isPending
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white hover:opacity-90'
+              }`}
+            >
+              {isPending ? 'Сохранение...' : 'Сохранить'}
+            </button>
           </div>
-        )}
-      </AlertDialogContent>
-    </AlertDialog>
+          
+          {isPending && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+            </div>
+          )}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

@@ -4,6 +4,16 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Компонент скелетона для загрузки
 function LoadingSkeleton() {
@@ -110,6 +120,7 @@ export default function ProfilePage() {
   // Всегда вызываем useState с первым элементом массива (он всегда есть)
   const [selected, setSelected] = useState(packages[0]);
   const [open, setOpen] = useState(false);
+  const [bioModalOpen, setBioModalOpen] = useState(false);
 
   // Состояние для модального окна PRO
   const [showProModal, setShowProModal] = useState(false);
@@ -126,6 +137,18 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('');
   const [bioSaving, setBioSaving] = useState(false);
   const [bioMsg, setBioMsg] = useState<string | null>(null);
+
+  // Debug mount
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('[ProfilePage] mounted');
+  }, []);
+
+  // Debug modal state changes
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('[ProfilePage] bioModalOpen =', bioModalOpen);
+  }, [bioModalOpen]);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -141,6 +164,8 @@ export default function ProfilePage() {
 
   const saveBio = async () => {
     setBioMsg(null);
+    // eslint-disable-next-line no-console
+    console.log('[ProfilePage] saveBio start', { bioLength: bio.length, bio });
     try {
       setBioSaving(true);
       const res = await fetch('/api/profile/bio', {
@@ -150,13 +175,20 @@ export default function ProfilePage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        // eslint-disable-next-line no-console
+        console.log('[ProfilePage] saveBio error', { status: res.status, data });
         if (res.status === 400 && data?.error === 'bio_too_long') setBioMsg('Слишком длинное описание (макс. 200 символов)');
         else setBioMsg('Ошибка сохранения, попробуйте позже');
         return;
       }
       setBio(String(data?.bio ?? bio));
       setBioMsg('Сохранено');
+      // eslint-disable-next-line no-console
+      console.log('[ProfilePage] saveBio success');
+      setBioModalOpen(false);
     } catch (e) {
+      // eslint-disable-next-line no-console
+      console.log('[ProfilePage] saveBio exception', e);
       setBioMsg('Ошибка сети, попробуйте позже');
     } finally {
       setBioSaving(false);
@@ -594,6 +626,109 @@ export default function ProfilePage() {
               <div className="text-neutral-400 text-base mt-2">
                 Подпишись на ПРО и получай <b>1000 токенов</b> в месяц всего за{' '}
                 <b>199 ₽</b> (≈0.2 ₽ за токен).
+              </div>
+            </div>
+          </section>
+
+          {/* Описание профиля */}
+          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04]">
+            <div className="flex items-start justify-between gap-8">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-white mb-2">Описание профиля</h2>
+                <p className="text-neutral-300 whitespace-pre-wrap min-h-[48px]">
+                  {bio ? bio : 'Добавьте описание вашего профиля, чтобы пользователи знали больше о вас.'}
+                </p>
+                {bioMsg && (
+                  <div className="mt-2 text-sm text-neutral-300">{bioMsg}</div>
+                )}
+              </div>
+              <div>
+                <AlertDialog
+                  data-component="ProfileBioAlertDialog"
+                  open={bioModalOpen}
+                  onOpenChange={(v) => {
+                    // eslint-disable-next-line no-console
+                    console.log('[ProfilePage] onOpenChange ->', v);
+                    setBioModalOpen(v);
+                    if (v) setBioMsg(null);
+                  }}
+                >
+                  <button
+                    type="button"
+                    data-testid="bio-edit-trigger"
+                    onClick={() => {
+                      // eslint-disable-next-line no-console
+                      console.log('[ProfilePage] bio edit trigger clicked -> set open true');
+                      setBioModalOpen(true);
+                    }}
+                    className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 hover:bg-white/10 px-5 py-3 text-sm font-semibold transition-colors"
+                  >
+                    Редактировать
+                  </button>
+                  <AlertDialogContent
+                    data-testid="bio-edit-content"
+                    onOpenAutoFocus={() => {
+                      // eslint-disable-next-line no-console
+                      console.log('[AlertDialogContent] onOpenAutoFocus');
+                    }}
+                    onEscapeKeyDown={() => {
+                      // eslint-disable-next-line no-console
+                      console.log('[AlertDialogContent] onEscapeKeyDown');
+                    }}
+                    onCloseAutoFocus={() => {
+                      // eslint-disable-next-line no-console
+                      console.log('[AlertDialogContent] onCloseAutoFocus');
+                    }}
+                    className="relative max-w-xl rounded-3xl border border-white/10 bg-white/[0.06] backdrop-blur-xl shadow-2xl"
+                  >
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-white">Редактировать описание профиля</AlertDialogTitle>
+                      <AlertDialogDescription className="text-neutral-400">
+                        Максимум 200 символов. Это описание отображается в вашем профиле.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="mt-2">
+                      <textarea
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        data-testid="bio-textarea"
+                        autoFocus
+                        className="w-full min-h-[140px] rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-600"
+                        placeholder="Добавьте описание (до 200 символов)"
+                        maxLength={200}
+                      />
+                      <div className="mt-2 flex items-center justify-between text-xs text-neutral-400">
+                        <span>{bio.length}/200</span>
+                        {bioMsg && (
+                          <span className={/Ошибка|Слишком/i.test(bioMsg) ? 'text-red-400' : 'text-neutral-400'}>{bioMsg}</span>
+                        )}
+                      </div>
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel data-testid="bio-cancel" className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200">
+                        Отменить
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        data-testid="bio-save"
+                        className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
+                          bioSaving
+                            ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-lg shadow-indigo-600/20 hover:opacity-95'
+                        }`}
+                        onClick={saveBio}
+                        disabled={bioSaving}
+                      >
+                        {bioSaving ? 'Сохранение...' : 'Сохранить'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+
+                    {bioSaving && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-3xl">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                      </div>
+                    )}
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </section>
