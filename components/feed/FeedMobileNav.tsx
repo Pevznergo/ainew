@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   MenuIcon,
@@ -34,10 +35,12 @@ export default function FeedMobileNav({
                   className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground"
                 >
                   <span className="inline-flex items-center gap-2">
-                    <img
+                    <Image
                       src="/images/logo.png"
                       alt="Главная"
-                      className="h-4 w-4 rounded-full object-cover"
+                      width={16}
+                      height={16}
+                      className="rounded-full object-cover"
                     />
                     <span>Главная</span>
                   </span>

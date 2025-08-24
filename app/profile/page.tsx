@@ -724,7 +724,7 @@ export default function ProfilePage() {
 
                     {bioSaving && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-3xl">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                        <div className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
                       </div>
                     )}
                   </AlertDialogContent>

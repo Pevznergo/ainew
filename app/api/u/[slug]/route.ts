@@ -29,7 +29,31 @@ function extractFirstImageUrl(msg: any): string | null {
   return null;
 }
 
-export async function GET(request: Request, { params }: { params: { slug: string } }) {
+type ApiResponse = {
+  items: Array<{
+    chatId: string;
+    firstMessageId: string | null;
+    createdAt: string;
+    text: string;
+    imageUrl: string | null;
+    upvotes: number;
+    reposts: number;
+    commentsCount: number;
+    hashtags: string[];
+    author: string;
+  }>;
+  nextBefore: string | null;
+  author: {
+    nickname: string | null;
+    email: string | null;
+    id: string;
+  };
+} | { error: string };
+
+export async function GET(
+  request: Request,
+  { params }: { params: { slug: string } }
+): Promise<NextResponse<ApiResponse>> {
   const { slug } = params;
   const { searchParams } = new URL(request.url);
   const before = searchParams.get('before');
@@ -41,12 +65,17 @@ export async function GET(request: Request, { params }: { params: { slug: string
   const sort: 'rating' | 'date' = sortParam === 'date' ? 'date' : 'rating';
 
   // Resolve user by nickname or id
-  const u = await db
-    .select({ id: user.id, email: user.email, nickname: user.nickname as any })
-    .from(user)
-    .where(or(eq(user.nickname, slug), eq(user.id, slug)))
-    .limit(1)
-    .then((rows) => rows[0]);
+  try {
+    const u = await db
+      .select({ id: user.id, email: user.email, nickname: user.nickname })
+      .from(user)
+      .where(or(eq(user.nickname, slug), eq(user.id, slug)))
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!u) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
   if (!u) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -65,7 +94,15 @@ export async function GET(request: Request, { params }: { params: { slug: string
     .limit(LIMIT);
 
   if (!userChats || userChats.length === 0) {
-    return NextResponse.json({ items: [], nextBefore: null });
+    return NextResponse.json({
+      items: [],
+      nextBefore: null,
+      author: {
+        nickname: u?.nickname || null,
+        email: u?.email || null,
+        id: u?.id || ''
+      }
+    });
   }
 
   const chatIds = userChats.map((c) => c.id);
@@ -144,9 +181,44 @@ export async function GET(request: Request, { params }: { params: { slug: string
     };
   });
 
-  const hasMore = userChats.length === LIMIT;
-  const lastCreatedAt = userChats[userChats.length - 1]?.createdAt as any;
-  const nextBefore = hasMore && lastCreatedAt ? new Date(lastCreatedAt).toISOString() : null;
+    const hasMore = userChats.length === LIMIT;
+    const lastCreatedAt = userChats[userChats.length - 1]?.createdAt as any;
+    const nextBefore = hasMore && lastCreatedAt ? new Date(lastCreatedAt).toISOString() : null;
 
-  return NextResponse.json({ items, nextBefore, author: { nickname: u.nickname, email: u.email, id: u.id } });
+    const response: ApiResponse = {
+      items: items.map(item => ({
+        chatId: item.chatId,
+        firstMessageId: item.firstMessageId,
+        createdAt: item.createdAt,
+        text: item.text,
+        imageUrl: item.imageUrl,
+        upvotes: item.upvotes,
+        reposts: item.reposts,
+        commentsCount: item.commentsCount,
+        hashtags: Array.isArray(item.hashtags) ? item.hashtags : [],
+        author: item.author
+      })),
+      nextBefore,
+      author: { 
+        nickname: u.nickname, 
+        email: u.email, 
+        id: u.id 
+      }
+    };
+
+    return NextResponse.json(response) as NextResponse<ApiResponse>;
+  } catch (error) {
+    console.error('Error in user feed API:', error);
+    const errorResponse: ApiResponse = {
+      items: [],
+      nextBefore: null,
+      author: {
+        nickname: null,
+        email: null,
+        id: ''
+      },
+      error: 'Internal server error'
+    };
+    return NextResponse.json(errorResponse, { status: 500 }) as NextResponse<ApiResponse>;
+  }
 }

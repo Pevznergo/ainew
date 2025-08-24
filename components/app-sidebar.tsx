@@ -2,11 +2,13 @@
 
 import type { User, Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
-import { PlusIcon, HomeIcon, MessageIcon, UserIcon } from '@/components/icons';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { SidebarHistory } from '@/components/sidebar-history';
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
-import { Button } from '@/components/ui/button';
+import { HomeIcon, MessageIcon, UserIcon, PlusIcon } from '@/components/icons';
 import {
   Sidebar,
   SidebarContent,
@@ -56,7 +58,13 @@ export function AppSidebar({
                   }}
                   aria-label="Главная"
                 >
-                  <img src="/images/logo.png" alt="Главная" className="h-4 w-4 rounded-full object-cover" />
+                  <Image 
+                    src="/images/logo.png" 
+                    alt="Главная" 
+                    width={16} 
+                    height={16} 
+                    className="rounded-full object-cover" 
+                  />
                   <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Главная</span>
                 </Button>
               </div>
