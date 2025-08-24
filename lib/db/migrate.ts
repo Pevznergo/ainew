@@ -3,9 +3,10 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 
-config({
-  path: '.env.local',
-});
+// Load env from common locations to match app runtime
+config({ path: '.env.local' });
+config({ path: '.env' });
+config({ path: '.env.l' });
 
 const runMigrate = async () => {
   if (!process.env.POSTGRES_URL) {

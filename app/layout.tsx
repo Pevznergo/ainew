@@ -6,6 +6,7 @@ import Script from 'next/script';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
+import { auth } from '@/app/(auth)/auth';
 import { ModelProvider } from '@/contexts/model-context';
 import { UserProvider } from '@/contexts/user-context';
 
@@ -115,6 +116,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
   return (
     <html
       lang="en"
@@ -163,7 +165,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <Toaster position="top-center" />
-          <SessionProvider>
+          <SessionProvider session={session as any}>
             <UserProvider initialUser={null}>
               <ModelProvider>{children}</ModelProvider>
             </UserProvider>

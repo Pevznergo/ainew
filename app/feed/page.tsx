@@ -128,7 +128,7 @@ export default async function FeedPage({
   // 5) Load users for attribution (optional)
   const userIds = Array.from(new Set(filteredChats.map((c) => c.userId))) as string[];
   const users = await db
-    .select({ id: user.id, email: user.email })
+    .select({ id: user.id, email: user.email, nickname: user.nickname as any })
     .from(user)
     .where(inArray(user.id, userIds));
   const userById = new Map(users.map((u) => [u.id, u]));
@@ -261,6 +261,8 @@ export default async function FeedPage({
                 const text = first ? extractTextFromParts(first.parts as any) : '';
                 const imageUrl = first ? extractFirstImageUrl(first) : null;
                 const upvotes = upvotesByChat.get(c.id) ?? 0;
+                const u = userById.get(c.userId as any) as any;
+                const author = u ? (String(u.nickname || '').trim() || String(u.email || '').trim() || 'Пользователь') : 'Пользователь';
                 return (
                   <FeedItem
                     key={c.id}
@@ -272,6 +274,7 @@ export default async function FeedPage({
                     initialUpvotes={upvotes}
                     commentsCount={Math.max(0, (userMsgCountByChat.get(c.id) ?? 0) - (first ? 1 : 0))}
                     hashtags={Array.isArray((c as any).hashtags) ? ((c as any).hashtags as string[]) : []}
+                    author={author}
                   />
                 );
               })}

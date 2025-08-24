@@ -7,6 +7,7 @@ import {
   gt,
   gte,
   inArray,
+  ne,
   lt,
   type SQL,
 } from 'drizzle-orm';
@@ -31,6 +32,7 @@ import {
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
 import { generateHashedPassword } from './utils';
+import { compare } from 'bcrypt-ts';
 import { ChatSDKError } from '../errors';
 
 // A lightweight chat shape that excludes optional/new columns like `hashtags`.
@@ -69,7 +71,6 @@ export async function createInvite(
     if (existing.length > 0) {
       return existing[0];
     }
-
     const [created] = await db
       .insert(invites)
       .values({
@@ -162,10 +163,12 @@ export async function createUser(email: string, password: string) {
       .values({
         email,
         password: hashedPassword,
-      })
+        nickname: email,
+      } as any)
       .returning({
         id: user.id,
         email: user.email,
+        nickname: user.nickname as any,
       });
 
     console.log('User created successfully:', result);
@@ -187,9 +190,10 @@ export async function createGuestUser() {
   const password = generateHashedPassword(generateUUID());
 
   try {
-    return await db.insert(user).values({ email, password }).returning({
+    return await db.insert(user).values({ email, password, nickname: email } as any).returning({
       id: user.id,
       email: user.email,
+      nickname: user.nickname as any,
     });
   } catch (error) {
     throw new ChatSDKError('bad_request:database');
@@ -206,10 +210,12 @@ export async function createGuestUserWithReferral(referralCode?: string) {
       .values({
         email,
         password,
-      })
+        nickname: email,
+      } as any)
       .returning({
         id: user.id,
         email: user.email,
+        nickname: user.nickname as any,
       });
 
     // Если есть реферальный код, устанавливаем связь
@@ -368,29 +374,59 @@ export async function setChatHashtags({
       к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',
       х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
     };
-    // Best-effort translator to English using DeepL if available
+    // Best-effort translator to English using DeepL if available; fallback to a small RU->EN dictionary
     const translateToEnglish = async (inputs: string[]): Promise<string[]> => {
       const key = process.env.DEEPL_API_KEY;
-      if (!key || inputs.length === 0) return inputs;
-      try {
-        const form = new URLSearchParams();
-        for (const t of inputs) form.append('text', String(t || ''));
-        form.append('target_lang', 'EN');
-        const res = await fetch('https://api-free.deepl.com/v2/translate', {
-          method: 'POST',
-          headers: { 'Authorization': `DeepL-Auth-Key ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: form.toString(),
-          // Small timeout via AbortController could be added if needed
-        });
-        if (!res.ok) return inputs;
-        const data = (await res.json()) as any;
-        const translated = Array.isArray(data?.translations)
-          ? data.translations.map((t: any) => String(t?.text || ''))
-          : inputs;
-        return translated;
-      } catch {
-        return inputs;
+      const normalizedInputs = (inputs || []).map((s) => String(s || '').trim());
+      if (normalizedInputs.length === 0) return normalizedInputs;
+
+      // If DeepL key is available, try using it first
+      if (key) {
+        try {
+          const form = new URLSearchParams();
+          for (const t of normalizedInputs) form.append('text', t);
+          form.append('target_lang', 'EN');
+          const res = await fetch('https://api-free.deepl.com/v2/translate', {
+            method: 'POST',
+            headers: { 'Authorization': `DeepL-Auth-Key ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: form.toString(),
+          });
+          if (res.ok) {
+            const data = (await res.json()) as any;
+            const translated = Array.isArray(data?.translations)
+              ? data.translations.map((t: any) => String(t?.text || ''))
+              : normalizedInputs;
+            return translated;
+          }
+        } catch {
+          // fall through to dictionary
+        }
       }
+
+      // Fallback: small RU->EN dictionary for common tags
+      const dict: Record<string, string> = {
+        'дом': 'home', 'квартира': 'apartment', 'ремонт': 'renovation', 'кухня': 'kitchen',
+        'работа': 'work', 'учеба': 'study', 'обучение': 'education', 'школа': 'school', 'университет': 'university',
+        'новости': 'news', 'кино': 'movies', 'фильм': 'movie', 'музыка': 'music',
+        'авто': 'cars', 'машина': 'car', 'спорт': 'sport', 'здоровье': 'health', 'еда': 'food', 'рецепт': 'recipe',
+        'путешествия': 'travel', 'поездка': 'trip', 'технологии': 'tech', 'техника': 'electronics', 'наука': 'science',
+        'искусство': 'art', 'фото': 'photo', 'видео': 'video', 'разработка': 'development', 'программирование': 'programming', 'код': 'code',
+        'дизайн': 'design', 'бизнес': 'business', 'деньги': 'money', 'финансы': 'finance', 'природа': 'nature', 'животные': 'animals',
+        'семья': 'family', 'друзья': 'friends', 'игра': 'game', 'игры': 'games', 'погода': 'weather', 'политика': 'politics', 'юмор': 'humor',
+        'маркетинг': 'marketing', 'аналитика': 'analytics', 'данные': 'data', 'интернет': 'internet', 'безопасность': 'security',
+      };
+      const cyrillicRe = /[\u0400-\u04FF]/;
+      const mapWord = (w: string) => {
+        const lw = w.toLowerCase();
+        return dict[lw] || w;
+      };
+      return normalizedInputs.map((s) => {
+        if (!cyrillicRe.test(s)) return s; // not Cyrillic, leave as is
+        // split by space or hyphen and map tokens if present in dict
+        const tokens = s.split(/[\s-]+/g);
+        const mapped = tokens.map(mapWord).join(' ');
+        return mapped;
+      });
     };
     const toEnglishSlug = (input: string) => {
       const lower = String(input || '').trim().toLowerCase();
@@ -467,6 +503,79 @@ export async function getUserBalance(userId: string) {
     .from(user)
     .where(eq(user.id, userId));
   return foundUser; // { balance: number } или undefined
+}
+
+export async function getUserNickname(userId: string) {
+  const [foundUser] = await db
+    .select({ nickname: user.nickname })
+    .from(user)
+    .where(eq(user.id, userId));
+  return foundUser?.nickname || null;
+}
+
+export async function updateUserNickname(userId: string, nickname: string) {
+  const value = String(nickname || '').trim();
+  if (!value) throw new ChatSDKError('bad_request:nickname_empty');
+  if (value.length > 64) throw new ChatSDKError('bad_request:nickname_too_long');
+  // If unchanged, return early
+  const [current] = await db
+    .select({ id: user.id, nickname: user.nickname as any })
+    .from(user)
+    .where(eq(user.id, userId));
+  if (current && String(current.nickname || '') === value) {
+    return current;
+  }
+  // Check if nickname already used by another user
+  const [exists] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(and(eq(user.nickname as any, value as any), ne(user.id, userId)) as any);
+  if (exists) {
+    throw new ChatSDKError('conflict:nickname_taken');
+  }
+
+  // Proceed to update
+  const [updated] = await db
+    .update(user)
+    .set({ nickname: value } as any)
+    .where(eq(user.id, userId))
+    .returning({ id: user.id, nickname: user.nickname as any });
+  return updated;
+}
+
+export async function updateUserPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
+  const curr = String(currentPassword || '');
+  const next = String(newPassword || '');
+  if (!next || next.length < 8) {
+    throw new ChatSDKError('bad_request:password_too_short');
+  }
+  // Load user
+  const [u] = await db
+    .select({ id: user.id, password: user.password })
+    .from(user)
+    .where(eq(user.id, userId));
+  if (!u) throw new ChatSDKError('not_found:database');
+
+  // If user has password, verify current
+  if (u.password) {
+    const matches = await compare(curr, u.password as any);
+    if (!matches) throw new ChatSDKError('forbidden:wrong_password');
+  } else {
+    // If no password set (OAuth account), require current to be empty
+    if (curr) throw new ChatSDKError('forbidden:wrong_password');
+  }
+
+  const hashed = generateHashedPassword(next);
+  const [updated] = await db
+    .update(user)
+    .set({ password: hashed } as any)
+    .where(eq(user.id, userId))
+    .returning({ id: user.id });
+  return updated;
 }
 
 export async function decrementUserBalance(userId: string, amount: number) {
@@ -1037,7 +1146,8 @@ export async function createOAuthUser(userData: {
       .values({
         email: userData.email,
         password: generateHashedPassword(generateUUID()), // Генерируем случайный пароль
-      })
+        nickname: userData.email,
+      } as any)
       .returning();
 
     console.log('OAuth user created successfully:', result);

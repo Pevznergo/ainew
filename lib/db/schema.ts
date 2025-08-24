@@ -17,6 +17,7 @@ export const user = pgTable('User', {
     .$defaultFn(() => generateUUID()),
   email: text('email').notNull().unique(),
   password: text('password').notNull(),
+  nickname: text('nickname').unique(),
   balance: integer('balance').notNull().default(0),
   referral_code: text('referral_code'),
   referred_by: text('referred_by'),

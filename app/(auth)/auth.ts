@@ -9,6 +9,7 @@ import {
   getUserBalance,
   getUserSubscriptionStatus,
   createUser,
+  getUserById,
 } from '@/lib/db/queries';
 import { authConfig } from './auth.config';
 import { DUMMY_PASSWORD } from '@/lib/constants';
@@ -24,6 +25,7 @@ declare module 'next-auth' {
       type: UserType;
       subscription_active: boolean;
       balance: number;
+      nickname?: string;
     } & DefaultSession['user'];
   }
 
@@ -111,16 +113,19 @@ export const {
         session.user.id = token.id;
         session.user.type = token.type;
         try {
-          const [status, balance] = await Promise.all([
+          const [status, balance, userRow] = await Promise.all([
             getUserSubscriptionStatus(token.id),
             getUserBalance(token.id),
+            getUserById(token.id),
           ]);
           session.user.subscription_active =
             status?.subscription_active ?? false;
           session.user.balance = balance?.balance ?? 0;
+          session.user.nickname = (userRow as any)?.nickname || session.user.name || session.user.email || '';
         } catch (e) {
           session.user.subscription_active = false;
           session.user.balance = 0;
+          session.user.nickname = session.user.name || session.user.email || '';
         }
       }
       return session;

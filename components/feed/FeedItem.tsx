@@ -56,6 +56,7 @@ export function FeedItem({
   initialUpvotes,
   commentsCount,
   hashtags = [],
+  author,
 }: {
   chatId: string;
   firstMessageId: string | null;
@@ -65,6 +66,7 @@ export function FeedItem({
   initialUpvotes: number;
   commentsCount?: number;
   hashtags?: string[];
+  author: string;
 }) {
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [liked, setLiked] = useState(false);
@@ -174,7 +176,7 @@ export function FeedItem({
         <div className="min-w-0 flex-1">
           {/* Header (Twitter-like) */}
           <div className="mb-1 flex items-center gap-2 text-sm text-white/70">
-            <span className="font-medium text-white/90">Пользователь</span>
+            <span className="font-medium text-white/90">{author}</span>
             <span className="text-white/40">·</span>
             <time dateTime={createdAt} className="text-white/50">
               {dateLabel}

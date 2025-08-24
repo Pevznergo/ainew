@@ -93,7 +93,7 @@ export async function updateChatVisibility({
           const { text } = await generateText({
             model: openai('gpt-4o-mini-2024-07-18'),
             system:
-              'Сгенерируй 5 коротких релевантных хештегов по этому сообщению. Только сами хештеги без #, через запятую. На русском, без пробелов внутри одного тега.',
+              'Generate 5 short, relevant hashtags for this message. Output only the hashtags without #, comma-separated. In English, no spaces inside a single tag.',
             prompt: firstText,
           });
 

@@ -38,6 +38,8 @@ function LoadingSkeleton() {
             </div>
           </section>
 
+          {/* Никнейм — скрываем в скелетоне */}
+
           {/* Баланс skeleton */}
           <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1 flex flex-col gap-4">
@@ -101,12 +103,66 @@ export default function ProfilePage() {
     privacy: false,
   });
   const [avatarError, setAvatarError] = useState(false);
+  const [nickname, setNickname] = useState('');
+  const [nickSaving, setNickSaving] = useState(false);
+  const [nickMsg, setNickMsg] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passSaving, setPassSaving] = useState(false);
+  const [passMsg, setPassMsg] = useState<string | null>(null);
 
   const handleConsentChange = (type: keyof typeof consents) => {
     setConsents((prev) => ({
       ...prev,
       [type]: !prev[type],
     }));
+  };
+
+  const savePassword = async () => {
+    setPassMsg(null);
+    const curr = String(currentPassword || '');
+    const next = String(newPassword || '');
+    const conf = String(confirmPassword || '');
+    if (!next) {
+      setPassMsg('Введите новый пароль');
+      return;
+    }
+    if (next.length < 8) {
+      setPassMsg('Пароль слишком короткий (мин. 8 символов)');
+      return;
+    }
+    if (next !== conf) {
+      setPassMsg('Подтверждение пароля не совпадает');
+      return;
+    }
+    try {
+      setPassSaving(true);
+      const res = await fetch('/api/profile/password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: curr, newPassword: next }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 403 && data?.error === 'wrong_password') {
+          setPassMsg('Текущий пароль неверен');
+        } else if (res.status === 400 && data?.error === 'password_too_short') {
+          setPassMsg('Пароль слишком короткий (мин. 8 символов)');
+        } else {
+          setPassMsg('Ошибка сохранения, попробуйте позже');
+        }
+        return;
+      }
+      setPassMsg('Пароль обновлён');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (e) {
+      setPassMsg('Ошибка сети, попробуйте позже');
+    } finally {
+      setPassSaving(false);
+    }
   };
 
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -259,6 +315,15 @@ export default function ProfilePage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  // Initialize nickname from session
+  useEffect(() => {
+    if (session?.user?.nickname || session?.user?.name || session?.user?.email) {
+      setNickname(
+        (session.user.nickname as string) || session.user.name || session.user.email || '',
+      );
+    }
+  }, [session?.user?.nickname, session?.user?.name, session?.user?.email]);
+
   // Показываем скелетон пока загружаемся
   if (status === 'loading') {
     return <LoadingSkeleton />;
@@ -282,6 +347,41 @@ export default function ProfilePage() {
     ? session.user?.image || '/images/profile.png'
     : '';
   const initials = (email || 'U').slice(0, 1).toUpperCase();
+
+  const saveNickname = async () => {
+    setNickMsg(null);
+    const value = String(nickname || '').trim();
+    if (!value) {
+      setNickMsg('Введите никнейм');
+      return;
+    }
+    if (value.length > 64) {
+      setNickMsg('Никнейм слишком длинный (макс. 64)');
+      return;
+    }
+    try {
+      setNickSaving(true);
+      const res = await fetch('/api/profile/nickname', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname: value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 409) setNickMsg('Такой ник уже занят');
+        else if (res.status === 400 && data?.error === 'nickname_empty') setNickMsg('Введите никнейм');
+        else setNickMsg('Ошибка сохранения, попробуйте позже');
+        return;
+      }
+      setNickMsg('Сохранено');
+      // reflect locally
+      setNickname(String(data?.nickname || value));
+    } catch (e) {
+      setNickMsg('Ошибка сети, попробуйте позже');
+    } finally {
+      setNickSaving(false);
+    }
+  };
 
   return (
     <div className="font-geist font-sans min-h-screen bg-[#0b0b0f] text-neutral-100">
@@ -430,6 +530,95 @@ export default function ProfilePage() {
               <div className="text-neutral-400 text-base mt-2">
                 Подпишись на ПРО и получай <b>1000 токенов</b> в месяц всего за{' '}
                 <b>199 ₽</b> (≈0.2 ₽ за токен).
+              </div>
+            </div>
+          </section>
+
+          {/* Никнейм */}
+          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04]">
+            <div className="flex items-start justify-between gap-8">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-white mb-2">Никнейм</h2>
+                <p className="text-neutral-400 mb-4">Установите отображаемое имя для вашего профиля.</p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    id="nickname"
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                    className="flex-1 rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-600"
+                    placeholder="Ваш никнейм"
+                    maxLength={64}
+                  />
+                  <button
+                    type="button"
+                    onClick={saveNickname}
+                    disabled={nickSaving}
+                    className={`rounded-xl px-5 py-3 text-sm font-semibold transition ${
+                      nickSaving
+                        ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-lg shadow-indigo-600/20 hover:opacity-95'
+                    }`}
+                  >
+                    {nickSaving ? 'Сохранение...' : 'Сохранить'}
+                  </button>
+                </div>
+                {nickMsg && (
+                  <div className="mt-2 text-sm text-neutral-300">{nickMsg}</div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Пароль */}
+          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04]">
+            <div className="flex items-start justify-between gap-8">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-white mb-2">Смена пароля</h2>
+                <p className="text-neutral-400 mb-4">Сначала введите текущий пароль (если он установлен), затем новый.</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-600"
+                    placeholder="Текущий пароль"
+                  />
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-600"
+                    placeholder="Новый пароль (мин. 8)"
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="flex-1 rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-600"
+                      placeholder="Повторите пароль"
+                    />
+                    <button
+                      type="button"
+                      onClick={savePassword}
+                      disabled={passSaving}
+                      className={`rounded-xl px-5 py-3 text-sm font-semibold whitespace-nowrap transition ${
+                        passSaving
+                          ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-lg shadow-indigo-600/20 hover:opacity-95'
+                      }`}
+                    >
+                      {passSaving ? 'Сохранение...' : 'Обновить'}
+                    </button>
+                  </div>
+                </div>
+                {passMsg && (
+                  <div className="mt-2 text-sm text-neutral-300">{passMsg}</div>
+                )}
               </div>
             </div>
           </section>
