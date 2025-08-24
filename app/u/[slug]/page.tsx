@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 
 import { db } from '@/lib/db/queries';
 import { chat, message, user, vote } from '@/lib/db/schema';
+import type { InferModel } from 'drizzle-orm';
 import { FeedItem } from '@/components/feed/FeedItem';
 import { UserChannelListClient } from '@/components/feed/UserChannelListClient';
 import SidebarProviderClient from '@/components/feed/SidebarProviderClient';
@@ -14,7 +15,51 @@ import { PlusIcon, HomeIcon, MessageIcon, UserIcon } from '@/components/icons';
 import { getUserChannelPath } from '@/lib/paths';
 import { auth } from '@/app/(auth)/auth';
 
-function extractTextFromParts(parts: any): string {
+type User = InferModel<typeof user> & {
+  bio?: string | null;
+  nickname?: string | null;
+};
+
+type Chat = InferModel<typeof chat> & {
+  hashtags?: string[] | null;
+  title?: string | null;
+  visibility?: 'public' | 'private';
+};
+
+type MessagePart = {
+  type: string;
+  text?: string;
+  imageUrl?: string;
+  [key: string]: unknown;
+};
+
+type MessageAttachment = {
+  type: string;
+  url?: string;
+  [key: string]: unknown;
+};
+
+type Message = InferModel<typeof message> & {
+  parts?: MessagePart[];
+  attachments?: MessageAttachment[];
+};
+
+type SearchParamsType = {
+  before?: string;
+  sort?: 'rating' | 'date';
+  tag?: string;
+  q?: string;
+  [key: string]: string | string[] | undefined;
+};
+
+type BaseProps = {
+  params: { slug: string };
+  searchParams?: SearchParamsType;
+};
+
+type Props = BaseProps;
+
+function extractTextFromParts(parts?: MessagePart[]): string {
   if (!Array.isArray(parts)) return '';
   for (const p of parts) {
     if (p?.type === 'text' && typeof p.text === 'string' && p.text.trim()) {
@@ -24,7 +69,7 @@ function extractTextFromParts(parts: any): string {
   return '';
 }
 
-function extractFirstImageUrl(msg: any): string | null {
+function extractFirstImageUrl(msg: Message): string | null {
   const parts = Array.isArray(msg?.parts) ? msg.parts : [];
   for (const p of parts) {
     if (p?.type === 'image' && typeof p.imageUrl === 'string' && p.imageUrl) {
@@ -42,7 +87,10 @@ function extractFirstImageUrl(msg: any): string | null {
 
 export const dynamic = 'force-dynamic';
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: any
+): Promise<Metadata> {
   const slug = params.slug;
   const u = await db
     .select({ id: user.id, email: user.email, nickname: user.nickname as any, bio: user.bio as any })
@@ -63,28 +111,34 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   } as Metadata;
 }
 
+
 export default async function UserChannelPage({
   params,
-  searchParams,
+  searchParams = {},
 }: {
   params: { slug: string };
-  searchParams?: Promise<{ before?: string; sort?: 'rating' | 'date'; tag?: string; q?: string }>;
-}) {
+  searchParams?: { [key: string]: string | string[] | undefined };
+} & any) {
   const session = await auth();
   const slug = params.slug;
   const LIMIT = 50;
-  const paramsObj = (await searchParams) || {};
-  const sort = 'date' as const; // Always sort by date
-  const tag = (paramsObj?.tag || '').toLowerCase().trim();
-  const q = (paramsObj?.q || '').toLowerCase().trim();
+  // Safely extract and type search params
+  const sort = searchParams?.sort === 'rating' ? 'rating' as const : 'date' as const;
+  const tag = searchParams?.tag ? String(Array.isArray(searchParams.tag) ? searchParams.tag[0] : searchParams.tag).toLowerCase().trim() : '';
+  const q = searchParams?.q ? String(Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q).toLowerCase().trim() : '';
+  const before = searchParams?.before ? String(Array.isArray(searchParams.before) ? searchParams.before[0] : searchParams.before) : undefined;
 
   // Resolve user by slug (nickname or id)
-  const u = await db
-    .select({ id: user.id, email: user.email, nickname: user.nickname as any, bio: user.bio as any })
+  const u = (await db
+    .select({ 
+      id: user.id, 
+      email: user.email, 
+      nickname: user.nickname, 
+      bio: user.bio 
+    })
     .from(user)
     .where(or(eq(user.nickname, slug), eq(user.id, slug)))
-    .limit(1)
-    .then((rows) => rows[0]);
+    .limit(1))[0] as User | undefined;
 
   if (!u) {
     return (
@@ -98,18 +152,25 @@ export default async function UserChannelPage({
     redirect(`/u/${encodeURIComponent(nick)}`);
   }
 
-  const beforeDate = paramsObj?.before ? new Date(paramsObj.before) : null;
-  const channelPath = getUserChannelPath(u.nickname as any, u.id);
-  const userChats = await db
-    .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility, hashtags: chat.hashtags as any })
+  const beforeDate = before ? new Date(before) : null;
+  const channelPath = getUserChannelPath(u.nickname || undefined, u.id);
+  const userChats = (await db
+    .select({ 
+      id: chat.id, 
+      createdAt: chat.createdAt, 
+      title: chat.title, 
+      userId: chat.userId, 
+      visibility: chat.visibility, 
+      hashtags: chat.hashtags 
+    })
     .from(chat)
     .where(
       beforeDate
-        ? and(eq(chat.userId, u.id), eq(chat.visibility, 'public'), lt(chat.createdAt, beforeDate))
-        : and(eq(chat.userId, u.id), eq(chat.visibility, 'public')),
+        ? and(eq(chat.userId, u.id), eq(chat.visibility, 'public' as const), lt(chat.createdAt, beforeDate))
+        : and(eq(chat.userId, u.id), eq(chat.visibility, 'public' as const)),
     )
     .orderBy(desc(chat.createdAt))
-    .limit(LIMIT);
+    .limit(LIMIT)) as Chat[];
 
   if (!userChats || userChats.length === 0) {
     return (
@@ -120,50 +181,57 @@ export default async function UserChannelPage({
   }
 
   const allChatIds = userChats.map((c) => c.id);
-  const msgs = await db
+  const msgs = (await db
     .select()
     .from(message)
     .where(and(inArray(message.chatId, allChatIds), eq(message.role, 'user')))
-    .orderBy(asc(message.createdAt));
+    .orderBy(asc(message.createdAt))).map(msg => ({
+      ...msg,
+      parts: Array.isArray(msg.parts) ? msg.parts as MessagePart[] : undefined,
+      attachments: Array.isArray(msg.attachments) ? msg.attachments as MessageAttachment[] : undefined
+    }));
 
-  const firstMsgByChat = new Map<string, typeof msgs[number]>();
+  const firstMsgByChat = new Map<string, Message>();
   const userMsgCountByChat = new Map<string, number>();
   for (const m of msgs) {
-    if (!firstMsgByChat.has(m.chatId)) firstMsgByChat.set(m.chatId, m);
-    userMsgCountByChat.set(m.chatId, (userMsgCountByChat.get(m.chatId) ?? 0) + 1);
+    const chatId = String(m.chatId);
+    if (!firstMsgByChat.has(chatId)) {
+      firstMsgByChat.set(chatId, m);
+    }
+    userMsgCountByChat.set(chatId, (userMsgCountByChat.get(chatId) ?? 0) + 1);
   }
 
   let filteredChats = tag
-    ? (userChats as any).filter((c: any) => Array.isArray(c?.hashtags) && c.hashtags.some((t: string) => String(t).toLowerCase() === tag))
+    ? userChats.filter((c) => Array.isArray(c?.hashtags) && c.hashtags.some((t) => String(t).toLowerCase() === tag))
     : userChats;
 
   if (q) {
-    const qlc = q;
-    filteredChats = (filteredChats as any).filter((c: any) => {
+    const qlc = q.toLowerCase();
+    filteredChats = filteredChats.filter((c) => {
       const first = firstMsgByChat.get(c.id);
-      const body = first ? extractTextFromParts((first as any).parts).toLowerCase() : '';
-      const title = String((c as any).title || '').toLowerCase();
-      const tags = Array.isArray((c as any).hashtags) ? ((c as any).hashtags as string[]) : [];
-      return body.includes(qlc) || title.includes(qlc) || tags.some((t) => String(t || '').toLowerCase().includes(qlc));
-    });
+      const body = first ? extractTextFromParts(first.parts).toLowerCase() : '';
+      const title = String(c.title || '').toLowerCase();
+      const tags = Array.isArray(c.hashtags) ? c.hashtags.map(t => String(t || '').toLowerCase()) : [];
+      return body.includes(qlc) || title.includes(qlc) || tags.some(t => t.includes(qlc));
+    }) as Chat[];
   }
 
-  const voteRows = await db
+  const voteRows = (await db
     .select({ chatId: vote.chatId, upvotes: count(vote.messageId) })
     .from(vote)
     .where(and(inArray(vote.chatId, filteredChats.map((c) => c.id)), eq(vote.isUpvoted, true)))
-    .groupBy(vote.chatId);
+    .groupBy(vote.chatId)) as Array<{ chatId: string; upvotes: number }>;
   const upvotesByChat = new Map<string, number>(voteRows.map((v) => [v.chatId, Number(v.upvotes)]));
 
   // Always sort by date
   const chatsForRender = [...filteredChats].sort(
-    (a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
   const authorText = String(u.nickname || '').trim() || String(u.email || '').trim() || 'Пользователь';
   const handle = nick ? `@${nick}` : `@user-${String(u.id).slice(0, 6)}`;
   const isOwner = Boolean(session?.user?.id && session.user.id === u.id);
-  const userBio = String((u as any).bio || '').trim();
+  const userBio = String(u.bio || '').trim();
   
   console.log('User channel page:', { 
     userId: u.id, 
@@ -174,11 +242,11 @@ export default async function UserChannelPage({
   });
 
   const hasMore = userChats.length === LIMIT;
-  const lastCreatedAt = userChats[userChats.length - 1]?.createdAt as any;
+  const lastCreatedAt = userChats[userChats.length - 1]?.createdAt;
   const initialNextBefore = hasMore && lastCreatedAt ? new Date(lastCreatedAt).toISOString() : null;
 
   // Always sort by date
-  filteredChats.sort((a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime());
+  filteredChats.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   
   // Simple stats for header
   const postsCount = filteredChats.length;
@@ -186,7 +254,7 @@ export default async function UserChannelPage({
 
   const tagCounts = new Map<string, number>();
   for (const c of filteredChats) {
-    const tags = Array.isArray((c as any).hashtags) ? ((c as any).hashtags as string[]) : [];
+    const tags = Array.isArray(c.hashtags) ? c.hashtags : [];
     for (const t of tags) {
       const key = String(t || '').toLowerCase();
       if (!key) continue;
@@ -210,10 +278,11 @@ export default async function UserChannelPage({
                     <span className="inline-flex items-center gap-2">
                       <Image 
                         src="/images/logo.png" 
-                        alt="Главная" 
+                        alt="Логотип" 
                         width={16} 
                         height={16} 
-                        className="rounded-full object-cover" 
+                        className="rounded-full object-cover w-4 h-4" 
+                        unoptimized
                       />
                       <span>Главная</span>
                     </span>

@@ -60,10 +60,11 @@ export function AppSidebar({
                 >
                   <Image 
                     src="/images/logo.png" 
-                    alt="Главная" 
+                    alt="Логотип" 
                     width={16} 
                     height={16} 
-                    className="rounded-full object-cover" 
+                    className="rounded-full object-cover w-4 h-4" 
+                    unoptimized
                   />
                   <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Главная</span>
                 </Button>

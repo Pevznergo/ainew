@@ -190,7 +190,14 @@ export default async function FeedPage({
                 <nav className="flex flex-col gap-2 text-sm">
                   <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
                     <span className="inline-flex items-center gap-2">
-                      <Image src="/images/logo.png" alt="Главная" width={16} height={16} className="rounded-full object-cover" />
+                      <Image 
+                        src="/images/logo.png" 
+                        alt="Логотип" 
+                        width={16} 
+                        height={16} 
+                        className="rounded-full object-cover w-4 h-4" 
+                        unoptimized
+                      />
                       <span>Главная</span>
                     </span>
                   </Link>
