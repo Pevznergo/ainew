@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, Repeat2 } from 'lucide-react';
+import { Avatar } from '@/components/ui/avatar';
 import { chatModels } from '@/lib/ai/models';
 
 function getCookie(name: string) {
@@ -213,13 +214,15 @@ export function FeedItem({
     <article className="rounded-3xl border border-border bg-card p-4 text-card-foreground">
       <div className="sm:flex sm:gap-3">
         {/* Avatar with link to user profile */}
-        {authorHref ? (
-          <Link href={authorHref} className="mb-2 block size-10 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border sm:mb-0">
-            <div className="size-full" />
-          </Link>
-        ) : (
-          <div className="mb-2 size-10 shrink-0 overflow-hidden rounded-full bg-muted ring-1 ring-border sm:mb-0" />
-        )}
+        <div className="mb-2 shrink-0 sm:mb-0">
+          {authorHref ? (
+            <Link href={authorHref}>
+              <Avatar name={author} size="md" className="ring-1 ring-border" />
+            </Link>
+          ) : (
+            <Avatar name={author} size="md" className="ring-1 ring-border" />
+          )}
+        </div>
 
         <div className="min-w-0 flex-1">
           {/* Header (Twitter-like) */}

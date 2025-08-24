@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, lt, count, or } from 'drizzle-orm';
 import Link from 'next/link';
 import Image from 'next/image';
 import { BioEditModal } from '@/components/channel/BioEditModal';
+import { Avatar } from '@/components/ui/avatar';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
@@ -324,7 +325,9 @@ export default async function UserChannelPage({
                 <div className="px-4 pb-4">
                   <div className="-mt-8 flex items-end gap-3">
                     {/* Avatar */}
-                    <div className="size-16 rounded-full ring-2 ring-background border border-border bg-muted" />
+                    <div className="size-16 rounded-full ring-2 ring-background border border-border overflow-hidden">
+                      <Avatar name={authorText} size="lg" className="w-full h-full" />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-base font-semibold text-foreground truncate">{authorText}</div>
                       <div className="text-xs text-muted-foreground truncate">{handle}</div>
