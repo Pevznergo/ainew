@@ -52,8 +52,9 @@ type ApiResponse = {
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  context: { params: { slug: string } }
 ): Promise<NextResponse<ApiResponse>> {
+  const { params } = context;
   const { slug } = params;
   const { searchParams } = new URL(request.url);
   const before = searchParams.get('before');

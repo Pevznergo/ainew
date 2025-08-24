@@ -103,7 +103,7 @@ export function BioEditModal({ initialBio }: { initialBio: string }) {
           
           {isPending && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+              <div className="size-6 animate-spin rounded-full border-2 border-white/20 border-t-white" />
             </div>
           )}
         </Dialog.Content>

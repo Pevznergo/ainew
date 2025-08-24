@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, lt, count, or } from 'drizzle-orm';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BioEditModal } from '@/components/channel/BioEditModal';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -207,7 +208,13 @@ export default async function UserChannelPage({
                 <nav className="flex flex-col gap-2 text-sm">
                   <Link href="/feed" className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground">
                     <span className="inline-flex items-center gap-2">
-                      <img src="/images/logo.png" alt="Главная" className="h-4 w-4 rounded-full object-cover" />
+                      <Image 
+                        src="/images/logo.png" 
+                        alt="Главная" 
+                        width={16} 
+                        height={16} 
+                        className="rounded-full object-cover" 
+                      />
                       <span>Главная</span>
                     </span>
                   </Link>
