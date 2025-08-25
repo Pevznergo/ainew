@@ -2,56 +2,42 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   JsonToSseTransformStream,
-  smoothStream,
   streamText,
 } from 'ai';
-import { auth, type UserType } from '@/app/(auth)/auth';
-import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
+import { auth, } from '@/app/(auth)/auth';
+import { systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
-  decrementUserBalance,
   deleteChatById,
   getChatById,
-  getMessageCountByUserId,
   getMessagesByChatId,
   saveChat,
   saveMessages,
-  getModelByName,
   getUserById,
   getGuestMessageCount,
 } from '@/lib/db/queries';
 import { convertToUIMessages, generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
-import { createDocument } from '@/lib/ai/tools/create-document';
-import { updateDocument } from '@/lib/ai/tools/update-document';
-import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import { getWeather } from '@/lib/ai/tools/get-weather';
-import { isProductionEnvironment, guestRegex } from '@/lib/constants';
+import { guestRegex } from '@/lib/constants';
 import {
-  entitlementsByUserType,
   checkUserEntitlements,
 } from '@/lib/ai/entitlements';
-import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
   createResumableStreamContext,
   type ResumableStreamContext,
 } from 'resumable-stream';
 import { after } from 'next/server';
-import { ChatSDKError } from '@/lib/errors';
-import type { ChatMessage } from '@/lib/types';
-import type { VisibilityType } from '@/components/visibility-selector';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { anthropic } from '@ai-sdk/anthropic';
 import { google } from '@ai-sdk/google';
 import { xai } from '@ai-sdk/xai';
-import { chatModels, type ChatModel, DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
+import { chatModels, DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { eq } from 'drizzle-orm';
 import { message } from '@/lib/db/schema';
 import { db } from '@/lib/db/index';
 import { cookies } from 'next/headers';
-import type { User } from '@/lib/db/schema';
 // OpenAI direct and OpenRouter clients
 const openaiDirect = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',

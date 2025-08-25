@@ -3,7 +3,6 @@ import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { google } from '@ai-sdk/google';
 import { xai } from '@ai-sdk/xai';
-import { createGateway } from '@ai-sdk/gateway';
 
 const providerMap = {
   openai,

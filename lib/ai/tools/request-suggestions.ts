@@ -5,11 +5,8 @@ import { getDocumentById, saveSuggestions } from '@/lib/db/queries';
 import type { Suggestion } from '@/lib/db/schema';
 import { generateUUID } from '@/lib/utils';
 import {
-  getProviderByModelId,
   getArtifactModel,
-  myProvider,
 } from '../providers';
-import type { ChatMessage } from '@/lib/types';
 
 interface RequestSuggestionsProps {
   session: Session;

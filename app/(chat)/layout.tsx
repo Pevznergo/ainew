@@ -7,7 +7,6 @@ import Script from 'next/script';
 import { DataStreamProvider } from '@/components/data-stream-provider';
 import { ModelProvider } from '@/contexts/model-context';
 import { getUserSubscriptionStatus } from '@/lib/db/queries';
-import { ChatHeader } from '@/components/chat-header';
 
 export const experimental_ppr = true;
 

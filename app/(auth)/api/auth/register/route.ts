@@ -1,5 +1,11 @@
 import type { NextRequest } from 'next/server';
-import { createUser, setUserReferrer, getInviteByCode, markInviteUsed } from '@/lib/db/queries';
+import {
+  createUser,
+  setUserReferrer,
+  getInviteByCode,
+  markInviteUsed,
+} from '@/lib/db/queries';
+import { signIn } from '@/app/(auth)/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +33,10 @@ export async function POST(request: NextRequest) {
         : 0;
       if (!invite || remaining <= 0) {
         return new Response(
-          JSON.stringify({ error: 'invite_unavailable', message: 'По данному коду нет доступных инвайтов' }),
+          JSON.stringify({
+            error: 'invite_unavailable',
+            message: 'По данному коду нет доступных инвайтов',
+          }),
           { status: 400, headers: { 'Content-Type': 'application/json' } },
         );
       }
@@ -71,6 +80,20 @@ export async function POST(request: NextRequest) {
         referralCode,
         newUser,
       });
+    }
+
+    // Автоматический вход после регистрации
+    console.log('Performing automatic login...');
+    try {
+      await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+      console.log('Automatic login successful');
+    } catch (loginError) {
+      console.error('Automatic login failed:', loginError);
+      // Не прерываем процесс, так как пользователь уже создан
     }
 
     return new Response(

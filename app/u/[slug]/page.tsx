@@ -10,7 +10,6 @@ import { chat, message, user, vote } from '@/lib/db/schema';
 import type { InferModel } from 'drizzle-orm';
 import { FeedItem } from '@/components/feed/FeedItem';
 import { UserChannelListClient } from '@/components/feed/UserChannelListClient';
-import SidebarProviderClient from '@/components/feed/SidebarProviderClient';
 import { getUserChannelPath } from '@/lib/paths';
 import { auth } from '@/app/(auth)/auth';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -258,30 +257,33 @@ export default async function UserChannelPage({
     .orderBy(desc(chat.createdAt))
     .limit(LIMIT)) as Chat[];
 
-  if (!userChats || userChats.length === 0) {
-    return (
-      <SidebarProviderClient>
-        <div className="mx-auto max-w-2xl px-4 py-8 text-sm text-muted-foreground">
-          У пользователя пока нет публичных постов.
-        </div>
-      </SidebarProviderClient>
-    );
-  }
-
+  // Continue with the rest of the logic even if there are no chats
   const allChatIds = userChats.map((c) => c.id);
-  const msgs = (
-    await db
-      .select()
-      .from(message)
-      .where(and(inArray(message.chatId, allChatIds), eq(message.role, 'user')))
-      .orderBy(asc(message.createdAt))
-  ).map((msg) => ({
-    ...msg,
-    parts: Array.isArray(msg.parts) ? (msg.parts as MessagePart[]) : undefined,
-    attachments: Array.isArray(msg.attachments)
-      ? (msg.attachments as MessageAttachment[])
-      : undefined,
-  }));
+
+  // Only query messages if there are chats
+  const msgs =
+    allChatIds.length > 0
+      ? (
+          await db
+            .select()
+            .from(message)
+            .where(
+              and(
+                inArray(message.chatId, allChatIds),
+                eq(message.role, 'user'),
+              ),
+            )
+            .orderBy(asc(message.createdAt))
+        ).map((msg) => ({
+          ...msg,
+          parts: Array.isArray(msg.parts)
+            ? (msg.parts as MessagePart[])
+            : undefined,
+          attachments: Array.isArray(msg.attachments)
+            ? (msg.attachments as MessageAttachment[])
+            : undefined,
+        }))
+      : [];
 
   const firstMsgByChat = new Map<string, Message>();
   const userMsgCountByChat = new Map<string, number>();
@@ -318,19 +320,22 @@ export default async function UserChannelPage({
     }) as Chat[];
   }
 
-  const voteRows = (await db
-    .select({ chatId: vote.chatId, upvotes: count(vote.messageId) })
-    .from(vote)
-    .where(
-      and(
-        inArray(
-          vote.chatId,
-          filteredChats.map((c) => c.id),
-        ),
-        eq(vote.isUpvoted, true),
-      ),
-    )
-    .groupBy(vote.chatId)) as Array<{ chatId: string; upvotes: number }>;
+  const voteRows =
+    filteredChats.length > 0
+      ? ((await db
+          .select({ chatId: vote.chatId, upvotes: count(vote.messageId) })
+          .from(vote)
+          .where(
+            and(
+              inArray(
+                vote.chatId,
+                filteredChats.map((c) => c.id),
+              ),
+              eq(vote.isUpvoted, true),
+            ),
+          )
+          .groupBy(vote.chatId)) as Array<{ chatId: string; upvotes: number }>)
+      : [];
   const upvotesByChat = new Map<string, number>(
     voteRows.map((v) => [v.chatId, Number(v.upvotes)]),
   );
@@ -484,45 +489,73 @@ export default async function UserChannelPage({
                       )}
                     </div>
 
-                    {chatsForRender.map((c) => {
-                      const first = firstMsgByChat.get(c.id);
-                      const text = first
-                        ? extractTextFromParts(first.parts as any)
-                        : '';
-                      const imageUrl = first
-                        ? extractFirstImageUrl(first)
-                        : null;
-                      const upvotes = upvotesByChat.get(c.id) ?? 0;
-                      return (
-                        <FeedItem
-                          key={c.id}
-                          chatId={c.id}
-                          firstMessageId={first?.id ?? null}
-                          createdAt={
-                            (c.createdAt as any)?.toISOString?.() ??
-                            new Date(c.createdAt as any).toISOString()
-                          }
-                          text={text}
-                          imageUrl={imageUrl}
-                          initialUpvotes={upvotes}
-                          initialReposts={0}
-                          commentsCount={Math.max(
-                            0,
-                            (userMsgCountByChat.get(c.id) ?? 0) -
-                              (first ? 1 : 0),
-                          )}
-                          hashtags={
-                            Array.isArray((c as any).hashtags)
-                              ? ((c as any).hashtags as string[])
-                              : []
-                          }
-                          author={authorText}
-                          authorHref={channelPath}
-                        />
-                      );
-                    })}
+                    {chatsForRender.length === 0 ? (
+                      <div className="rounded-3xl border border-border bg-card p-8 text-center">
+                        <div className="text-muted-foreground mb-2">
+                          <svg
+                            className="mx-auto size-12 text-muted-foreground/30"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                            />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-foreground mb-2">
+                          Публичных постов пока нет
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {isOwner
+                            ? 'Создайте свой первый публичный пост в чате и он отобразится здесь.'
+                            : `Пользователь ${authorText} ещё не публиковал ничего.`}
+                        </p>
+                      </div>
+                    ) : (
+                      chatsForRender.map((c) => {
+                        const first = firstMsgByChat.get(c.id);
+                        const text = first
+                          ? extractTextFromParts(first.parts as any)
+                          : '';
+                        const imageUrl = first
+                          ? extractFirstImageUrl(first)
+                          : null;
+                        const upvotes = upvotesByChat.get(c.id) ?? 0;
+                        return (
+                          <FeedItem
+                            key={c.id}
+                            chatId={c.id}
+                            firstMessageId={first?.id ?? null}
+                            createdAt={
+                              (c.createdAt as any)?.toISOString?.() ??
+                              new Date(c.createdAt as any).toISOString()
+                            }
+                            text={text}
+                            imageUrl={imageUrl}
+                            initialUpvotes={upvotes}
+                            initialReposts={0}
+                            commentsCount={Math.max(
+                              0,
+                              (userMsgCountByChat.get(c.id) ?? 0) -
+                                (first ? 1 : 0),
+                            )}
+                            hashtags={
+                              Array.isArray((c as any).hashtags)
+                                ? ((c as any).hashtags as string[])
+                                : []
+                            }
+                            author={authorText}
+                            authorHref={channelPath}
+                          />
+                        );
+                      })
+                    )}
 
-                    {sort === 'date' && (
+                    {sort === 'date' && chatsForRender.length > 0 && (
                       <UserChannelListClient
                         slug={slug}
                         initialItems={[]}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useOptimistic, startTransition } from 'react';
+import { useEffect, } from 'react';
 import { ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import type { Session } from 'next-auth';

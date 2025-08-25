@@ -33,7 +33,10 @@ export default function Page() {
     toast({ type: 'success', description: 'Account created successfully!' });
     setIsSuccessful(true);
     gtmEvent('sign_up', { method: 'email' });
-    router.push('/subscriptions');
+    // Small delay to ensure session cookies are set, then refresh to update session state
+    setTimeout(() => {
+      window.location.href = '/subscriptions';
+    }, 100);
   }, [router]);
 
   // Prefill invite code from localStorage or cookies
@@ -146,7 +149,6 @@ export default function Page() {
         if (data.error === 'invite_unavailable') {
           setInviteError('По данному коду нет доступных инвайтов');
         }
-        
       }
     } catch (error) {
       console.error('Registration error:', error);

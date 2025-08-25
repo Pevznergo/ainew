@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useScrollToBottom } from './use-scroll-to-bottom';
-import type { ChatMessage } from '@/lib/types';
 
 export function useMessages({
   chatId,

@@ -3,8 +3,6 @@
 import type { User, Session } from 'next-auth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { SidebarHistory } from '@/components/sidebar-history';
 import { SidebarUserNav } from '@/components/sidebar-user-nav';

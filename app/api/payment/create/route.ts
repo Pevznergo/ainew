@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { YooCheckout } from '@a2seven/yoo-checkout';
 import { auth } from '@/app/(auth)/auth';
-import { nanoid } from 'nanoid';
 
 const checkout = new YooCheckout({
   shopId: process.env.YOOKASSA_SHOP_ID || '',

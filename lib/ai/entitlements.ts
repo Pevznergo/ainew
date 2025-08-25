@@ -2,7 +2,6 @@ import type { UserType } from '@/app/(auth)/auth';
 import type { ChatModel, ImageModel } from './models';
 import { chatModels, imageModels } from './models';
 import type { User } from '@/lib/db/schema';
-import { guestRegex } from '@/lib/constants';
 import { decrementUserBalance } from '@/lib/db/server-queries';
 
 interface Entitlements {

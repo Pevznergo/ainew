@@ -1,20 +1,17 @@
 import { and, asc, desc, eq, inArray, lt, count } from 'drizzle-orm';
 import Link from 'next/link';
-import Image from 'next/image';
 import type { Metadata } from 'next';
 
 import { db, getUserSubscriptionStatus } from '@/lib/db/queries';
 import { chat, message, user, vote, repost } from '@/lib/db/schema';
 import { FeedItem } from '@/components/feed/FeedItem';
 import { FeedListClient } from '@/components/feed/FeedListClient';
-import SidebarProviderClient from '@/components/feed/SidebarProviderClient';
 import { auth } from '@/app/(auth)/auth';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { ModelProvider } from '@/contexts/model-context';
 import { DataStreamProvider } from '@/components/data-stream-provider';
 import { cookies } from 'next/headers';
-import FeedMobileNav from '@/components/feed/FeedMobileNav';
 import { getUserChannelPath } from '@/lib/paths';
 
 function extractTextFromParts(parts: any): string {
