@@ -398,21 +398,23 @@ export default async function FeedPage({
                         {tag && <input type="hidden" name="tag" value={tag} />}
                       </form>
                     </div>
-                    <div className="rounded-2xl border border-green-600/30 bg-green-500/5 p-4">
-                      <div className="mb-2 text-sm font-medium text-foreground">
-                        Активируй ПРО подписку
+                    {!subscriptionStatus?.subscription_active && (
+                      <div className="rounded-2xl border border-green-600/30 bg-green-500/5 p-4">
+                        <div className="mb-2 text-sm font-medium text-foreground">
+                          Активируй ПРО подписку
+                        </div>
+                        <p className="mb-3 text-xs text-muted-foreground">
+                          Открой доступ к расширенным возможностям и большему
+                          лимиту токенов.
+                        </p>
+                        <Link
+                          href="/profile"
+                          className="inline-block rounded-xl border border-green-600/40 bg-green-500/10 px-3 py-1.5 text-xs text-green-600 dark:text-green-300 hover:bg-green-500/20"
+                        >
+                          Перейти в профиль
+                        </Link>
                       </div>
-                      <p className="mb-3 text-xs text-muted-foreground">
-                        Открой доступ к расширенным возможностям и большему
-                        лимиту токенов.
-                      </p>
-                      <Link
-                        href="/profile"
-                        className="inline-block rounded-xl border border-green-600/40 bg-green-500/10 px-3 py-1.5 text-xs text-green-600 dark:text-green-300 hover:bg-green-500/20"
-                      >
-                        Перейти в профиль
-                      </Link>
-                    </div>
+                    )}
                     <div className="rounded-2xl border border-border bg-muted/40 p-3">
                       <div className="mb-2 px-1 text-xs font-medium text-muted-foreground">
                         Популярные теги
@@ -451,21 +453,23 @@ export default async function FeedPage({
                         {tag && <input type="hidden" name="tag" value={tag} />}
                       </form>
                     </div>
-                    <div className="rounded-2xl border border-green-600/30 bg-green-500/5 p-4">
-                      <div className="mb-2 text-sm font-medium text-foreground">
-                        Активируй ПРО подписку
+                    {!subscriptionStatus?.subscription_active && (
+                      <div className="rounded-2xl border border-green-600/30 bg-green-500/5 p-4">
+                        <div className="mb-2 text-sm font-medium text-foreground">
+                          Активируй ПРО подписку
+                        </div>
+                        <p className="mb-3 text-xs text-muted-foreground">
+                          Открой доступ к расширенным возможностям и большему
+                          лимиту токенов.
+                        </p>
+                        <Link
+                          href="/profile"
+                          className="inline-block rounded-xl border border-green-600/40 bg-green-500/10 px-3 py-1.5 text-xs text-green-300 hover:bg-green-500/20"
+                        >
+                          Перейти в профиль
+                        </Link>
                       </div>
-                      <p className="mb-3 text-xs text-muted-foreground">
-                        Открой доступ к расширенным возможностям и большему
-                        лимиту токенов.
-                      </p>
-                      <Link
-                        href="/profile"
-                        className="inline-block rounded-xl border border-green-600/40 bg-green-500/10 px-3 py-1.5 text-xs text-green-300 hover:bg-green-500/20"
-                      >
-                        Перейти в профиль
-                      </Link>
-                    </div>
+                    )}
                     <div className="rounded-2xl border border-border bg-muted/40 p-3">
                       <div className="mb-2 px-1 text-xs font-medium text-muted-foreground">
                         Популярные теги
