@@ -190,6 +190,11 @@ export default function ProfilePage() {
       // eslint-disable-next-line no-console
       console.log('[ProfilePage] saveBio success');
       setBioModalOpen(false);
+
+      // Refresh page to update any task completion status
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (e) {
       // eslint-disable-next-line no-console
       console.log('[ProfilePage] saveBio exception', e);
@@ -485,6 +490,11 @@ export default function ProfilePage() {
       setNickMsg('Сохранено');
       // reflect locally
       setNickname(String(data?.nickname || value));
+
+      // Refresh page to update any task completion status
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (e) {
       setNickMsg('Ошибка сети, попробуйте позже');
     } finally {

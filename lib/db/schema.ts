@@ -25,6 +25,32 @@ export const user = pgTable('User', {
   referral_bonus_paid: boolean('referral_bonus_paid').default(false),
   subscription_active: boolean('subscription_active').default(false),
   type: text('type').notNull().default('guest'),
+
+  // Email verification
+  email_verified: boolean('email_verified').default(false),
+  email_verification_token: text('email_verification_token'),
+  email_verification_expires: timestamp('email_verification_expires'),
+
+  // Task completion tracking
+  task_email_verified: boolean('task_email_verified').default(false),
+  task_profile_completed: boolean('task_profile_completed').default(false),
+  task_first_chat: boolean('task_first_chat').default(false),
+  task_first_share: boolean('task_first_share').default(false),
+  task_social_twitter: boolean('task_social_twitter').default(false),
+  task_social_facebook: boolean('task_social_facebook').default(false),
+  task_social_vk: boolean('task_social_vk').default(false),
+  task_social_telegram: boolean('task_social_telegram').default(false),
+  task_friends_invited: integer('task_friends_invited').default(0),
+
+  // Task completion timestamps
+  task_email_verified_at: timestamp('task_email_verified_at'),
+  task_profile_completed_at: timestamp('task_profile_completed_at'),
+  task_first_chat_at: timestamp('task_first_chat_at'),
+  task_first_share_at: timestamp('task_first_share_at'),
+
+  // Total tokens earned from tasks
+  task_tokens_earned: integer('task_tokens_earned').default(0),
+
   createdAt: timestamp('createdAt').notNull().defaultNow(),
 });
 
@@ -40,8 +66,12 @@ export const chat = pgTable('Chat', {
   visibility: text('visibility').notNull().default('public'),
   hashtags: varchar('hashtags', { length: 64 }).array(),
   isRepost: boolean('is_repost').notNull().default(false),
-  originalChatId: text('original_chat_id').references(() => chat.id, { onDelete: 'set null' }),
-  originalAuthorId: text('original_author_id').references(() => user.id, { onDelete: 'set null' }),
+  originalChatId: text('original_chat_id').references(() => chat.id, {
+    onDelete: 'set null',
+  }),
+  originalAuthorId: text('original_author_id').references(() => user.id, {
+    onDelete: 'set null',
+  }),
 });
 
 export type Chat = InferSelectModel<typeof chat>;

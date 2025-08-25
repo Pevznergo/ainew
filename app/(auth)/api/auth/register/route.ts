@@ -4,8 +4,11 @@ import {
   setUserReferrer,
   getInviteByCode,
   markInviteUsed,
+  generateEmailVerificationToken,
 } from '@/lib/db/queries';
 import { signIn } from '@/app/(auth)/auth';
+import resend from '@/lib/resend';
+import { createWelcomeEmailTemplate } from '@/lib/email-templates';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,6 +49,38 @@ export async function POST(request: NextRequest) {
     // Создаем пользователя
     const [newUser] = (await createUser(email, password)) as any;
     console.log('User created:', newUser);
+
+    // Generate email verification token and send welcome email
+    if (newUser) {
+      try {
+        const verificationToken = await generateEmailVerificationToken(
+          newUser.id,
+        );
+
+        // Send welcome email with verification link
+        const emailTemplate = createWelcomeEmailTemplate({
+          userEmail: email,
+          verificationToken,
+        });
+
+        const { error: emailError } = await resend.emails.send({
+          from: 'Aporto <noreply@aporto.tech>',
+          to: [email],
+          subject: 'Добро пожаловать в Aporto! Подтвердите ваш email',
+          html: emailTemplate,
+        });
+
+        if (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't fail registration if email sending fails
+        } else {
+          console.log('Welcome email sent successfully to:', email);
+        }
+      } catch (emailErr) {
+        console.error('Email sending error:', emailErr);
+        // Don't fail registration if email sending fails
+      }
+    }
 
     if (!newUser) {
       console.log('Failed to create user');

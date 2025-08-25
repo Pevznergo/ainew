@@ -34,6 +34,12 @@ import { generateUUID } from '../utils';
 import { generateHashedPassword } from './utils';
 import { compare } from 'bcrypt-ts';
 import { ChatSDKError } from '../errors';
+import {
+  TASK_REWARDS,
+  TaskType,
+  generateEmailVerificationToken as generateTokenString,
+  getEmailVerificationExpiry,
+} from '../email-verification';
 
 // A lightweight chat shape that excludes optional/new columns like `hashtags`.
 type ChatBasic = {
@@ -303,6 +309,16 @@ export async function saveChat({
     });
 
   console.log('saveChat result:', result);
+
+  // Check for first chat completion and award tokens if appropriate
+  // This is performance-optimized: only checks if user hasn't completed the task yet
+  try {
+    await checkFirstChat(userId);
+  } catch (error) {
+    console.error('Error checking first chat completion:', error);
+    // Don't fail the chat save if task checking fails
+  }
+
   return result[0];
 }
 
@@ -1334,5 +1350,222 @@ export async function createOAuthUser(userData: {
   } catch (error) {
     console.error('Error creating OAuth user:', error);
     throw new ChatSDKError('bad_request:database');
+  }
+}
+
+// ===================== EMAIL VERIFICATION =====================
+
+export async function generateEmailVerificationToken(
+  userId: string,
+): Promise<string> {
+  try {
+    const token = generateTokenString();
+    const expires = getEmailVerificationExpiry();
+
+    await db
+      .update(user)
+      .set({
+        email_verification_token: token,
+        email_verification_expires: expires,
+      } as any)
+      .where(eq(user.id, userId));
+
+    return token;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database');
+  }
+}
+
+export async function verifyEmailToken(token: string): Promise<User | null> {
+  try {
+    const [foundUser] = await db
+      .select()
+      .from(user)
+      .where(
+        and(
+          eq(user.email_verification_token, token),
+          gt(user.email_verification_expires, new Date()),
+        ),
+      )
+      .limit(1);
+
+    if (!foundUser) {
+      return null;
+    }
+
+    // Mark email as verified and complete the task
+    const [updatedUser] = await db
+      .update(user)
+      .set({
+        email_verified: true,
+        email_verification_token: null,
+        email_verification_expires: null,
+        task_email_verified: true,
+        task_email_verified_at: new Date(),
+        task_tokens_earned:
+          (foundUser.task_tokens_earned || 0) + TASK_REWARDS.EMAIL_VERIFICATION,
+        balance: (foundUser.balance || 0) + TASK_REWARDS.EMAIL_VERIFICATION,
+      } as any)
+      .where(eq(user.id, foundUser.id))
+      .returning();
+
+    return updatedUser;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database');
+  }
+}
+
+export async function getUserTaskProgress(userId: string) {
+  try {
+    const [foundUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    return foundUser;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database');
+  }
+}
+
+export async function completeTask(
+  userId: string,
+  taskType: TaskType,
+  additionalData?: any,
+): Promise<User | null> {
+  try {
+    const [foundUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    if (!foundUser) {
+      return null;
+    }
+
+    const updates: any = {};
+    const now = new Date();
+    let tokensToAdd = 0;
+
+    switch (taskType) {
+      case 'EMAIL_VERIFICATION':
+        if (!foundUser.task_email_verified) {
+          updates.task_email_verified = true;
+          updates.task_email_verified_at = now;
+          tokensToAdd = TASK_REWARDS.EMAIL_VERIFICATION;
+        }
+        break;
+      case 'PROFILE_COMPLETION':
+        if (!foundUser.task_profile_completed) {
+          updates.task_profile_completed = true;
+          updates.task_profile_completed_at = now;
+          tokensToAdd = TASK_REWARDS.PROFILE_COMPLETION;
+        }
+        break;
+      case 'FIRST_CHAT':
+        if (!foundUser.task_first_chat) {
+          updates.task_first_chat = true;
+          updates.task_first_chat_at = now;
+          tokensToAdd = TASK_REWARDS.FIRST_CHAT;
+        }
+        break;
+      case 'FIRST_SHARE':
+        if (!foundUser.task_first_share) {
+          updates.task_first_share = true;
+          updates.task_first_share_at = now;
+          tokensToAdd = TASK_REWARDS.FIRST_SHARE;
+        }
+        break;
+      case 'SOCIAL_TWITTER':
+        if (!foundUser.task_social_twitter) {
+          updates.task_social_twitter = true;
+          tokensToAdd = TASK_REWARDS.SOCIAL_TWITTER;
+        }
+        break;
+      case 'SOCIAL_FACEBOOK':
+        if (!foundUser.task_social_facebook) {
+          updates.task_social_facebook = true;
+          tokensToAdd = TASK_REWARDS.SOCIAL_FACEBOOK;
+        }
+        break;
+      case 'SOCIAL_VK':
+        if (!foundUser.task_social_vk) {
+          updates.task_social_vk = true;
+          tokensToAdd = TASK_REWARDS.SOCIAL_VK;
+        }
+        break;
+      case 'SOCIAL_TELEGRAM':
+        if (!foundUser.task_social_telegram) {
+          updates.task_social_telegram = true;
+          tokensToAdd = TASK_REWARDS.SOCIAL_TELEGRAM;
+        }
+        break;
+      case 'FRIEND_INVITATION':
+        updates.task_friends_invited =
+          (foundUser.task_friends_invited || 0) + 1;
+        tokensToAdd = TASK_REWARDS.FRIEND_INVITATION;
+        break;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      updates.task_tokens_earned =
+        (foundUser.task_tokens_earned || 0) + tokensToAdd;
+      updates.balance = (foundUser.balance || 0) + tokensToAdd;
+
+      const [updatedUser] = await db
+        .update(user)
+        .set(updates)
+        .where(eq(user.id, userId))
+        .returning();
+
+      return updatedUser;
+    }
+
+    return foundUser;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database');
+  }
+}
+
+export async function checkProfileCompletion(userId: string): Promise<void> {
+  try {
+    const [foundUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    if (!foundUser || foundUser.task_profile_completed) {
+      return;
+    }
+
+    // Check if profile is completed (has nickname and bio)
+    if (foundUser.nickname && foundUser.bio) {
+      await completeTask(userId, 'PROFILE_COMPLETION');
+    }
+  } catch (error) {
+    console.error('Error checking profile completion:', error);
+  }
+}
+
+export async function checkFirstChat(userId: string): Promise<void> {
+  try {
+    const [foundUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    // Only check if user hasn't completed first chat task yet - performance optimization
+    if (!foundUser || foundUser.task_first_chat) {
+      return;
+    }
+
+    // User hasn't completed first chat task, so complete it now
+    await completeTask(userId, 'FIRST_CHAT');
+  } catch (error) {
+    console.error('Error checking first chat completion:', error);
   }
 }

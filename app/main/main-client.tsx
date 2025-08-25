@@ -113,8 +113,8 @@ const content: Content = {
     title: 'Все лучшие Нейросети на одной платформе',
     subtitle: 'GPT‑5 • GPT‑4 • Claude • Gemini • Qwen • DALL·E 3 • Midjourney',
     description: '',
-    primaryCta: { label: 'Попробовать бесплатно', href: '#' },
-    secondaryCta: { label: 'Корпоративный тариф', href: '#' },
+    primaryCta: { label: 'Попробовать бесплатно', href: '/register' },
+    secondaryCta: { label: 'Корпоративный тариф', href: '#support' },
   },
   capabilities: {
     title: 'Что умеет Чат GPT 5?',

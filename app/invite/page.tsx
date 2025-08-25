@@ -13,6 +13,29 @@ type Invite = {
   created_at: string;
 };
 
+type TaskProgress = {
+  totalTokens: number;
+  completedTasks: number;
+  totalTasks: number;
+  progressPercentage: number;
+};
+
+type UserTaskData = {
+  email_verified: boolean;
+  task_email_verified: boolean;
+  task_profile_completed: boolean;
+  task_first_chat: boolean;
+  task_first_share: boolean;
+  task_social_twitter: boolean;
+  task_social_facebook: boolean;
+  task_social_vk: boolean;
+  task_social_telegram: boolean;
+  task_friends_invited: number;
+  task_tokens_earned: number;
+  nickname: string | null;
+  bio: string | null;
+};
+
 // Компонент скелетона для загрузки
 function LoadingSkeleton() {
   return (
@@ -95,6 +118,9 @@ export default function InvitePage() {
   const [referralCode, setReferralCode] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [taskProgress, setTaskProgress] = useState<TaskProgress | null>(null);
+  const [userData, setUserData] = useState<UserTaskData | null>(null);
+  const [resendingEmail, setResendingEmail] = useState(false);
   // invite is created automatically (if missing) on load; no manual button
 
   useEffect(() => {
@@ -146,6 +172,90 @@ export default function InvitePage() {
       loadInvites();
     }
   }, [session, status]);
+
+  // Load task progress
+  const loadTaskProgress = async () => {
+    if (!session?.user) return;
+    try {
+      const res = await fetch('/api/tasks/progress');
+      if (!res.ok) throw new Error('Failed to fetch task progress');
+      const data = await res.json();
+      setTaskProgress(data.taskProgress);
+      setUserData(data.user);
+    } catch (e) {
+      console.error('Failed to load task progress:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      loadTaskProgress();
+    }
+  }, [session, status]);
+
+  // Check for email verification success and refresh data
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('verified') === 'true' && status === 'authenticated') {
+      // Show success message
+      toast({
+        type: 'success',
+        description: 'Email успешно подтвержден! Вы получили 100 токенов.',
+      });
+
+      // Refresh task progress data
+      setTimeout(() => {
+        loadTaskProgress();
+      }, 1000); // Small delay to ensure backend has processed the verification
+
+      // Clean up URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [status]);
+
+  // Refresh data when user returns to the page (e.g., after email verification)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (status === 'authenticated') {
+        loadTaskProgress();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [status]);
+
+  const handleResendVerification = async () => {
+    setResendingEmail(true);
+    try {
+      const res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast({
+          type: 'success',
+          description: data.message || 'Письмо отправлено!',
+        });
+        // Refresh task progress in case the email was already verified
+        setTimeout(() => {
+          loadTaskProgress();
+        }, 500);
+      } else {
+        toast({
+          type: 'error',
+          description: data.error || 'Ошибка отправки письма',
+        });
+      }
+    } catch (error) {
+      toast({
+        type: 'error',
+        description: 'Ошибка отправки письма',
+      });
+    } finally {
+      setResendingEmail(false);
+    }
+  };
 
   const copyToClipboard = async () => {
     try {
@@ -235,40 +345,76 @@ export default function InvitePage() {
               <div className="mb-10">
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-neutral-300 text-sm">Прогресс</span>
-                  <span className="text-neutral-300 text-sm">
-                    {/* Mock current tokens - replace with real data later */}0
-                    / 45 200 токенов
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-neutral-300 text-sm">
+                      {taskProgress?.totalTokens || 0} / 45 200 токенов
+                    </span>
+                    <button
+                      type="button"
+                      onClick={loadTaskProgress}
+                      className="text-xs text-neutral-400 hover:text-neutral-200 transition-colors p-1 rounded hover:bg-white/5"
+                      title="Обновить прогресс"
+                    >
+                      <svg
+                        className="size-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <div className="w-full bg-neutral-800 rounded-full h-3">
                   <div
                     className="bg-gradient-to-r from-indigo-500 to-cyan-500 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${(0 / 45200) * 100}%` }}
+                    style={{
+                      width: `${taskProgress?.progressPercentage || 0}%`,
+                    }}
                   />
                 </div>
                 <div className="text-center mt-2 text-xs text-neutral-400">
-                  {((0 / 45200) * 100).toFixed(1)}% выполнено
+                  {(taskProgress?.progressPercentage || 0).toFixed(1)}%
+                  выполнено
                 </div>
               </div>
 
               {/* Tasks Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Basic Tasks */}
-                <div className="rounded-2xl border border-green-500/30 bg-green-500/5 p-6 relative">
+                {/* Email Verification Task */}
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    userData?.task_email_verified
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-orange-500/30 bg-orange-500/5'
+                  }`}
+                >
                   <div className="absolute top-4 right-4">
-                    <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
-                      <svg
-                        className="size-4 text-white"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
+                    {userData?.task_email_verified ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-orange-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
+                    )}
                   </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2">
@@ -277,23 +423,69 @@ export default function InvitePage() {
                     <p className="text-neutral-400 text-sm mb-3">
                       Подтвердите ваш email адрес
                     </p>
-                    <button
-                      type="button"
-                      className="text-xs bg-green-600/20 hover:bg-green-600/30 text-green-400 px-3 py-1.5 rounded-lg border border-green-500/30 transition-colors"
-                    >
-                      Отправить письмо повторно
-                    </button>
+                    {!userData?.task_email_verified && (
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={resendingEmail}
+                        className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                          resendingEmail
+                            ? 'bg-neutral-600/20 text-neutral-500 border-neutral-500/30 cursor-not-allowed'
+                            : 'bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border-orange-500/30'
+                        }`}
+                      >
+                        {resendingEmail
+                          ? 'Отправка...'
+                          : 'Отправить письмо повторно'}
+                      </button>
+                    )}
                   </div>
-                  <div className="text-green-400 font-bold text-lg">
+                  <div
+                    className={`font-bold text-lg ${
+                      userData?.task_email_verified
+                        ? 'text-green-400'
+                        : 'text-orange-400'
+                    }`}
+                  >
                     +100 токенов
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-6 relative">
+                {/* Profile Completion Task */}
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    userData?.task_profile_completed
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-orange-500/30 bg-orange-500/5'
+                  }`}
+                >
                   <div className="absolute top-4 right-4">
-                    <div className="size-6 bg-orange-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">50%</span>
-                    </div>
+                    {userData?.task_profile_completed ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-orange-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">
+                          {userData?.nickname && userData?.bio
+                            ? '100'
+                            : userData?.nickname || userData?.bio
+                              ? '50'
+                              : '0'}
+                          %
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2">
@@ -302,42 +494,85 @@ export default function InvitePage() {
                     <p className="text-neutral-400 text-sm mb-3">
                       Добавьте никнейм и биографию
                     </p>
-                    <div className="flex gap-2">
-                      <Link
-                        href="/profile"
-                        className="text-xs bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 px-3 py-1.5 rounded-lg border border-orange-500/30 transition-colors"
-                      >
-                        Профиль
-                      </Link>
-                      <Link
-                        href="/profile"
-                        className="text-xs bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 px-3 py-1.5 rounded-lg border border-orange-500/30 transition-colors"
-                      >
-                        Канал
-                      </Link>
-                    </div>
+                    {!userData?.task_profile_completed && (
+                      <div className="flex gap-2">
+                        <Link
+                          href="/profile"
+                          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                            userData?.task_profile_completed
+                              ? 'bg-green-600/20 hover:bg-green-600/30 text-green-400 border-green-500/30'
+                              : 'bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border-orange-500/30'
+                          }`}
+                        >
+                          Профиль
+                        </Link>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-orange-400 font-bold text-lg">
+                  <div
+                    className={`font-bold text-lg ${
+                      userData?.task_profile_completed
+                        ? 'text-green-400'
+                        : 'text-orange-400'
+                    }`}
+                  >
                     +100 токенов
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    userData?.task_first_chat
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-neutral-600 bg-neutral-800/20'
+                  }`}
+                >
+                  <div className="absolute top-4 right-4">
+                    {userData?.task_first_chat ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-neutral-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">3</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2">
                       Первый вопрос ИИ
                     </h3>
                     <p className="text-neutral-400 text-sm mb-3">
-                      Задайте свой первый вопрос
+                      {userData?.task_first_chat
+                        ? 'Задание выполнено!'
+                        : 'Задайте свой первый вопрос'}
                     </p>
-                    <Link
-                      href="/"
-                      className="text-xs bg-neutral-600/20 hover:bg-neutral-600/30 text-neutral-300 px-3 py-1.5 rounded-lg border border-neutral-500/30 transition-colors"
-                    >
-                      Новый чат
-                    </Link>
+                    {!userData?.task_first_chat && (
+                      <Link
+                        href="/"
+                        className="text-xs bg-neutral-600/20 hover:bg-neutral-600/30 text-neutral-300 px-3 py-1.5 rounded-lg border border-neutral-500/30 transition-colors"
+                      >
+                        Новый чат
+                      </Link>
+                    )}
                   </div>
-                  <div className="text-neutral-400 font-bold text-lg">
+                  <div
+                    className={`font-bold text-lg ${
+                      userData?.task_first_chat
+                        ? 'text-green-400'
+                        : 'text-neutral-400'
+                    }`}
+                  >
                     +100 токенов
                   </div>
                 </div>

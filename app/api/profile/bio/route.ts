@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
-import { getUserBio, updateUserBio } from '@/lib/db/queries';
+import {
+  getUserBio,
+  updateUserBio,
+  checkProfileCompletion,
+} from '@/lib/db/queries';
 
 export async function GET() {
   try {
@@ -24,6 +28,10 @@ export async function PATCH(req: Request) {
     const body = await req.json().catch(() => ({}));
     const bio = String(body?.bio ?? '');
     const updated = await updateUserBio(session.user.id, bio);
+
+    // Check for profile completion and award tokens if appropriate
+    await checkProfileCompletion(session.user.id);
+
     return NextResponse.json({ id: updated.id, bio: updated.bio });
   } catch (e: any) {
     const msg = String(e?.message || '');

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
-import { updateUserNickname } from '@/lib/db/queries';
+import { updateUserNickname, checkProfileCompletion } from '@/lib/db/queries';
 
 export async function PATCH(req: Request) {
   try {
@@ -19,10 +19,17 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'nickname_too_long' }, { status: 400 });
     }
     if (nickname !== nickname.toLowerCase()) {
-      return NextResponse.json({ error: 'nickname_uppercase' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'nickname_uppercase' },
+        { status: 400 },
+      );
     }
 
     const updated = await updateUserNickname(session.user.id, nickname);
+
+    // Check for profile completion and award tokens if appropriate
+    await checkProfileCompletion(session.user.id);
+
     return NextResponse.json({ id: updated.id, nickname: updated.nickname });
   } catch (e: any) {
     console.error('Nickname update error:', e);
@@ -37,7 +44,10 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'nickname_too_long' }, { status: 400 });
     }
     if (msg.includes('bad_request:nickname_uppercase')) {
-      return NextResponse.json({ error: 'nickname_uppercase' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'nickname_uppercase' },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
