@@ -644,13 +644,13 @@ export default function ProfilePage() {
           </section>
 
           {/* Описание профиля */}
-          <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04]">
-            <div className="flex items-start justify-between gap-8">
+          <section className="rounded-3xl border border-white/10 p-4 md:p-8 bg-white/[0.04]">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-white mb-2">
                   Описание профиля
                 </h2>
-                <p className="text-neutral-300 whitespace-pre-wrap min-h-[48px]">
+                <p className="text-neutral-300 whitespace-pre-wrap min-h-[48px] break-words leading-relaxed">
                   {bio
                     ? bio
                     : 'Добавьте описание вашего профиля, чтобы пользователи знали больше о вас.'}
@@ -659,7 +659,7 @@ export default function ProfilePage() {
                   <div className="mt-2 text-sm text-neutral-300">{bioMsg}</div>
                 )}
               </div>
-              <div>
+              <div className="flex-shrink-0">
                 <AlertDialog
                   data-component="ProfileBioAlertDialog"
                   open={bioModalOpen}
@@ -680,7 +680,7 @@ export default function ProfilePage() {
                       );
                       setBioModalOpen(true);
                     }}
-                    className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 hover:bg-white/10 px-5 py-3 text-sm font-semibold transition-colors"
+                    className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 hover:bg-white/10 px-3 md:px-5 py-2 md:py-3 text-xs md:text-sm font-semibold transition-colors whitespace-nowrap"
                   >
                     Редактировать
                   </button>
