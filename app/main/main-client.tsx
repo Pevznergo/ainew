@@ -325,7 +325,7 @@ const content: Content = {
 export default function AIAcademyDarkEditable() {
   const nav = useMemo(() => content.header.nav, []);
   const [formSuccess, setFormSuccess] = useState(false);
-  const [showPromo, setShowPromo] = useState(true);
+  const [showPromo, setShowPromo] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
