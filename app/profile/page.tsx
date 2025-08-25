@@ -521,7 +521,7 @@ export default function ProfilePage() {
               </Link>
             ) : (
               <Link
-                href="/chat"
+                href="/"
                 className="rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-4 md:px-5 py-2.5 text-sm font-semibold shadow-lg shadow-indigo-600/20 hover:opacity-95 transition"
               >
                 В чат

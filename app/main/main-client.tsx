@@ -332,7 +332,11 @@ export default function AIAcademyDarkEditable() {
   // Save referral code from ?ref= to localStorage and a cookie
   useEffect(() => {
     try {
-      const code = searchParams?.get('ref') || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('ref') : null);
+      const code =
+        searchParams?.get('ref') ||
+        (typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('ref')
+          : null);
       if (code) {
         // Persist for client-side flows
         localStorage.setItem('referralCode', code);
@@ -433,7 +437,7 @@ export default function AIAcademyDarkEditable() {
               onClick={() => router.push('/register')}
               className="w-full text-left rounded-2xl border border-white/15 bg-[#0f1016]/70 backdrop-blur-xl p-4 text-sm text-neutral-100 shadow-xl shadow-indigo-900/20 hover:bg-[#141622]/75 transition-colors pr-10 ring-1 ring-white/10"
             >
-              <span className="font-medium">Бонус до 40000 рублей</span> при
+              <span className="font-medium">Бонус до 45 200 токенов</span> при
               регистрации сегодня.
               <Link
                 href="/invite"

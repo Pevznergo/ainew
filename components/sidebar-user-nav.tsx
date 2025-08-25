@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, } from 'react';
+import { useEffect } from 'react';
 import { ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import type { Session } from 'next-auth';
@@ -139,7 +139,7 @@ export function SidebarUserNav({ session }: { session: Session }) {
                 >
                   <span>Пригласить друга</span>
                   <span className="text-xs text-muted-foreground">
-                    Бонусы до 40000 рублей!
+                    Бонусы до 45 200 токенов!
                   </span>
                 </DropdownMenuItem>
 
