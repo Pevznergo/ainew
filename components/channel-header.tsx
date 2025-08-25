@@ -60,7 +60,7 @@ function PureChannelHeader({
         </Tooltip>
       )}
 
-      <div className="ml-auto flex gap-2 hidden md:flex">
+      <div className="ml-auto gap-2 hidden md:flex">
         <Button
           variant="outline"
           className="px-3 py-1.5 h-fit"
