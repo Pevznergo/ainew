@@ -137,9 +137,9 @@ export function SidebarUserNav({ session }: { session: Session }) {
                   className="cursor-pointer flex flex-col items-start"
                   onSelect={() => router.push('/invite')}
                 >
-                  <span>Пригласить друга</span>
+                  <span>Получить бонусы</span>
                   <span className="text-xs text-muted-foreground">
-                    Бонусы до 45 200 токенов!
+                    до 45 200 токенов!
                   </span>
                 </DropdownMenuItem>
 
