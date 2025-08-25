@@ -11,6 +11,7 @@ import {
   getChatById,
   getFirstUserMessageByChatId,
   setChatHashtags,
+  checkFirstShare,
 } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { openai } from '@ai-sdk/openai';
@@ -74,6 +75,19 @@ export async function updateChatVisibility({
   console.log('updateChatVisibility called with:', { chatId, visibility });
   const updated = await updateChatVisiblityById({ chatId, visibility });
 
+  // Check for first share completion when chat is made public
+  if (visibility === 'public') {
+    const session = await auth();
+    if (session?.user?.id) {
+      try {
+        await checkFirstShare(session.user.id);
+      } catch (error) {
+        console.error('Error checking first share completion:', error);
+        // Don't fail the visibility update if task checking fails
+      }
+    }
+  }
+
   try {
     if (visibility === 'public') {
       const chat = await getChatById({ id: chatId });
@@ -82,36 +96,47 @@ export async function updateChatVisibility({
         console.log('Starting hashtag generation for chat:', chatId);
         const firstMsg = await getFirstUserMessageByChatId({ chatId });
         console.log('First message raw:', JSON.stringify(firstMsg, null, 2));
-        
+
         let firstText = '';
-        
+
         // Try different ways to extract text from the message
         if (firstMsg) {
           // Case 1: Check if parts is an array with text content
           if (Array.isArray(firstMsg.parts)) {
             for (const p of firstMsg.parts) {
-              if (p?.type === 'text' && typeof p.text === 'string' && p.text.trim()) {
+              if (
+                p?.type === 'text' &&
+                typeof p.text === 'string' &&
+                p.text.trim()
+              ) {
                 firstText = p.text.trim();
                 console.log('Found text in parts:', firstText);
                 break;
               }
             }
           }
-          
+
           // Case 2: Check if there's a single text part in the message
-          if (!firstText && Array.isArray(firstMsg.parts) && firstMsg.parts.length === 1 && 
-              firstMsg.parts[0]?.type === 'text' && typeof firstMsg.parts[0]?.text === 'string') {
+          if (
+            !firstText &&
+            Array.isArray(firstMsg.parts) &&
+            firstMsg.parts.length === 1 &&
+            firstMsg.parts[0]?.type === 'text' &&
+            typeof firstMsg.parts[0]?.text === 'string'
+          ) {
             firstText = firstMsg.parts[0].text.trim();
             console.log('Found text in single part:', firstText);
           }
-          
+
           // Case 3: Check if message has a data field with content
-          if (!firstText && typeof (firstMsg as any)?.data?.content === 'string') {
+          if (
+            !firstText &&
+            typeof (firstMsg as any)?.data?.content === 'string'
+          ) {
             firstText = (firstMsg as any).data.content.trim();
             console.log('Found text in data.content:', firstText);
           }
         }
-        
 
         if (firstText) {
           try {
@@ -125,7 +150,7 @@ export async function updateChatVisibility({
             const tags = String(text)
               .split(/[,\n]/)
               .map((s) => s.trim().replace(/^#/, '').toLowerCase())
-              .filter(s => /^[a-z]{3,12}$/.test(s)) // Only keep English words with 3-12 letters
+              .filter((s) => /^[a-z]{3,12}$/.test(s)) // Only keep English words with 3-12 letters
               .slice(0, 5);
 
             if (tags.length > 0) {

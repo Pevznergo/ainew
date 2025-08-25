@@ -36,7 +36,7 @@ import { compare } from 'bcrypt-ts';
 import { ChatSDKError } from '../errors';
 import {
   TASK_REWARDS,
-  TaskType,
+  type TaskType,
   generateEmailVerificationToken as generateTokenString,
   getEmailVerificationExpiry,
 } from '../email-verification';
@@ -1409,6 +1409,14 @@ export async function verifyEmailToken(token: string): Promise<User | null> {
       .where(eq(user.id, foundUser.id))
       .returning();
 
+    // Check for friend invitation reward - award tokens to referrer if this user was referred
+    try {
+      await checkFriendInvitation(foundUser.id);
+    } catch (error) {
+      console.error('Error processing friend invitation reward:', error);
+      // Don't fail the email verification if friend invitation check fails
+    }
+
     return updatedUser;
   } catch (error) {
     throw new ChatSDKError('bad_request:database');
@@ -1567,5 +1575,75 @@ export async function checkFirstChat(userId: string): Promise<void> {
     await completeTask(userId, 'FIRST_CHAT');
   } catch (error) {
     console.error('Error checking first chat completion:', error);
+  }
+}
+
+export async function checkFirstShare(userId: string): Promise<void> {
+  try {
+    const [foundUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    // Only check if user hasn't completed first share task yet - performance optimization
+    if (!foundUser || foundUser.task_first_share) {
+      return;
+    }
+
+    // User hasn't completed first share task, so complete it now
+    await completeTask(userId, 'FIRST_SHARE');
+  } catch (error) {
+    console.error('Error checking first share completion:', error);
+  }
+}
+
+export async function checkFriendInvitation(
+  verifiedUserId: string,
+): Promise<void> {
+  try {
+    // Get the verified user to check if they were referred
+    const [verifiedUser] = await db
+      .select({
+        id: user.id,
+        referred_by: user.referred_by,
+      })
+      .from(user)
+      .where(eq(user.id, verifiedUserId))
+      .limit(1);
+
+    // If user wasn't referred, no friend invitation reward to give
+    if (!verifiedUser?.referred_by) {
+      return;
+    }
+
+    // Get the referrer's current friend invitation count
+    const [referrer] = await db
+      .select({
+        id: user.id,
+        task_friends_invited: user.task_friends_invited,
+      })
+      .from(user)
+      .where(eq(user.id, verifiedUser.referred_by))
+      .limit(1);
+
+    if (!referrer) {
+      return;
+    }
+
+    // Check if referrer has already reached the max (16 friends)
+    const currentCount = referrer.task_friends_invited || 0;
+    if (currentCount >= 16) {
+      return; // Already at max, no more rewards
+    }
+
+    // Award tokens to the referrer for this friend invitation
+    await completeTask(verifiedUser.referred_by, 'FRIEND_INVITATION');
+
+    console.log(
+      `Friend invitation reward: ${TASK_REWARDS.FRIEND_INVITATION} tokens awarded to user ${verifiedUser.referred_by} for friend ${verifiedUserId} email verification. New count: ${currentCount + 1}/16`,
+    );
+  } catch (error) {
+    console.error('Error checking friend invitation reward:', error);
   }
 }

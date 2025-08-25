@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { verifyEmailToken, completeTask } from '@/lib/db/queries';
-import { TASK_REWARDS } from '@/lib/email-verification';
 
 export async function GET(request: NextRequest) {
   try {

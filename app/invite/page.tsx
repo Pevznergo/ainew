@@ -267,6 +267,107 @@ export default function InvitePage() {
     }
   };
 
+  const handleTwitterShare = async () => {
+    const tweetUrl = 'https://x.com/pevznerigor/status/1960053767291781488';
+    const twitterUrl = `https://twitter.com/intent/retweet?tweet_id=1960053767291781488&related=pevznerigor`;
+
+    // Show immediate feedback
+    toast({
+      type: 'success',
+      description:
+        'Открываем Twitter для репоста. После репоста вернитесь на эту страницу.',
+    });
+
+    // Open Twitter in new tab
+    const newWindow = window.open(twitterUrl, '_blank');
+
+    if (!newWindow) {
+      toast({
+        type: 'error',
+        description:
+          'Не удалось открыть Twitter. Пожалуйста, разрешите всплывающие окна.',
+      });
+      return;
+    }
+
+    // Show confirmation dialog after a delay
+    setTimeout(() => {
+      // Check if user is still on the page (not switched to Twitter tab)
+      if (document.hasFocus()) {
+        showTwitterConfirmation();
+      } else {
+        // If user is on Twitter tab, wait for them to return
+        const handleFocus = () => {
+          setTimeout(() => {
+            showTwitterConfirmation();
+            window.removeEventListener('focus', handleFocus);
+          }, 1000);
+        };
+        window.addEventListener('focus', handleFocus);
+
+        // Fallback: show confirmation after 30 seconds regardless
+        setTimeout(() => {
+          showTwitterConfirmation();
+          window.removeEventListener('focus', handleFocus);
+        }, 30000);
+      }
+    }, 3000);
+  };
+
+  const showTwitterConfirmation = () => {
+    const confirmed = window.confirm(
+      '🐦 Сделали репост в Twitter?\n\n' +
+        'Если вы успешно сделали репост нашего поста, нажмите "OK" чтобы получить 300 токенов.\n\n' +
+        'Если нет - нажмите "Отмена" и попробуйте снова.',
+    );
+
+    if (confirmed) {
+      completeTwitterTask();
+    } else {
+      toast({
+        type: 'success',
+        description: 'Нет проблем! Вы можете попробовать снова в любое время.',
+      });
+    }
+  };
+
+  const completeTwitterTask = async () => {
+    try {
+      const response = await fetch('/api/tasks/twitter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: true }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          type: 'success',
+          description:
+            data.message ||
+            'Twitter задание выполнено! Вы получили 300 токенов.',
+        });
+
+        // Refresh task progress
+        setTimeout(() => {
+          loadTaskProgress();
+        }, 1000);
+      } else {
+        toast({
+          type: 'error',
+          description: data.error || 'Ошибка при выполнении задания.',
+        });
+      }
+    } catch (error) {
+      console.error('Error completing Twitter task:', error);
+      toast({
+        type: 'error',
+        description: 'Ошибка при выполнении задания. Попробуйте позже.',
+      });
+    }
+  };
+
   // Показываем скелетон пока загружаемся
   if (status === 'loading' || loading) {
     return <LoadingSkeleton />;
@@ -337,7 +438,7 @@ export default function InvitePage() {
                   Выполняйте задания и получайте токены.
                 </h2>
                 <p className="text-neutral-300 text-lg">
-                  Максимум — 45 200 токенов!
+                  Максимум — 46 800 токенов!
                 </p>
               </div>
 
@@ -347,7 +448,7 @@ export default function InvitePage() {
                   <span className="text-neutral-300 text-sm">Прогресс</span>
                   <div className="flex items-center gap-3">
                     <span className="text-neutral-300 text-sm">
-                      {taskProgress?.totalTokens || 0} / 45 200 токенов
+                      {taskProgress?.totalTokens || 0} / 46 800 токенов
                     </span>
                     <button
                       type="button"
@@ -577,22 +678,89 @@ export default function InvitePage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    userData?.task_first_share
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-neutral-600 bg-neutral-800/20'
+                  }`}
+                >
+                  <div className="absolute top-4 right-4">
+                    {userData?.task_first_share ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-neutral-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">4</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2">
                       Опубликовать чат
                     </h3>
                     <p className="text-neutral-400 text-sm mb-3">
-                      После первого вопроса в чат нажмите &quot;Поделиться&quot;
+                      {userData?.task_first_share
+                        ? 'Задание выполнено!'
+                        : 'После первого вопроса в чат нажмите &quot;Поделиться&quot;'}
                     </p>
+                    {!userData?.task_first_share && (
+                      <div className="text-xs text-neutral-500">
+                        Или смените видимость чата на &quot;Публичный&quot;
+                      </div>
+                    )}
                   </div>
-                  <div className="text-neutral-400 font-bold text-lg">
+                  <div
+                    className={`font-bold text-lg ${
+                      userData?.task_first_share
+                        ? 'text-green-400'
+                        : 'text-neutral-400'
+                    }`}
+                  >
                     +100 токенов
                   </div>
                 </div>
 
                 {/* Social Tasks */}
-                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    userData?.task_social_twitter
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-neutral-600 bg-neutral-800/20'
+                  }`}
+                >
+                  <div className="absolute top-4 right-4">
+                    {userData?.task_social_twitter ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-neutral-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">5</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2 flex items-center">
                       <svg
@@ -600,26 +768,64 @@ export default function InvitePage() {
                         fill="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 00-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
                       </svg>
                       Поделиться в Twitter
                     </h3>
                     <p className="text-neutral-400 text-sm mb-3">
-                      Расскажите о сервисе в Twitter
+                      {userData?.task_social_twitter
+                        ? 'Задание выполнено!'
+                        : 'Сделайте репост нашего поста в Twitter'}
                     </p>
-                    <button
-                      type="button"
-                      className="text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/30 transition-colors"
-                    >
-                      Поделиться
-                    </button>
+                    {!userData?.task_social_twitter && (
+                      <button
+                        type="button"
+                        onClick={handleTwitterShare}
+                        className="text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/30 transition-colors"
+                      >
+                        Поделиться
+                      </button>
+                    )}
                   </div>
-                  <div className="text-neutral-400 font-bold text-lg">
+                  <div
+                    className={`font-bold text-lg ${
+                      userData?.task_social_twitter
+                        ? 'text-green-400'
+                        : 'text-neutral-400'
+                    }`}
+                  >
                     +300 токенов
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    userData?.task_social_facebook
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-neutral-600 bg-neutral-800/20'
+                  }`}
+                >
+                  <div className="absolute top-4 right-4">
+                    {userData?.task_social_facebook ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-neutral-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">6</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2 flex items-center">
                       <svg
@@ -632,16 +838,26 @@ export default function InvitePage() {
                       Поделиться в Facebook
                     </h3>
                     <p className="text-neutral-400 text-sm mb-3">
-                      Расскажите о сервисе в Facebook
+                      {userData?.task_social_facebook
+                        ? 'Задание выполнено!'
+                        : 'Расскажите о сервисе в Facebook'}
                     </p>
-                    <button
-                      type="button"
-                      className="text-xs bg-blue-700/20 hover:bg-blue-700/30 text-blue-300 px-3 py-1.5 rounded-lg border border-blue-600/30 transition-colors"
-                    >
-                      Поделиться
-                    </button>
+                    {!userData?.task_social_facebook && (
+                      <button
+                        type="button"
+                        className="text-xs bg-blue-700/20 hover:bg-blue-700/30 text-blue-300 px-3 py-1.5 rounded-lg border border-blue-600/30 transition-colors"
+                      >
+                        Поделиться
+                      </button>
+                    )}
                   </div>
-                  <div className="text-neutral-400 font-bold text-lg">
+                  <div
+                    className={`font-bold text-lg ${
+                      userData?.task_social_facebook
+                        ? 'text-green-400'
+                        : 'text-neutral-400'
+                    }`}
+                  >
                     +300 токенов
                   </div>
                 </div>
@@ -654,7 +870,7 @@ export default function InvitePage() {
                         fill="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z" />
+                        <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0 1.248.561 1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z" />
                       </svg>
                       Отзыв на Reddit
                     </h3>
@@ -698,7 +914,34 @@ export default function InvitePage() {
                 </div>
 
                 {/* Friend Referral Tasks */}
-                <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-6 relative">
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    (userData?.task_friends_invited || 0) >= 16
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-purple-500/30 bg-purple-500/5'
+                  }`}
+                >
+                  <div className="absolute top-4 right-4">
+                    {(userData?.task_friends_invited || 0) >= 16 ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-purple-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">9</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2 flex items-center">
                       <svg
@@ -708,36 +951,48 @@ export default function InvitePage() {
                       >
                         <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      Пригласить друга
+                      Пригласить друзей
                     </h3>
                     <p className="text-neutral-400 text-sm mb-3">
-                      За каждого друга (до 16)
+                      {(userData?.task_friends_invited || 0) >= 16
+                        ? 'Задание выполнено! Все 16 друзей приглашены.'
+                        : `Прогресс: ${userData?.task_friends_invited || 0}/16 друзей`}
                     </p>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(
-                            referralLink || '',
-                          );
-                          toast({
-                            type: 'success',
-                            description: 'Ссылка скопирована',
-                          });
-                        } catch (_) {
-                          console.error('Failed to copy referral link');
-                        }
-                      }}
-                      className="text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-3 py-1.5 rounded-lg border border-purple-500/30 transition-colors"
-                    >
-                      Скопировать ссылку
-                    </button>
+                    {(userData?.task_friends_invited || 0) < 16 && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(
+                              referralLink || '',
+                            );
+                            toast({
+                              type: 'success',
+                              description: 'Ссылка скопирована',
+                            });
+                          } catch (_) {
+                            console.error('Failed to copy referral link');
+                          }
+                        }}
+                        className="text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-3 py-1.5 rounded-lg border border-purple-500/30 transition-colors"
+                      >
+                        Скопировать ссылку
+                      </button>
+                    )}
                   </div>
-                  <div className="text-purple-400 font-bold text-lg">
-                    +100 токенов
+                  <div
+                    className={`font-bold text-lg ${
+                      (userData?.task_friends_invited || 0) >= 16
+                        ? 'text-green-400'
+                        : 'text-purple-400'
+                    }`}
+                  >
+                    +200 токенов за каждого
                   </div>
                   <div className="text-xs text-neutral-500 mt-1">
-                    Максимум: 1 600 токенов
+                    {(userData?.task_friends_invited || 0) >= 16
+                      ? `Получено: ${(userData?.task_friends_invited || 0) * 200} токенов`
+                      : `Максимум: 3 200 токенов (${userData?.task_friends_invited || 0} × 200 получено)`}
                   </div>
                 </div>
 
@@ -817,10 +1072,10 @@ export default function InvitePage() {
                   Максимальная награда за все задания:
                 </div>
                 <div className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                  45 200 токенов
+                  46 800 токенов
                 </div>
                 <div className="text-neutral-500 text-sm mt-1">
-                  ≈ 9 040 рублей
+                  ≈ 9 360 рублей
                 </div>
               </div>
             </div>

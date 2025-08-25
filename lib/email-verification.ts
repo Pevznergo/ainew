@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 export function generateEmailVerificationToken(): string {
   return crypto.randomBytes(32).toString('hex');
@@ -24,10 +24,10 @@ export const TASK_REWARDS = {
   SOCIAL_FACEBOOK: 300,
   SOCIAL_VK: 300,
   SOCIAL_TELEGRAM: 300,
-  FRIEND_INVITATION: 500, // per friend
+  FRIEND_INVITATION: 200, // per friend
 } as const;
 
-export const MAX_TOTAL_TASK_TOKENS = 45200;
+export const MAX_TOTAL_TASK_TOKENS = 46800;
 
 export type TaskType = keyof typeof TASK_REWARDS;
 
