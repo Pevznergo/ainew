@@ -54,10 +54,7 @@ export const db = drizzle(client);
 
 // ===================== INVITES =====================
 // Create or return invite entry using user's existing referral_code
-export async function createInvite(
-  ownerUserId: string,
-  availableCount = 4,
-) {
+export async function createInvite(ownerUserId: string, availableCount = 4) {
   try {
     // ensure user has referral_code
     const referralCode = await getUserReferralCode(ownerUserId);
@@ -66,7 +63,12 @@ export async function createInvite(
     const existing = await db
       .select()
       .from(invites)
-      .where(and(eq(invites.owner_user_id, ownerUserId), eq(invites.code, referralCode)))
+      .where(
+        and(
+          eq(invites.owner_user_id, ownerUserId),
+          eq(invites.code, referralCode),
+        ),
+      )
       .limit(1);
     if (existing.length > 0) {
       return existing[0];
@@ -158,18 +160,35 @@ export async function createUser(email: string, password: string) {
       throw new Error('User with this email already exists');
     }
 
+    // Сначала создаем пользователя без nickname
     const result = await db
       .insert(user)
       .values({
         email,
         password: hashedPassword,
-        nickname: email,
       } as any)
       .returning({
         id: user.id,
         email: user.email,
         nickname: user.nickname as any,
       });
+
+    // Затем обновляем nickname используя сгенерированный ID
+    if (result[0]) {
+      const nickname = `user-${result[0].id.slice(0, 9)}`;
+      const updatedResult = await db
+        .update(user)
+        .set({ nickname } as any)
+        .where(eq(user.id, result[0].id))
+        .returning({
+          id: user.id,
+          email: user.email,
+          nickname: user.nickname as any,
+        });
+
+      console.log('User created successfully:', updatedResult[0]);
+      return updatedResult;
+    }
 
     console.log('User created successfully:', result);
     return result;
@@ -190,11 +209,35 @@ export async function createGuestUser() {
   const password = generateHashedPassword(generateUUID());
 
   try {
-    return await db.insert(user).values({ email, password, nickname: email } as any).returning({
-      id: user.id,
-      email: user.email,
-      nickname: user.nickname as any,
-    });
+    // Сначала создаем пользователя без nickname
+    const result = await db
+      .insert(user)
+      .values({
+        email,
+        password,
+      } as any)
+      .returning({
+        id: user.id,
+        email: user.email,
+        nickname: user.nickname as any,
+      });
+
+    // Обновляем nickname используя сгенерированный ID
+    if (result[0]) {
+      const nickname = `user-${result[0].id.slice(0, 9)}`;
+      const updatedResult = await db
+        .update(user)
+        .set({ nickname } as any)
+        .where(eq(user.id, result[0].id))
+        .returning({
+          id: user.id,
+          email: user.email,
+          nickname: user.nickname as any,
+        });
+      return updatedResult;
+    }
+
+    return result;
   } catch (error) {
     throw new ChatSDKError('bad_request:database');
   }
@@ -251,7 +294,13 @@ export async function saveChat({
       createdAt: new Date(),
       ...(visibility ? { visibility } : {}),
     } as any)
-    .returning({ id: chat.id, userId: chat.userId, title: chat.title, createdAt: chat.createdAt, visibility: chat.visibility });
+    .returning({
+      id: chat.id,
+      userId: chat.userId,
+      title: chat.title,
+      createdAt: chat.createdAt,
+      visibility: chat.visibility,
+    });
 
   console.log('saveChat result:', result);
   return result[0];
@@ -296,7 +345,13 @@ export async function getChatsByUserId({
 
     const query = (whereCondition?: SQL<any>) =>
       db
-        .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility })
+        .select({
+          id: chat.id,
+          createdAt: chat.createdAt,
+          title: chat.title,
+          userId: chat.userId,
+          visibility: chat.visibility,
+        })
         .from(chat)
         .where(
           whereCondition
@@ -351,7 +406,14 @@ export async function getChatsByUserId({
 export async function getChatById({ id }: { id: string }) {
   try {
     const [selectedChat] = await db
-      .select({ id: chat.id, createdAt: chat.createdAt, title: chat.title, userId: chat.userId, visibility: chat.visibility, hashtags: chat.hashtags as any })
+      .select({
+        id: chat.id,
+        createdAt: chat.createdAt,
+        title: chat.title,
+        userId: chat.userId,
+        visibility: chat.visibility,
+        hashtags: chat.hashtags as any,
+      })
       .from(chat)
       .where(eq(chat.id, id));
     return selectedChat;
@@ -370,14 +432,46 @@ export async function setChatHashtags({
   try {
     // Helper: transliterate Cyrillic (ru) to Latin and slugify to ASCII
     const translitMap: Record<string, string> = {
-      а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y',
-      к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',
-      х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+      а: 'a',
+      б: 'b',
+      в: 'v',
+      г: 'g',
+      д: 'd',
+      е: 'e',
+      ё: 'e',
+      ж: 'zh',
+      з: 'z',
+      и: 'i',
+      й: 'y',
+      к: 'k',
+      л: 'l',
+      м: 'm',
+      н: 'n',
+      о: 'o',
+      п: 'p',
+      р: 'r',
+      с: 's',
+      т: 't',
+      у: 'u',
+      ф: 'f',
+      х: 'h',
+      ц: 'c',
+      ч: 'ch',
+      ш: 'sh',
+      щ: 'sch',
+      ъ: '',
+      ы: 'y',
+      ь: '',
+      э: 'e',
+      ю: 'yu',
+      я: 'ya',
     };
     // Best-effort translator to English using DeepL if available; fallback to a small RU->EN dictionary
     const translateToEnglish = async (inputs: string[]): Promise<string[]> => {
       const key = process.env.DEEPL_API_KEY;
-      const normalizedInputs = (inputs || []).map((s) => String(s || '').trim());
+      const normalizedInputs = (inputs || []).map((s) =>
+        String(s || '').trim(),
+      );
       if (normalizedInputs.length === 0) return normalizedInputs;
 
       // If DeepL key is available, try using it first
@@ -388,7 +482,10 @@ export async function setChatHashtags({
           form.append('target_lang', 'EN');
           const res = await fetch('https://api-free.deepl.com/v2/translate', {
             method: 'POST',
-            headers: { 'Authorization': `DeepL-Auth-Key ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {
+              Authorization: `DeepL-Auth-Key ${key}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
             body: form.toString(),
           });
           if (res.ok) {
@@ -405,15 +502,54 @@ export async function setChatHashtags({
 
       // Fallback: small RU->EN dictionary for common tags
       const dict: Record<string, string> = {
-        'дом': 'home', 'квартира': 'apartment', 'ремонт': 'renovation', 'кухня': 'kitchen',
-        'работа': 'work', 'учеба': 'study', 'обучение': 'education', 'школа': 'school', 'университет': 'university',
-        'новости': 'news', 'кино': 'movies', 'фильм': 'movie', 'музыка': 'music',
-        'авто': 'cars', 'машина': 'car', 'спорт': 'sport', 'здоровье': 'health', 'еда': 'food', 'рецепт': 'recipe',
-        'путешествия': 'travel', 'поездка': 'trip', 'технологии': 'tech', 'техника': 'electronics', 'наука': 'science',
-        'искусство': 'art', 'фото': 'photo', 'видео': 'video', 'разработка': 'development', 'программирование': 'programming', 'код': 'code',
-        'дизайн': 'design', 'бизнес': 'business', 'деньги': 'money', 'финансы': 'finance', 'природа': 'nature', 'животные': 'animals',
-        'семья': 'family', 'друзья': 'friends', 'игра': 'game', 'игры': 'games', 'погода': 'weather', 'политика': 'politics', 'юмор': 'humor',
-        'маркетинг': 'marketing', 'аналитика': 'analytics', 'данные': 'data', 'интернет': 'internet', 'безопасность': 'security',
+        дом: 'home',
+        квартира: 'apartment',
+        ремонт: 'renovation',
+        кухня: 'kitchen',
+        работа: 'work',
+        учеба: 'study',
+        обучение: 'education',
+        школа: 'school',
+        университет: 'university',
+        новости: 'news',
+        кино: 'movies',
+        фильм: 'movie',
+        музыка: 'music',
+        авто: 'cars',
+        машина: 'car',
+        спорт: 'sport',
+        здоровье: 'health',
+        еда: 'food',
+        рецепт: 'recipe',
+        путешествия: 'travel',
+        поездка: 'trip',
+        технологии: 'tech',
+        техника: 'electronics',
+        наука: 'science',
+        искусство: 'art',
+        фото: 'photo',
+        видео: 'video',
+        разработка: 'development',
+        программирование: 'programming',
+        код: 'code',
+        дизайн: 'design',
+        бизнес: 'business',
+        деньги: 'money',
+        финансы: 'finance',
+        природа: 'nature',
+        животные: 'animals',
+        семья: 'family',
+        друзья: 'friends',
+        игра: 'game',
+        игры: 'games',
+        погода: 'weather',
+        политика: 'politics',
+        юмор: 'humor',
+        маркетинг: 'marketing',
+        аналитика: 'analytics',
+        данные: 'data',
+        интернет: 'internet',
+        безопасность: 'security',
       };
       const cyrillicRe = /[\u0400-\u04FF]/;
       const mapWord = (w: string) => {
@@ -429,7 +565,9 @@ export async function setChatHashtags({
       });
     };
     const toEnglishSlug = (input: string) => {
-      const lower = String(input || '').trim().toLowerCase();
+      const lower = String(input || '')
+        .trim()
+        .toLowerCase();
       // Cyrillic transliteration
       const transliterated = lower
         .split('')
@@ -516,7 +654,8 @@ export async function getUserNickname(userId: string) {
 export async function updateUserNickname(userId: string, nickname: string) {
   const value = String(nickname || '').trim();
   if (!value) throw new ChatSDKError('bad_request:nickname_empty');
-  if (value.length > 64) throw new ChatSDKError('bad_request:nickname_too_long');
+  if (value.length > 64)
+    throw new ChatSDKError('bad_request:nickname_too_long');
   // Disallow uppercase letters
   if (value !== value.toLowerCase()) {
     throw new ChatSDKError('bad_request:nickname_uppercase');
@@ -533,7 +672,9 @@ export async function updateUserNickname(userId: string, nickname: string) {
   const [exists] = await db
     .select({ id: user.id })
     .from(user)
-    .where(and(eq(user.nickname as any, value as any), ne(user.id, userId)) as any);
+    .where(
+      and(eq(user.nickname as any, value as any), ne(user.id, userId)) as any,
+    );
   if (exists) {
     throw new ChatSDKError('conflict:nickname_taken');
   }
@@ -1172,9 +1313,21 @@ export async function createOAuthUser(userData: {
       .values({
         email: userData.email,
         password: generateHashedPassword(generateUUID()), // Генерируем случайный пароль
-        nickname: userData.email,
       } as any)
       .returning();
+
+    // Обновляем nickname используя сгенерированный ID
+    if (result[0]) {
+      const nickname = `user-${result[0].id.slice(0, 9)}`;
+      const updatedUser = await db
+        .update(user)
+        .set({ nickname } as any)
+        .where(eq(user.id, result[0].id))
+        .returning();
+
+      console.log('OAuth user created successfully:', updatedUser[0]);
+      return updatedUser[0];
+    }
 
     console.log('OAuth user created successfully:', result);
     return result[0];
