@@ -218,243 +218,379 @@ export default function InvitePage() {
 
       {/* Основной контент */}
       <main className="max-w-5xl mx-auto py-12 px-6 flex-1 w-full">
-        {/* Hero секция в стиле main */}
-        <section className="mb-12 text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4">
-            Приглашайте друзей в Aporto
-          </h1>
-          <p className="text-neutral-300 text-lg md:text-xl mb-6 max-w-3xl mx-auto">
-            Делитесь своей реферальной ссылкой или инвайт-кодом и получайте
-            бонусы.
-          </p>
-          {!session?.user ? (
-            <div className="flex items-center justify-center gap-3">
-              <Link
-                href="/register"
-                className="rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-6 py-3 text-base shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
-                prefetch
-              >
-                Попробовать бесплатно
-              </Link>
-            </div>
-          ) : null}
-        </section>
-
-        {/* Реферальная ссылка (недоступно для guest) */}
+        {/* Tasks Ladder Section */}
         {session?.user ? (
-          <section className="mb-12">
-            <div className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col items-center w-full">
-              <h2 className="text-2xl font-bold mb-4 text-white">
-                Ваша реферальная ссылка
-              </h2>
-              <div className="flex w-full max-w-2xl mb-3">
-                <input
-                  type="text"
-                  value={referralLink || ''}
-                  readOnly
-                  className="flex-1 bg-neutral-900 text-white font-mono rounded-l-lg px-5 py-3 outline-none text-base border border-neutral-800"
-                />
-                <button
-                  className="rounded-l-none rounded-r-lg border border-white/10 bg-white/5 px-5 py-3 text-base text-neutral-200 hover:bg-white/10 transition-colors"
-                  type="button"
-                  onClick={copyToClipboard}
-                >
-                  Копировать
-                </button>
-              </div>
-              <p className="text-neutral-400 text-base">
-                Поделитесь этой ссылкой с друзьями и получите бонусы!
-              </p>
-              {/* Инвайт-код в этой секции скрыт */}
-            </div>
-          </section>
-        ) : null}
-
-        {/* Инвайт-код (недоступно для guest) */}
-        {session?.user ? (
-          <section className="mb-12">
-            <div className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] w-full">
-              <div className="flex items-center justify-between gap-4 mb-6">
-                <h2 className="text-2xl font-bold text-white">Инвайт-код</h2>
-              </div>
-
-              {invites.length === 0 ? (
-                <p className="text-neutral-400">У вас пока нет инвайтов.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {invites.map((inv) => (
-                    <div
-                      key={inv.id}
-                      className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="text-white font-mono text-lg">
-                          {inv.code}
-                        </div>
-                        <div className="text-neutral-400 text-sm mt-1">
-                          Доступно:{' '}
-                          {Math.max(
-                            0,
-                            (inv.available_count || 0) - (inv.used_count || 0),
-                          )}{' '}
-                          из {inv.available_count}
-                        </div>
-                      </div>
-                      <button
-                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-neutral-200 hover:bg-white/10 transition-colors"
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(inv.code);
-                            toast({
-                              type: 'success',
-                              description: 'Код скопирован',
-                            });
-                          } catch (_) {}
-                        }}
-                      >
-                        Копировать код
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-        ) : null}
-
-        {/* Бонусные шаги */}
-        <section className="mb-16">
-          <div className="rounded-3xl border border-white/10 p-10 bg-white/[0.04] text-center mb-10">
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-3">
-              Приглашайте друзей и получайте бонусы до 40 000 рублей!
-            </h1>
-            <p className="text-xl opacity-90 mb-6">
-              Ваша реферальная программа — это просто:
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((step, idx) => (
-              <div
-                key={step}
-                className="rounded-3xl border border-white/10 p-8 bg-white/[0.04] flex flex-col items-center"
-              >
-                <div className="bg-gradient-to-br from-indigo-500 to-green-400 text-black size-16 flex items-center justify-center rounded-xl text-3xl font-extrabold mb-5 shadow">
-                  {step}
-                </div>
-                <h4 className="font-bold text-xl mb-2 text-white">
-                  {idx === 0 && 'Получите ссылку'}
-                  {idx === 1 && 'Пригласите друга'}
-                  {idx === 2 && 'Получите бонус'}
-                </h4>
-                <p className="text-neutral-400 text-center text-base">
-                  {idx === 0 && 'Получите свою уникальную реферальную ссылку'}
-                  {idx === 1 &&
-                    'Поделитесь своей реферальной ссылкой с друзьями и знакомыми'}
-                  {idx === 2 &&
-                    'Когда ваш друг зарегистрируется и начнет использовать сервис, вы получите бонус'}
+          <section className="mb-16">
+            <div className="rounded-3xl border border-white/10 p-8 bg-white/[0.04]">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-white mb-4">
+                  Выполняйте задания и получайте токены.
+                </h2>
+                <p className="text-neutral-300 text-lg">
+                  Максимум — 45 200 токенов!
                 </p>
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* CTA */}
-        <section className="rounded-3xl border border-white/10 p-10 bg-white/[0.04] text-center mb-16">
-          <h3 className="text-3xl md:text-4xl font-extrabold mb-8">
-            Воспользуйтесь реферальной программой уже сегодня. Вы участвуете?
-          </h3>
-          <div className="flex flex-col md:flex-row gap-6 justify-center">
-            <Link
-              href="/register"
-              className="rounded-2xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white px-6 py-3 text-base shadow-lg shadow-indigo-600/20 hover:opacity-95 transition-opacity"
-            >
-              Начать приглашать
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-base text-neutral-200 hover:bg-white/10 transition-colors"
-            >
-              Уже есть аккаунт? Войти
-            </Link>
-          </div>
-        </section>
+              {/* Progress Bar */}
+              <div className="mb-10">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-neutral-300 text-sm">Прогресс</span>
+                  <span className="text-neutral-300 text-sm">
+                    {/* Mock current tokens - replace with real data later */}0
+                    / 45 200 токенов
+                  </span>
+                </div>
+                <div className="w-full bg-neutral-800 rounded-full h-3">
+                  <div
+                    className="bg-gradient-to-r from-indigo-500 to-cyan-500 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${(0 / 45200) * 100}%` }}
+                  />
+                </div>
+                <div className="text-center mt-2 text-xs text-neutral-400">
+                  {((0 / 45200) * 100).toFixed(1)}% выполнено
+                </div>
+              </div>
 
-        {/* Условия и положения */}
-        <section className="rounded-3xl border border-white/10 p-10 bg-white/[0.04] mb-8">
-          <h2 className="text-3xl font-bold text-center mb-10 text-white">
-            Условия и положения
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-neutral-200 mb-3">
-                Бонус за привлечение
-              </h3>
-              <p className="text-neutral-300 text-base">
-                Бонус 1000 токенов (равный 200 рублям) начисляется после того,
-                как привлечённый пользователь оплатил подписку на любой тариф.
-              </p>
+              {/* Tasks Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Basic Tasks */}
+                <div className="rounded-2xl border border-green-500/30 bg-green-500/5 p-6 relative">
+                  <div className="absolute top-4 right-4">
+                    <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                      <svg
+                        className="size-4 text-white"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2">
+                      Подтвердить email
+                    </h3>
+                    <p className="text-neutral-400 text-sm mb-3">
+                      Подтвердите ваш email адрес
+                    </p>
+                    <button
+                      type="button"
+                      className="text-xs bg-green-600/20 hover:bg-green-600/30 text-green-400 px-3 py-1.5 rounded-lg border border-green-500/30 transition-colors"
+                    >
+                      Отправить письмо повторно
+                    </button>
+                  </div>
+                  <div className="text-green-400 font-bold text-lg">
+                    +100 токенов
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-6 relative">
+                  <div className="absolute top-4 right-4">
+                    <div className="size-6 bg-orange-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs font-bold">50%</span>
+                    </div>
+                  </div>
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2">
+                      Заполнить профиль
+                    </h3>
+                    <p className="text-neutral-400 text-sm mb-3">
+                      Добавьте никнейм и биографию
+                    </p>
+                    <div className="flex gap-2">
+                      <Link
+                        href="/profile"
+                        className="text-xs bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 px-3 py-1.5 rounded-lg border border-orange-500/30 transition-colors"
+                      >
+                        Профиль
+                      </Link>
+                      <Link
+                        href="/profile"
+                        className="text-xs bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 px-3 py-1.5 rounded-lg border border-orange-500/30 transition-colors"
+                      >
+                        Канал
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="text-orange-400 font-bold text-lg">
+                    +100 токенов
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2">
+                      Первый вопрос ИИ
+                    </h3>
+                    <p className="text-neutral-400 text-sm mb-3">
+                      Задайте свой первый вопрос
+                    </p>
+                    <Link
+                      href="/"
+                      className="text-xs bg-neutral-600/20 hover:bg-neutral-600/30 text-neutral-300 px-3 py-1.5 rounded-lg border border-neutral-500/30 transition-colors"
+                    >
+                      Новый чат
+                    </Link>
+                  </div>
+                  <div className="text-neutral-400 font-bold text-lg">
+                    +100 токенов
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2">
+                      Опубликовать чат
+                    </h3>
+                    <p className="text-neutral-400 text-sm mb-3">
+                      После первого вопроса в чат нажмите &quot;Поделиться&quot;
+                    </p>
+                  </div>
+                  <div className="text-neutral-400 font-bold text-lg">
+                    +100 токенов
+                  </div>
+                </div>
+
+                {/* Social Tasks */}
+                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2 flex items-center">
+                      <svg
+                        className="size-4 mr-2 text-blue-400"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                      </svg>
+                      Поделиться в Twitter
+                    </h3>
+                    <p className="text-neutral-400 text-sm mb-3">
+                      Расскажите о сервисе в Twitter
+                    </p>
+                    <button
+                      type="button"
+                      className="text-xs bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/30 transition-colors"
+                    >
+                      Поделиться
+                    </button>
+                  </div>
+                  <div className="text-neutral-400 font-bold text-lg">
+                    +300 токенов
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2 flex items-center">
+                      <svg
+                        className="size-4 mr-2 text-blue-600"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                      </svg>
+                      Поделиться в Facebook
+                    </h3>
+                    <p className="text-neutral-400 text-sm mb-3">
+                      Расскажите о сервисе в Facebook
+                    </p>
+                    <button
+                      type="button"
+                      className="text-xs bg-blue-700/20 hover:bg-blue-700/30 text-blue-300 px-3 py-1.5 rounded-lg border border-blue-600/30 transition-colors"
+                    >
+                      Поделиться
+                    </button>
+                  </div>
+                  <div className="text-neutral-400 font-bold text-lg">
+                    +300 токенов
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2 flex items-center">
+                      <svg
+                        className="size-4 mr-2 text-orange-600"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z" />
+                      </svg>
+                      Отзыв на Reddit
+                    </h3>
+                    <p className="text-neutral-400 text-sm mb-3">
+                      Напишите отзыв о сервисе
+                    </p>
+                    <a
+                      href="https://reddit.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs bg-orange-700/20 hover:bg-orange-700/30 text-orange-300 px-3 py-1.5 rounded-lg border border-orange-600/30 transition-colors"
+                    >
+                      Перейти в Reddit
+                    </a>
+                  </div>
+                  <div className="text-neutral-400 font-bold text-lg">
+                    +300 токенов
+                  </div>
+                </div>
+
+                {/* Engagement Task */}
+                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2 flex items-center">
+                      <svg
+                        className="size-4 mr-2 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                      </svg>
+                      10 лайков на пост
+                    </h3>
+                    <p className="text-neutral-400 text-sm">
+                      Получите 10 лайков на любой пост
+                    </p>
+                  </div>
+                  <div className="text-neutral-400 font-bold text-lg">
+                    +300 токенов
+                  </div>
+                </div>
+
+                {/* Friend Referral Tasks */}
+                <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-6 relative">
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2 flex items-center">
+                      <svg
+                        className="size-4 mr-2 text-purple-400"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      Пригласить друга
+                    </h3>
+                    <p className="text-neutral-400 text-sm mb-3">
+                      За каждого друга (до 16)
+                    </p>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(
+                            referralLink || '',
+                          );
+                          toast({
+                            type: 'success',
+                            description: 'Ссылка скопирована',
+                          });
+                        } catch (_) {
+                          console.error('Failed to copy referral link');
+                        }
+                      }}
+                      className="text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 px-3 py-1.5 rounded-lg border border-purple-500/30 transition-colors"
+                    >
+                      Скопировать ссылку
+                    </button>
+                  </div>
+                  <div className="text-purple-400 font-bold text-lg">
+                    +100 токенов
+                  </div>
+                  <div className="text-xs text-neutral-500 mt-1">
+                    Максимум: 1 600 токенов
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/5 p-6 relative">
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-white mb-2 flex items-center">
+                      <svg
+                        className="size-4 mr-2 text-yellow-400"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                      Друг купил Про
+                    </h3>
+                    <p className="text-neutral-400 text-sm mb-3">
+                      За каждого друга с Про (до 16)
+                    </p>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(
+                            referralLink || '',
+                          );
+                          toast({
+                            type: 'success',
+                            description: 'Ссылка скопирована',
+                          });
+                        } catch (_) {
+                          console.error('Failed to copy referral link');
+                        }
+                      }}
+                      className="text-xs bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 px-3 py-1.5 rounded-lg border border-yellow-500/30 transition-colors"
+                    >
+                      Скопировать ссылку
+                    </button>
+                  </div>
+                  <div className="text-yellow-400 font-bold text-lg">
+                    +2 000 токенов
+                  </div>
+                  <div className="text-xs text-neutral-500 mt-1">
+                    Максимум: 32 000 токенов
+                  </div>
+                </div>
+              </div>
+
+              {/* Completion Bonus */}
+              <div className="mt-8 pt-8 border-t border-white/10">
+                <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-cyan-500/10 p-8 text-center">
+                  <div className="mb-4">
+                    <div className="size-16 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg
+                        className="size-8 text-white"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      Завершить все задания
+                    </h3>
+                    <p className="text-neutral-300">
+                      Выполните все задания и получите мега-бонус!
+                    </p>
+                  </div>
+                  <div className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                    +10 000 токенов
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="mt-8 text-center">
+                <div className="text-neutral-400 text-sm mb-2">
+                  Максимальная награда за все задания:
+                </div>
+                <div className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                  45 200 токенов
+                </div>
+                <div className="text-neutral-500 text-sm mt-1">
+                  ≈ 9 040 рублей
+                </div>
+              </div>
             </div>
-            <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-neutral-200 mb-3">
-                Условия вывода
-              </h3>
-              <p className="text-neutral-300 text-base">
-                Вывод средств доступен при накоплении не менее 10 000 токенов.
-                Для вывода необходимо написать на почту{' '}
-                <a
-                  href="mailto:hey@aporto.tech"
-                  className="underline text-neutral-300 hover:text-white"
-                >
-                  hey@aporto.tech
-                </a>{' '}
-                с указанием суммы и реквизитов.
-              </p>
-            </div>
-            <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-neutral-200 mb-3">
-                Реферальная ссылка
-              </h3>
-              <p className="text-neutral-300 text-base">
-                Каждый зарегистрированный пользователь получает уникальную
-                реферальную ссылку, которую можно делиться с друзьями и
-                знакомыми.
-              </p>
-            </div>
-            <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-neutral-200 mb-3">
-                Правила начисления
-              </h3>
-              <p className="text-neutral-300 text-base">
-                Бонус начисляется только за реальных пользователей, которые
-                прошли полную регистрацию и совершили оплату подписки.
-              </p>
-            </div>
-            <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-neutral-200 mb-3">
-                Срок действия
-              </h3>
-              <p className="text-neutral-300 text-base">
-                Реферальная программа действует бессрочно. Бонусы не имеют срока
-                действия и накапливаются на вашем балансе.
-              </p>
-            </div>
-            <div className="rounded-xl border border-white/10 p-6 bg-white/[0.02]">
-              <h3 className="font-semibold text-neutral-200 mb-3">
-                Ограничения
-              </h3>
-              <p className="text-neutral-300 text-base">
-                Запрещено создание множественных аккаунтов для получения
-                бонусов. Нарушение правил ведёт к блокировке аккаунта.
-              </p>
-            </div>
-          </div>
-          <div className="bg-yellow-100/10 border border-yellow-400/30 rounded-lg p-5 text-center text-yellow-300 text-base">
-            <strong>Важно:</strong> Все бонусы начисляются в валюте токенов.
-            Курс обмена: 1 токен = 0.2 рубля. Компания оставляет за собой право
-            изменять условия программы, уведомив пользователей заранее.
-          </div>
-        </section>
+          </section>
+        ) : null}
       </main>
       <footer className="mt-8 pb-4">
         <nav className="flex flex-wrap gap-6 justify-center items-center text-sm mb-2">
