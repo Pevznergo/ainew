@@ -10,6 +10,7 @@ import { chat, message, user, vote } from '@/lib/db/schema';
 import type { InferModel } from 'drizzle-orm';
 import { FeedItem } from '@/components/feed/FeedItem';
 import { UserChannelListClient } from '@/components/feed/UserChannelListClient';
+import { ChannelHeader } from '@/components/channel-header';
 import { getUserChannelPath } from '@/lib/paths';
 import { auth } from '@/app/(auth)/auth';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -410,6 +411,11 @@ export default async function UserChannelPage({
           <ModelProvider initialModel={chatModelFromCookie?.value}>
             {session && <AppSidebar user={session.user} session={session} />}
             <SidebarInset className="flex-1 overflow-auto">
+              <ChannelHeader
+                session={session}
+                authorName={authorText}
+                isOwner={isOwner}
+              />
               <div className="mx-auto max-w-7xl px-4 py-6">
                 <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6">
                   <main className="space-y-4">
