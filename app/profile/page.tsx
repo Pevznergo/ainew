@@ -176,8 +176,12 @@ export default function ProfilePage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         // eslint-disable-next-line no-console
-        console.log('[ProfilePage] saveBio error', { status: res.status, data });
-        if (res.status === 400 && data?.error === 'bio_too_long') setBioMsg('Слишком длинное описание (макс. 200 символов)');
+        console.log('[ProfilePage] saveBio error', {
+          status: res.status,
+          data,
+        });
+        if (res.status === 400 && data?.error === 'bio_too_long')
+          setBioMsg('Слишком длинное описание (макс. 200 символов)');
         else setBioMsg('Ошибка сохранения, попробуйте позже');
         return;
       }
@@ -393,9 +397,16 @@ export default function ProfilePage() {
 
   // Initialize nickname from session
   useEffect(() => {
-    if (session?.user?.nickname || session?.user?.name || session?.user?.email) {
+    if (
+      session?.user?.nickname ||
+      session?.user?.name ||
+      session?.user?.email
+    ) {
       setNickname(
-        (session.user.nickname as string) || session.user.name || session.user.email || '',
+        (session.user.nickname as string) ||
+          session.user.name ||
+          session.user.email ||
+          '',
       );
     }
   }, [session?.user?.nickname, session?.user?.name, session?.user?.email]);
@@ -464,8 +475,10 @@ export default function ProfilePage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (res.status === 409) setNickMsg('Такой ник уже занят');
-        else if (res.status === 400 && data?.error === 'nickname_empty') setNickMsg('Введите никнейм');
-        else if (res.status === 400 && data?.error === 'nickname_uppercase') setNickMsg('Никнейм должен быть в нижнем регистре (без заглавных)');
+        else if (res.status === 400 && data?.error === 'nickname_empty')
+          setNickMsg('Введите никнейм');
+        else if (res.status === 400 && data?.error === 'nickname_uppercase')
+          setNickMsg('Никнейм должен быть в нижнем регистре (без заглавных)');
         else setNickMsg('Ошибка сохранения, попробуйте позже');
         return;
       }
@@ -495,7 +508,7 @@ export default function ProfilePage() {
               Главная
             </Link>
             <Link
-              href="/chat"
+              href="/"
               className="px-3 py-2 rounded-lg text-sm text-neutral-200 hover:bg-white/10 transition-colors"
             >
               Чат
@@ -634,9 +647,13 @@ export default function ProfilePage() {
           <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04]">
             <div className="flex items-start justify-between gap-8">
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-white mb-2">Описание профиля</h2>
+                <h2 className="text-xl font-bold text-white mb-2">
+                  Описание профиля
+                </h2>
                 <p className="text-neutral-300 whitespace-pre-wrap min-h-[48px]">
-                  {bio ? bio : 'Добавьте описание вашего профиля, чтобы пользователи знали больше о вас.'}
+                  {bio
+                    ? bio
+                    : 'Добавьте описание вашего профиля, чтобы пользователи знали больше о вас.'}
                 </p>
                 {bioMsg && (
                   <div className="mt-2 text-sm text-neutral-300">{bioMsg}</div>
@@ -658,7 +675,9 @@ export default function ProfilePage() {
                     data-testid="bio-edit-trigger"
                     onClick={() => {
                       // eslint-disable-next-line no-console
-                      console.log('[ProfilePage] bio edit trigger clicked -> set open true');
+                      console.log(
+                        '[ProfilePage] bio edit trigger clicked -> set open true',
+                      );
                       setBioModalOpen(true);
                     }}
                     className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200 hover:bg-white/10 px-5 py-3 text-sm font-semibold transition-colors"
@@ -682,9 +701,12 @@ export default function ProfilePage() {
                     className="relative max-w-xl rounded-3xl border border-white/10 bg-white/[0.06] backdrop-blur-xl shadow-2xl"
                   >
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="text-white">Редактировать описание профиля</AlertDialogTitle>
+                      <AlertDialogTitle className="text-white">
+                        Редактировать описание профиля
+                      </AlertDialogTitle>
                       <AlertDialogDescription className="text-neutral-400">
-                        Максимум 200 символов. Это описание отображается в вашем профиле.
+                        Максимум 200 символов. Это описание отображается в вашем
+                        профиле.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="mt-2">
@@ -700,12 +722,23 @@ export default function ProfilePage() {
                       <div className="mt-2 flex items-center justify-between text-xs text-neutral-400">
                         <span>{bio.length}/200</span>
                         {bioMsg && (
-                          <span className={/Ошибка|Слишком/i.test(bioMsg) ? 'text-red-400' : 'text-neutral-400'}>{bioMsg}</span>
+                          <span
+                            className={
+                              /Ошибка|Слишком/i.test(bioMsg)
+                                ? 'text-red-400'
+                                : 'text-neutral-400'
+                            }
+                          >
+                            {bioMsg}
+                          </span>
                         )}
                       </div>
                     </div>
                     <AlertDialogFooter>
-                      <AlertDialogCancel data-testid="bio-cancel" className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200">
+                      <AlertDialogCancel
+                        data-testid="bio-cancel"
+                        className="rounded-xl border border-white/10 bg-white/[0.02] text-neutral-200"
+                      >
                         Отменить
                       </AlertDialogCancel>
                       <AlertDialogAction
@@ -738,7 +771,9 @@ export default function ProfilePage() {
             <div className="flex items-start justify-between gap-8">
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-white mb-2">Никнейм</h2>
-                <p className="text-neutral-400 mb-4">Установите отображаемое имя для вашего профиля.</p>
+                <p className="text-neutral-400 mb-4">
+                  Установите отображаемое имя для вашего профиля.
+                </p>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
@@ -778,8 +813,13 @@ export default function ProfilePage() {
           <section className="rounded-3xl border border-white/10 p-8 bg-white/[0.04]">
             <div className="flex items-start justify-between gap-8">
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-white mb-2">Смена пароля</h2>
-                <p className="text-neutral-400 mb-4">Сначала введите текущий пароль (если он установлен), затем новый.</p>
+                <h2 className="text-xl font-bold text-white mb-2">
+                  Смена пароля
+                </h2>
+                <p className="text-neutral-400 mb-4">
+                  Сначала введите текущий пароль (если он установлен), затем
+                  новый.
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <input
                     type="password"
@@ -1138,10 +1178,16 @@ export default function ProfilePage() {
       <footer className="mt-12 border-t border-white/10 bg-white/[0.02]">
         <div className="max-w-7xl mx-auto p-6">
           <nav className="flex flex-wrap gap-6 justify-center items-center text-sm mb-3">
-            <Link href="/privacy" className="text-neutral-300 hover:text-indigo-300 hover:underline">
+            <Link
+              href="/privacy"
+              className="text-neutral-300 hover:text-indigo-300 hover:underline"
+            >
               Политика конфиденциальности
             </Link>
-            <Link href="/tos" className="text-neutral-300 hover:text-indigo-300 hover:underline">
+            <Link
+              href="/tos"
+              className="text-neutral-300 hover:text-indigo-300 hover:underline"
+            >
               Пользовательское соглашение
             </Link>
             <Link
@@ -1157,7 +1203,9 @@ export default function ProfilePage() {
               Связаться с нами
             </a>
           </nav>
-          <div className="text-center text-neutral-400 text-xs">© 2025 Aporto</div>
+          <div className="text-center text-neutral-400 text-xs">
+            © 2025 Aporto
+          </div>
         </div>
       </footer>
     </div>

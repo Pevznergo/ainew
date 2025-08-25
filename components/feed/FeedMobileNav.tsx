@@ -31,7 +31,7 @@ export default function FeedMobileNav({
             <div className="p-4 space-y-4">
               <nav className="flex flex-col gap-2 text-sm">
                 <Link
-                  href="/feed"
+                  href="/"
                   className="block rounded-xl px-3 py-2 border border-border bg-muted hover:bg-accent text-foreground"
                 >
                   <span className="inline-flex items-center gap-2">

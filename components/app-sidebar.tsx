@@ -18,7 +18,6 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
- 
 
 export function AppSidebar({
   user,
@@ -54,19 +53,21 @@ export function AppSidebar({
                   className="p-2 h-fit justify-start gap-2"
                   onClick={() => {
                     setOpenMobile(false);
-                    router.push('/feed');
+                    router.push('/');
                   }}
                   aria-label="Главная"
                 >
-                  <Image 
-                    src="/images/logo.png" 
-                    alt="Логотип" 
-                    width={16} 
-                    height={16} 
-                    className="rounded-full object-cover size-4" 
+                  <Image
+                    src="/images/logo.png"
+                    alt="Логотип"
+                    width={16}
+                    height={16}
+                    className="rounded-full object-cover size-4"
                     unoptimized
                   />
-                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Главная</span>
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">
+                    Главная
+                  </span>
                 </Button>
               </div>
 
@@ -77,12 +78,16 @@ export function AppSidebar({
                   className="p-2 h-fit justify-start gap-2"
                   onClick={() => {
                     setOpenMobile(false);
-                    router.push(`/u/${session?.user?.nickname || session?.user?.id || user.id}`);
+                    router.push(
+                      `/u/${session?.user?.nickname || session?.user?.id || user.id}`,
+                    );
                   }}
                   aria-label="Мой канал"
                 >
                   <HomeIcon size={16} />
-                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Мой канал</span>
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">
+                    Мой канал
+                  </span>
                 </Button>
               </div>
 
@@ -98,7 +103,9 @@ export function AppSidebar({
                   aria-label="Лента"
                 >
                   <MessageIcon size={16} />
-                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Лента</span>
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">
+                    Лента
+                  </span>
                 </Button>
               </div>
 
@@ -114,7 +121,9 @@ export function AppSidebar({
                   aria-label="Профиль"
                 >
                   <UserIcon />
-                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">Профиль</span>
+                  <span className="text-sm text-foreground/80 group-data-[collapsible=icon]:hidden">
+                    Профиль
+                  </span>
                 </Button>
               </div>
 
@@ -132,7 +141,9 @@ export function AppSidebar({
                   aria-label="Новый чат"
                 >
                   <PlusIcon />
-                  <span className="text-sm group-data-[collapsible=icon]:hidden">Новый чат</span>
+                  <span className="text-sm group-data-[collapsible=icon]:hidden">
+                    Новый чат
+                  </span>
                 </Button>
               </div>
             </div>
