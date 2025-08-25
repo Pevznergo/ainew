@@ -231,7 +231,7 @@ export function FeedItem({
     <article className="rounded-3xl border border-border bg-card text-card-foreground overflow-hidden">
       {isRepost && repostedBy && (
         <div className="flex items-center gap-2 px-4 pt-3 pb-1 text-xs text-muted-foreground">
-          <Repeat2 className="w-3.5 h-3.5" />
+          <Repeat2 className="size-3.5" />
           {repostedByHref ? (
             <Link href={repostedByHref} className="hover:underline">
               {repostedBy} репостнул(а)
