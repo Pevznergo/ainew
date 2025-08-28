@@ -77,8 +77,69 @@ export default async function FeedPage({
   const tag = (params?.tag || '').toLowerCase().trim();
   const q = (params?.q || '').toLowerCase().trim();
 
-  // 1) Get latest public chats
+  // 1) Get both original posts and reposts in chronological order
   const beforeDate = params?.before ? new Date(params.before) : null;
+
+  // Get original public chats
+  const publicChats = await db
+    .select({
+      id: chat.id,
+      createdAt: chat.createdAt,
+      title: chat.title,
+      userId: chat.userId,
+      visibility: chat.visibility,
+      hashtags: chat.hashtags as any,
+      isRepost: chat.isRepost,
+      originalChatId: chat.originalChatId,
+      originalAuthorId: chat.originalAuthorId,
+    })
+    .from(chat)
+    .where(
+      beforeDate
+        ? and(eq(chat.visibility, 'public'), lt(chat.createdAt, beforeDate))
+        : eq(chat.visibility, 'public'),
+    )
+    .orderBy(desc(chat.createdAt))
+    .limit(LIMIT);
+
+  // Get recent reposts as feed items (sorted by repost time)
+  const repostItems = await db
+    .select({
+      id: chat.id,
+      createdAt: repost.createdAt, // Use repost time for sorting
+      title: chat.title,
+      userId: chat.userId, // Original author
+      visibility: chat.visibility,
+      hashtags: chat.hashtags as any,
+      originalChatId: chat.id,
+      originalAuthorId: chat.userId,
+      repostedBy: repost.userId, // Who reposted it
+    })
+    .from(repost)
+    .innerJoin(chat, eq(repost.chatId, chat.id))
+    .where(
+      beforeDate
+        ? and(eq(chat.visibility, 'public'), lt(repost.createdAt, beforeDate))
+        : eq(chat.visibility, 'public'),
+    )
+    .orderBy(desc(repost.createdAt))
+    .limit(LIMIT);
+
+  // Combine and sort all feed items
+  const allFeedItems = [
+    ...publicChats.map((chat) => ({
+      ...chat,
+      isRepost: false as const,
+      repostedBy: null as string | null,
+    })),
+    ...repostItems.map((item) => ({ ...item, isRepost: true as const })),
+  ];
+  allFeedItems.sort(
+    (a, b) =>
+      new Date(b.createdAt as any).getTime() -
+      new Date(a.createdAt as any).getTime(),
+  );
+  const feedItems = allFeedItems.slice(0, LIMIT);
 
   // Get repost counts for all chats
   const repostCounts = await db
@@ -94,30 +155,19 @@ export default async function FeedPage({
     repostCounts.map((rc) => [rc.chatId, Number(rc.count)]),
   );
 
-  const publicChats = await db
-    .select({
-      id: chat.id,
-      createdAt: chat.createdAt,
-      title: chat.title,
-      userId: chat.userId,
-      visibility: chat.visibility,
-      hashtags: chat.hashtags as any,
-    })
-    .from(chat)
-    .where(
-      beforeDate
-        ? and(eq(chat.visibility, 'public'), lt(chat.createdAt, beforeDate))
-        : eq(chat.visibility, 'public'),
-    )
-    .orderBy(desc(chat.createdAt))
-    .limit(LIMIT);
-
-  // 2) Get all user messages for current page chats, ordered by createdAt asc (first is the initial question)
-  const allChatIds = publicChats.map((c) => c.id);
+  // 2) Get all user messages for current feed items, ordered by createdAt asc (first is the initial question)
+  const allChatIds = feedItems.map((c) =>
+    c.isRepost ? (c.originalChatId as string) || c.id : c.id,
+  );
   const msgs = await db
     .select()
     .from(message)
-    .where(and(inArray(message.chatId, allChatIds), eq(message.role, 'user')))
+    .where(
+      and(
+        inArray(message.chatId, allChatIds as string[]),
+        eq(message.role, 'user'),
+      ),
+    )
     .orderBy(asc(message.createdAt));
 
   // 3) Take the first user message per chat
@@ -133,17 +183,18 @@ export default async function FeedPage({
 
   // 4) Now apply tag and query filters using chat + first message content
   let filteredChats = tag
-    ? (publicChats as any).filter(
+    ? feedItems.filter(
         (c: any) =>
           Array.isArray(c?.hashtags) &&
           c.hashtags.some((t: string) => String(t).toLowerCase() === tag),
       )
-    : publicChats;
+    : feedItems;
 
   if (q) {
     const qlc = q;
-    filteredChats = (filteredChats as any).filter((c: any) => {
-      const first = firstMsgByChat.get(c.id);
+    filteredChats = filteredChats.filter((c: any) => {
+      const chatId = c.isRepost ? c.originalChatId || c.id : c.id;
+      const first = firstMsgByChat.get(chatId);
       const body = first
         ? extractTextFromParts((first as any).parts).toLowerCase()
         : '';
@@ -171,23 +222,34 @@ export default async function FeedPage({
     );
   }
 
-  const chatIds = filteredChats.map((c) => c.id);
+  const chatIds = filteredChats.map((c) =>
+    c.isRepost ? (c.originalChatId as string) || c.id : c.id,
+  );
 
-  // 5) Load users for attribution (optional)
-  const userIds = Array.from(
+  // 5) Load users for attribution (both original authors and reposters)
+  const originalUserIds = Array.from(
     new Set(filteredChats.map((c) => c.userId)),
   ) as string[];
+  const repostUserIds = Array.from(
+    new Set(filteredChats.filter((c) => c.repostedBy).map((c) => c.repostedBy)),
+  ) as string[];
+  const allUserIds = Array.from(
+    new Set([...originalUserIds, ...repostUserIds]),
+  );
+
   const users = await db
     .select({ id: user.id, email: user.email, nickname: user.nickname as any })
     .from(user)
-    .where(inArray(user.id, userIds));
+    .where(inArray(user.id, allUserIds));
   const userById = new Map(users.map((u) => [u.id, u]));
 
   // 6) Aggregate upvotes per chat for final filtered set
   const voteRows = await db
     .select({ chatId: vote.chatId, upvotes: count(vote.messageId) })
     .from(vote)
-    .where(and(inArray(vote.chatId, chatIds), eq(vote.isUpvoted, true)))
+    .where(
+      and(inArray(vote.chatId, chatIds as string[]), eq(vote.isUpvoted, true)),
+    )
     .groupBy(vote.chatId);
   const upvotesByChat = new Map<string, number>(
     voteRows.map((v) => [v.chatId, Number(v.upvotes)]),
@@ -197,8 +259,14 @@ export default async function FeedPage({
   const chatsForRender = (() => {
     if (sort === 'rating') {
       return [...filteredChats].sort((a, b) => {
-        const ua = upvotesByChat.get(a.id) ?? 0;
-        const ub = upvotesByChat.get(b.id) ?? 0;
+        const chatIdA = a.isRepost
+          ? (a.originalChatId as string) || a.id
+          : a.id;
+        const chatIdB = b.isRepost
+          ? (b.originalChatId as string) || b.id
+          : b.id;
+        const ua = upvotesByChat.get(chatIdA) ?? 0;
+        const ub = upvotesByChat.get(chatIdB) ?? 0;
         if (ub !== ua) return ub - ua;
         return (
           new Date(b.createdAt as any).getTime() -
@@ -209,8 +277,8 @@ export default async function FeedPage({
     return filteredChats;
   })();
 
-  const hasMore = publicChats.length === LIMIT; // pagination by date only
-  const lastCreatedAt = publicChats[publicChats.length - 1]?.createdAt as any;
+  const hasMore = feedItems.length === LIMIT; // pagination by date only
+  const lastCreatedAt = feedItems[feedItems.length - 1]?.createdAt as any;
   const initialNextBefore =
     hasMore && lastCreatedAt && sort === 'date'
       ? new Date(lastCreatedAt).toISOString()
@@ -298,64 +366,75 @@ export default async function FeedPage({
                     </div>
 
                     {chatsForRender.map((c) => {
-                      const first = firstMsgByChat.get(c.id);
+                      const chatId = c.isRepost
+                        ? (c.originalChatId as string) || c.id
+                        : c.id;
+                      const first = firstMsgByChat.get(chatId);
                       const text = first
                         ? extractTextFromParts(first.parts as any)
                         : '';
                       const imageUrl = first
                         ? extractFirstImageUrl(first)
                         : null;
-                      const upvotes = upvotesByChat.get(c.id) ?? 0;
-                      const u = userById.get(c.userId as any) as any;
-                      const isRepost = Boolean((c as any).originalChatId);
+                      const upvotes = upvotesByChat.get(chatId) ?? 0;
 
                       let authorName: string;
                       let authorLink: string;
                       let repostedByName: string | null = null;
                       let repostedByLink: string | null = null;
 
-                      if (isRepost && u && (c as any).originalAuthor) {
+                      if (c.isRepost && c.repostedBy) {
                         // For reposts, show original author as main author
-                        const originalAuthor = (c as any).originalAuthor;
-                        authorName =
-                          String(originalAuthor.nickname || '').trim() ||
-                          `User-${String(originalAuthor.id || '').slice(0, 6)}`;
-                        authorLink = getUserChannelPath(
-                          originalAuthor.nickname,
-                          originalAuthor.id,
-                        );
-                        // Show who reposted it
-                        repostedByName = u
-                          ? String(u.nickname || '').trim() ||
-                            `User-${String(u.id || '').slice(0, 6)}`
+                        const originalAuthor = userById.get(
+                          c.userId as any,
+                        ) as any;
+                        const reposter = userById.get(
+                          c.repostedBy as any,
+                        ) as any;
+
+                        authorName = originalAuthor
+                          ? String(originalAuthor.nickname || '').trim() ||
+                            `User-${String(originalAuthor.id || '').slice(0, 6)}`
                           : 'Unknown';
-                        repostedByLink = u
-                          ? getUserChannelPath(u.nickname, u.id)
+                        authorLink = originalAuthor
+                          ? getUserChannelPath(
+                              originalAuthor.nickname,
+                              originalAuthor.id,
+                            )
                           : '#';
-                      } else if (u) {
-                        // Regular post
-                        authorName =
-                          String(u.nickname || '').trim() ||
-                          `User-${String(u.id || '').slice(0, 6)}`;
-                        authorLink = getUserChannelPath(u.nickname, u.id);
+
+                        // Show who reposted it
+                        repostedByName = reposter
+                          ? String(reposter.nickname || '').trim() ||
+                            `User-${String(reposter.id || '').slice(0, 6)}`
+                          : 'Unknown';
+                        repostedByLink = reposter
+                          ? getUserChannelPath(reposter.nickname, reposter.id)
+                          : '#';
                       } else {
-                        // Fallback if user data is missing
-                        authorName = 'Unknown';
-                        authorLink = '#';
+                        // Regular post
+                        const author = userById.get(c.userId as any) as any;
+                        authorName = author
+                          ? String(author.nickname || '').trim() ||
+                            `User-${String(author.id || '').slice(0, 6)}`
+                          : 'Unknown';
+                        authorLink = author
+                          ? getUserChannelPath(author.nickname, author.id)
+                          : '#';
                       }
 
                       return (
                         <FeedItem
-                          key={c.id}
-                          chatId={c.id}
+                          key={`${c.id}-${c.isRepost ? c.repostedBy : 'original'}`}
+                          chatId={chatId}
                           firstMessageId={first?.id || null}
                           createdAt={c.createdAt as any}
                           text={text}
                           imageUrl={imageUrl}
                           initialUpvotes={upvotes}
-                          initialReposts={repostsByChat.get(c.id) ?? 0}
+                          initialReposts={repostsByChat.get(chatId) ?? 0}
                           commentsCount={
-                            userMsgCountByChat.get(c.id) - (first ? 1 : 0)
+                            userMsgCountByChat.get(chatId) - (first ? 1 : 0)
                           }
                           hashtags={
                             Array.isArray((c as any).hashtags)
@@ -364,7 +443,7 @@ export default async function FeedPage({
                           }
                           author={authorName}
                           authorHref={authorLink}
-                          isRepost={isRepost}
+                          isRepost={c.isRepost}
                           repostedBy={repostedByName}
                           repostedByHref={repostedByLink}
                         />

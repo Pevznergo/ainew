@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, asc } from 'drizzle-orm';
 import { auth } from '@/app/(auth)/auth';
-import { db, getChatById, getMessagesByChatId, saveChat, saveMessages } from '@/lib/db/queries';
-import { repost } from '@/lib/db/schema';
-import { generateUUID } from '@/lib/utils';
+import { db, getChatById, voteMessage } from '@/lib/db/queries';
+import { repost, message } from '@/lib/db/schema';
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +14,10 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const originalChatId = String(body?.chatId || '').trim();
     if (!originalChatId) {
-      return NextResponse.json({ error: 'chatId is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'chatId is required' },
+        { status: 400 },
+      );
     }
 
     // Validate original chat exists and is public
@@ -24,51 +26,72 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Chat not found' }, { status: 404 });
     }
     if (String(original.visibility) !== 'public') {
-      return NextResponse.json({ error: 'Chat is not public' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Chat is not public' },
+        { status: 403 },
+      );
     }
-    
+
     // Prevent users from reposting their own content
     if (original.userId === session.user.id) {
-      return NextResponse.json({ error: 'You cannot repost your own content' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'You cannot repost your own content' },
+        { status: 400 },
+      );
     }
 
     // Prevent duplicate reposts by same user
     const existing = await db
       .select()
       .from(repost)
-      .where(and(eq(repost.chatId, originalChatId), eq(repost.userId, session.user.id)))
+      .where(
+        and(
+          eq(repost.chatId, originalChatId),
+          eq(repost.userId, session.user.id),
+        ),
+      )
       .limit(1);
     if (existing.length > 0) {
       return NextResponse.json({ error: 'Already reposted' }, { status: 409 });
     }
 
-    // Create new chat for the reposting user
-    const newChatId = generateUUID();
-    const title = String(original.title || '').trim() || 'Репост';
-    await saveChat({ id: newChatId, userId: session.user.id, title, visibility: 'public' });
-
-    // Copy messages from original chat to new chat
-    const originalMessages = await getMessagesByChatId({ id: originalChatId });
-    if (Array.isArray(originalMessages) && originalMessages.length > 0) {
-      const cloned = originalMessages.map((m) => ({
-        id: generateUUID(),
-        role: m.role as 'user' | 'assistant',
-        parts: (m as any).parts,
-        attachments: (m as any).attachments || [],
-        createdAt: (m as any).createdAt,
-        chatId: newChatId,
-      }));
-      await saveMessages({ messages: cloned });
-    }
-
-    // Insert repost record
+    // Insert repost record (no longer creating duplicate chat)
     await db
       .insert(repost)
       .values({ chatId: originalChatId, userId: session.user.id } as any)
       .onConflictDoNothing();
 
-    return NextResponse.json({ ok: true, newChatId });
+    // Automatically like the original post when reposting
+    try {
+      // Get the first message from the original chat for voting
+      const originalMessages = await db
+        .select({ id: message.id })
+        .from(message)
+        .where(
+          and(eq(message.chatId, originalChatId), eq(message.role, 'user')),
+        )
+        .orderBy(asc(message.createdAt))
+        .limit(1);
+
+      if (originalMessages.length > 0) {
+        const firstMessageId = originalMessages[0].id;
+        await voteMessage({
+          chatId: originalChatId,
+          messageId: firstMessageId,
+          userId: session.user.id,
+          type: 'up',
+        });
+      }
+    } catch (voteError) {
+      // Log the error but don't fail the repost if voting fails
+      console.error('Failed to auto-like during repost:', voteError);
+    }
+
+    return NextResponse.json({ ok: true, chatId: originalChatId });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Repost failed' }, { status: 400 });
+    return NextResponse.json(
+      { error: e?.message || 'Repost failed' },
+      { status: 400 },
+    );
   }
 }

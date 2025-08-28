@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { db, getUserSubscriptionStatus } from '@/lib/db/queries';
-import { chat, message, user, vote } from '@/lib/db/schema';
+import { chat, message, user, vote, repost } from '@/lib/db/schema';
 import type { InferModel } from 'drizzle-orm';
 import { FeedItem } from '@/components/feed/FeedItem';
 import { UserChannelListClient } from '@/components/feed/UserChannelListClient';
@@ -236,6 +236,8 @@ export default async function UserChannelPage({
 
   const beforeDate = before ? new Date(before) : null;
   const channelPath = getUserChannelPath(u.nickname || undefined, u.id);
+
+  // Get user's original chats
   const userChats = (await db
     .select({
       id: chat.id,
@@ -258,8 +260,54 @@ export default async function UserChannelPage({
     .orderBy(desc(chat.createdAt))
     .limit(LIMIT)) as Chat[];
 
+  // Get user's reposts
+  const userReposts = await db
+    .select({
+      id: chat.id,
+      createdAt: repost.createdAt, // Use repost time for sorting
+      title: chat.title,
+      userId: chat.userId, // Original author
+      visibility: chat.visibility,
+      hashtags: chat.hashtags,
+      originalChatId: chat.id,
+      originalAuthorId: chat.userId,
+      repostedBy: repost.userId, // Who reposted it (should be u.id)
+    })
+    .from(repost)
+    .innerJoin(chat, eq(repost.chatId, chat.id))
+    .where(
+      beforeDate
+        ? and(
+            eq(repost.userId, u.id),
+            eq(chat.visibility, 'public'),
+            lt(repost.createdAt, beforeDate),
+          )
+        : and(eq(repost.userId, u.id), eq(chat.visibility, 'public')),
+    )
+    .orderBy(desc(repost.createdAt))
+    .limit(LIMIT);
+
+  // Combine and sort all user activity (original posts + reposts)
+  const allUserActivity = [
+    ...userChats.map((chat) => ({
+      ...chat,
+      isRepost: false as const,
+      repostedBy: null as string | null,
+    })),
+    ...userReposts.map((item) => ({
+      ...item,
+      isRepost: true as const,
+    })),
+  ];
+  allUserActivity.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  const userActivity = allUserActivity.slice(0, LIMIT);
+
   // Continue with the rest of the logic even if there are no chats
-  const allChatIds = userChats.map((c) => c.id);
+  const allChatIds = userActivity.map((c) =>
+    c.isRepost ? (c.originalChatId as string) || c.id : c.id,
+  );
 
   // Only query messages if there are chats
   const msgs =
@@ -270,7 +318,7 @@ export default async function UserChannelPage({
             .from(message)
             .where(
               and(
-                inArray(message.chatId, allChatIds),
+                inArray(message.chatId, allChatIds as string[]),
                 eq(message.role, 'user'),
               ),
             )
@@ -297,17 +345,18 @@ export default async function UserChannelPage({
   }
 
   let filteredChats = tag
-    ? userChats.filter(
+    ? userActivity.filter(
         (c) =>
           Array.isArray(c?.hashtags) &&
           c.hashtags.some((t) => String(t).toLowerCase() === tag),
       )
-    : userChats;
+    : userActivity;
 
   if (q) {
     const qlc = q.toLowerCase();
     filteredChats = filteredChats.filter((c) => {
-      const first = firstMsgByChat.get(c.id);
+      const chatId = c.isRepost ? (c.originalChatId as string) || c.id : c.id;
+      const first = firstMsgByChat.get(chatId);
       const body = first ? extractTextFromParts(first.parts).toLowerCase() : '';
       const title = String(c.title || '').toLowerCase();
       const tags = Array.isArray(c.hashtags)
@@ -318,9 +367,12 @@ export default async function UserChannelPage({
         title.includes(qlc) ||
         tags.some((t) => t.includes(qlc))
       );
-    }) as Chat[];
+    });
   }
 
+  const filteredChatIds = filteredChats.map((c) =>
+    c.isRepost ? (c.originalChatId as string) || c.id : c.id,
+  );
   const voteRows =
     filteredChats.length > 0
       ? ((await db
@@ -328,10 +380,7 @@ export default async function UserChannelPage({
           .from(vote)
           .where(
             and(
-              inArray(
-                vote.chatId,
-                filteredChats.map((c) => c.id),
-              ),
+              inArray(vote.chatId, filteredChatIds as string[]),
               eq(vote.isUpvoted, true),
             ),
           )
@@ -340,6 +389,29 @@ export default async function UserChannelPage({
   const upvotesByChat = new Map<string, number>(
     voteRows.map((v) => [v.chatId, Number(v.upvotes)]),
   );
+
+  // Load original authors for reposts
+  const originalAuthorIds = Array.from(
+    new Set(
+      filteredChats
+        .filter((c) => c.isRepost && c.originalAuthorId)
+        .map((c) => c.originalAuthorId as string),
+    ),
+  );
+
+  const originalAuthors =
+    originalAuthorIds.length > 0
+      ? await db
+          .select({
+            id: user.id,
+            email: user.email,
+            nickname: user.nickname as any,
+          })
+          .from(user)
+          .where(inArray(user.id, originalAuthorIds))
+      : [];
+
+  const originalAuthorById = new Map(originalAuthors.map((u) => [u.id, u]));
 
   // Always sort by date
   const chatsForRender = [...filteredChats].sort(
@@ -362,15 +434,12 @@ export default async function UserChannelPage({
     userBio,
   });
 
-  const hasMore = userChats.length === LIMIT;
-  const lastCreatedAt = userChats[userChats.length - 1]?.createdAt;
+  const hasMore = userActivity.length === LIMIT;
+  const lastCreatedAt = userActivity[userActivity.length - 1]?.createdAt;
   const initialNextBefore =
-    hasMore && lastCreatedAt ? new Date(lastCreatedAt).toISOString() : null;
-
-  // Always sort by date
-  filteredChats.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+    hasMore && lastCreatedAt
+      ? new Date(lastCreatedAt as any).toISOString()
+      : null;
 
   // Simple stats for header
   const postsCount = filteredChats.length;
@@ -523,18 +592,53 @@ export default async function UserChannelPage({
                       </div>
                     ) : (
                       chatsForRender.map((c) => {
-                        const first = firstMsgByChat.get(c.id);
+                        const chatId = c.isRepost
+                          ? (c.originalChatId as string) || c.id
+                          : c.id;
+                        const first = firstMsgByChat.get(chatId);
                         const text = first
                           ? extractTextFromParts(first.parts as any)
                           : '';
                         const imageUrl = first
                           ? extractFirstImageUrl(first)
                           : null;
-                        const upvotes = upvotesByChat.get(c.id) ?? 0;
+                        const upvotes = upvotesByChat.get(chatId) ?? 0;
+
+                        // For reposts, show original author info, not the reposter
+                        let displayAuthor = authorText;
+                        let displayAuthorHref = channelPath;
+                        let isRepost = false;
+                        let repostedBy: string | null = null;
+                        let repostedByHref: string | null = null;
+
+                        if (c.isRepost && c.originalAuthorId) {
+                          isRepost = true;
+                          repostedBy = authorText; // Current user reposted it
+                          repostedByHref = channelPath;
+
+                          // Use the original author's information
+                          const originalAuthor = originalAuthorById.get(
+                            c.originalAuthorId,
+                          );
+                          if (originalAuthor) {
+                            displayAuthor =
+                              String(originalAuthor.nickname || '').trim() ||
+                              `User-${String(originalAuthor.id || '').slice(0, 6)}`;
+                            displayAuthorHref = getUserChannelPath(
+                              originalAuthor.nickname,
+                              originalAuthor.id,
+                            );
+                          } else {
+                            // Fallback if original author not found
+                            displayAuthor = 'Unknown User';
+                            displayAuthorHref = '#';
+                          }
+                        }
+
                         return (
                           <FeedItem
-                            key={c.id}
-                            chatId={c.id}
+                            key={`${c.id}-${c.isRepost ? 'repost' : 'original'}`}
+                            chatId={chatId}
                             firstMessageId={first?.id ?? null}
                             createdAt={
                               (c.createdAt as any)?.toISOString?.() ??
@@ -546,7 +650,7 @@ export default async function UserChannelPage({
                             initialReposts={0}
                             commentsCount={Math.max(
                               0,
-                              (userMsgCountByChat.get(c.id) ?? 0) -
+                              (userMsgCountByChat.get(chatId) ?? 0) -
                                 (first ? 1 : 0),
                             )}
                             hashtags={
@@ -554,8 +658,11 @@ export default async function UserChannelPage({
                                 ? ((c as any).hashtags as string[])
                                 : []
                             }
-                            author={authorText}
-                            authorHref={channelPath}
+                            author={displayAuthor}
+                            authorHref={displayAuthorHref}
+                            isRepost={isRepost}
+                            repostedBy={repostedBy}
+                            repostedByHref={repostedByHref}
                           />
                         );
                       })

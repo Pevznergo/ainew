@@ -98,6 +98,8 @@ export function TokenBalance({
     return (
       <div
         onClick={handleClick}
+        role="button"
+        tabIndex={clickable ? 0 : -1}
         className={cn(
           'flex items-center gap-1 bg-background border border-border px-2 py-1 rounded-md text-xs transition-all duration-200',
           hasChanged && 'ring-1 ring-amber-400/50',
@@ -125,6 +127,8 @@ export function TokenBalance({
     return (
       <div
         onClick={handleClick}
+        role="button"
+        tabIndex={clickable ? 0 : -1}
         className={cn(
           'flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 px-2.5 py-1.5 rounded-lg border border-amber-200/50 dark:border-amber-800/50 transition-all duration-300',
           hasChanged && 'ring-2 ring-amber-400/50 scale-105',
@@ -151,6 +155,8 @@ export function TokenBalance({
   return (
     <div
       onClick={handleClick}
+      role="button"
+      tabIndex={clickable ? 0 : -1}
       className={cn(
         'flex items-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/30 px-3 py-2 rounded-xl border border-amber-200/50 dark:border-amber-800/50 shadow-sm transition-all duration-300',
         hasChanged && 'ring-2 ring-amber-400/50 scale-105',

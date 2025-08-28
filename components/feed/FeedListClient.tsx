@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useRef, useState } from 'react';
 import { FeedItem } from './FeedItem';
@@ -15,6 +15,9 @@ export type FeedItemData = {
   hashtags?: string[];
   author: string;
   authorHref?: string | null;
+  isRepost?: boolean;
+  repostedBy?: string | null;
+  repostedByHref?: string | null;
 };
 
 export function FeedListClient({
@@ -31,7 +34,9 @@ export function FeedListClient({
   q?: string | null;
 }) {
   const [items, setItems] = useState<FeedItemData[]>(initialItems || []);
-  const [nextBefore, setNextBefore] = useState<string | null>(initialNextBefore);
+  const [nextBefore, setNextBefore] = useState<string | null>(
+    initialNextBefore,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -83,9 +88,9 @@ export function FeedListClient({
 
   return (
     <>
-      {items.map((it) => (
+      {items.map((it, index) => (
         <FeedItem
-          key={it.chatId}
+          key={`${it.chatId}-${it.isRepost ? 'repost' : 'original'}-${index}`}
           chatId={it.chatId}
           firstMessageId={it.firstMessageId}
           createdAt={it.createdAt}
@@ -97,6 +102,9 @@ export function FeedListClient({
           hashtags={it.hashtags || []}
           author={it.author}
           authorHref={it.authorHref || undefined}
+          isRepost={it.isRepost || false}
+          repostedBy={it.repostedBy || null}
+          repostedByHref={it.repostedByHref || null}
         />
       ))}
 
@@ -105,13 +113,17 @@ export function FeedListClient({
         <div className="text-center text-sm text-destructive">{error}</div>
       )}
       {loading && (
-        <div className="text-center text-sm text-muted-foreground">Загрузка…</div>
+        <div className="text-center text-sm text-muted-foreground">
+          Загрузка…
+        </div>
       )}
 
       {/* Sentinel for infinite scroll */}
       <div ref={sentinelRef} className="h-8" />
       {!nextBefore && (
-        <div className="py-4 text-center text-xs text-muted-foreground">Больше постов нет</div>
+        <div className="py-4 text-center text-xs text-muted-foreground">
+          Больше постов нет
+        </div>
       )}
     </>
   );
