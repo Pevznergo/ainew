@@ -30,8 +30,11 @@ type UserTaskData = {
   task_social_facebook: boolean;
   task_social_vk: boolean;
   task_social_telegram: boolean;
+  task_social_reddit: boolean;
   task_friends_invited: number;
   task_friends_pro_subscribed: number;
+  task_post_likes_10: boolean;
+  task_all_completed: boolean;
   task_tokens_earned: number;
   nickname: string | null;
   bio: string | null;
@@ -369,6 +372,103 @@ export default function InvitePage() {
     }
   };
 
+  const handleRedditShare = () => {
+    // Open Reddit in a new window
+    const redditUrl =
+      'https://reddit.com/submit?url=https://aporto.tech&title=Aporto%20-%20AI%20chatbot%20platform';
+    const popup = window.open(
+      redditUrl,
+      '_blank',
+      'width=600,height=600,scrollbars=yes,resizable=yes',
+    );
+
+    if (!popup) {
+      toast({
+        type: 'error',
+        description:
+          'Не удалось открыть Reddit. Пожалуйста, разрешите всплывающие окна.',
+      });
+      return;
+    }
+
+    // Show confirmation dialog after a delay
+    setTimeout(() => {
+      // Check if user is still on the page (not switched to Reddit tab)
+      if (document.hasFocus()) {
+        showRedditConfirmation();
+      } else {
+        // If user is on Reddit tab, wait for them to return
+        const handleFocus = () => {
+          setTimeout(() => {
+            showRedditConfirmation();
+            window.removeEventListener('focus', handleFocus);
+          }, 1000);
+        };
+        window.addEventListener('focus', handleFocus);
+
+        // Fallback: show confirmation after 30 seconds regardless
+        setTimeout(() => {
+          showRedditConfirmation();
+          window.removeEventListener('focus', handleFocus);
+        }, 30000);
+      }
+    }, 3000);
+  };
+
+  const showRedditConfirmation = () => {
+    const confirmed = window.confirm(
+      '📝 Написали отзыв на Reddit?\n\n' +
+        'Если вы успешно написали отзыв о нашем сервисе на Reddit, нажмите "OK" чтобы получить 300 токенов.\n\n' +
+        'Если нет - нажмите "Отмена" и попробуйте снова.',
+    );
+
+    if (confirmed) {
+      completeRedditTask();
+    } else {
+      toast({
+        type: 'success',
+        description: 'Нет проблем! Вы можете попробовать снова в любое время.',
+      });
+    }
+  };
+
+  const completeRedditTask = async () => {
+    try {
+      const response = await fetch('/api/tasks/reddit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: true }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          type: 'success',
+          description:
+            data.message ||
+            'Reddit задание выполнено! Вы получили 300 токенов.',
+        });
+
+        // Refresh task progress
+        setTimeout(() => {
+          loadTaskProgress();
+        }, 1000);
+      } else {
+        toast({
+          type: 'error',
+          description: data.error || 'Ошибка при выполнении задания.',
+        });
+      }
+    } catch (error) {
+      console.error('Error completing Reddit task:', error);
+      toast({
+        type: 'error',
+        description: 'Ошибка при выполнении задания. Попробуйте позже.',
+      });
+    }
+  };
+
   // Показываем скелетон пока загружаемся
   if (status === 'loading' || loading) {
     return <LoadingSkeleton />;
@@ -439,7 +539,7 @@ export default function InvitePage() {
                   Выполняйте задания и получайте токены.
                 </h2>
                 <p className="text-neutral-300 text-lg">
-                  Максимум — 30 800 токенов!
+                  Максимум — 41,400 токенов!
                 </p>
               </div>
 
@@ -449,7 +549,7 @@ export default function InvitePage() {
                   <span className="text-neutral-300 text-sm">Прогресс</span>
                   <div className="flex items-center gap-3">
                     <span className="text-neutral-300 text-sm">
-                      {taskProgress?.totalTokens || 0} / 30 800 токенов
+                      {taskProgress?.totalTokens || 0} / 41,400 токенов
                     </span>
                     <button
                       type="button"
@@ -863,7 +963,34 @@ export default function InvitePage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    userData?.task_social_reddit
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-orange-600/30 bg-orange-600/20'
+                  }`}
+                >
+                  <div className="absolute top-4 right-4">
+                    {userData?.task_social_reddit ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-orange-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">7</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2 flex items-center">
                       <svg
@@ -876,24 +1003,60 @@ export default function InvitePage() {
                       Отзыв на Reddit
                     </h3>
                     <p className="text-neutral-400 text-sm mb-3">
-                      Напишите отзыв о сервисе
+                      {userData?.task_social_reddit
+                        ? 'Задание выполнено!'
+                        : 'Напишите отзыв о сервисе'}
                     </p>
-                    <a
-                      href="https://reddit.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs bg-orange-700/20 hover:bg-orange-700/30 text-orange-300 px-3 py-1.5 rounded-lg border border-orange-600/30 transition-colors"
-                    >
-                      Перейти в Reddit
-                    </a>
+                    {!userData?.task_social_reddit && (
+                      <button
+                        type="button"
+                        onClick={handleRedditShare}
+                        className="text-xs bg-orange-700/20 hover:bg-orange-700/30 text-orange-300 px-3 py-1.5 rounded-lg border border-orange-600/30 transition-colors"
+                      >
+                        Перейти в Reddit
+                      </button>
+                    )}
                   </div>
-                  <div className="text-neutral-400 font-bold text-lg">
+                  <div
+                    className={`font-bold text-lg ${
+                      userData?.task_social_reddit
+                        ? 'text-green-400'
+                        : 'text-orange-400'
+                    }`}
+                  >
                     +300 токенов
                   </div>
                 </div>
 
                 {/* Engagement Task */}
-                <div className="rounded-2xl border border-neutral-600 bg-neutral-800/20 p-6 relative">
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    userData?.task_post_likes_10
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-red-500/30 bg-red-500/5'
+                  }`}
+                >
+                  <div className="absolute top-4 right-4">
+                    {userData?.task_post_likes_10 ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">8</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2 flex items-center">
                       <svg
@@ -905,11 +1068,24 @@ export default function InvitePage() {
                       </svg>
                       10 лайков на пост
                     </h3>
-                    <p className="text-neutral-400 text-sm">
-                      Получите 10 лайков на любой пост
+                    <p className="text-neutral-400 text-sm mb-3">
+                      {userData?.task_post_likes_10
+                        ? 'Задание выполнено!'
+                        : 'Получите 10 лайков на любой из ваших постов'}
                     </p>
+                    {!userData?.task_post_likes_10 && (
+                      <div className="text-xs text-neutral-500">
+                        Опубликуйте интересный контент и получайте лайки
+                      </div>
+                    )}
                   </div>
-                  <div className="text-neutral-400 font-bold text-lg">
+                  <div
+                    className={`font-bold text-lg ${
+                      userData?.task_post_likes_10
+                        ? 'text-green-400'
+                        : 'text-red-400'
+                    }`}
+                  >
                     +300 токенов
                   </div>
                 </div>
@@ -1082,26 +1258,66 @@ export default function InvitePage() {
 
               {/* Completion Bonus */}
               <div className="mt-8 pt-8 border-t border-white/10">
-                <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-cyan-500/10 p-8 text-center">
+                <div
+                  className={`rounded-2xl border p-8 text-center ${
+                    userData?.task_all_completed
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-cyan-500/10'
+                  }`}
+                >
                   <div className="mb-4">
-                    <div className="size-16 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg
-                        className="size-8 text-white"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                    <div
+                      className={`size-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                        userData?.task_all_completed
+                          ? 'bg-green-500'
+                          : 'bg-gradient-to-r from-indigo-500 to-cyan-500'
+                      }`}
+                    >
+                      {userData?.task_all_completed ? (
+                        <svg
+                          className="size-8 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="size-8 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      )}
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-2">
                       Завершить все задания
                     </h3>
-                    <p className="text-neutral-300">
-                      Выполните все задания и получите мега-бонус!
+                    <p
+                      className={`text-lg ${
+                        userData?.task_all_completed
+                          ? 'text-green-400 font-semibold'
+                          : 'text-neutral-300'
+                      }`}
+                    >
+                      {userData?.task_all_completed
+                        ? 'Мега-бонус получен!'
+                        : 'Выполните все задания и получите мега-бонус!'}
                     </p>
                   </div>
-                  <div className="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                    +10 000 токенов
+                  <div
+                    className={`text-4xl font-bold ${
+                      userData?.task_all_completed
+                        ? 'text-green-400'
+                        : 'bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent'
+                    }`}
+                  >
+                    +10,000 токенов
                   </div>
                 </div>
               </div>
@@ -1112,10 +1328,10 @@ export default function InvitePage() {
                   Максимальная награда за все задания:
                 </div>
                 <div className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                  30 800 токенов
+                  41,400 токенов
                 </div>
                 <div className="text-neutral-500 text-sm mt-1">
-                  ≈ 6 160 рублей
+                  ≈ 8,280 рублей
                 </div>
               </div>
             </div>

@@ -15,6 +15,13 @@
       "when": 1755937114155,
       "tag": "0001_chubby_maximus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756351138267,
+      "tag": "0002_neat_magneto",
+      "breakpoints": true
     }
   ]
 }

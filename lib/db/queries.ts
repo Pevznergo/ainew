@@ -1537,6 +1537,12 @@ export async function completeTask(
           tokensToAdd = TASK_REWARDS.SOCIAL_TELEGRAM;
         }
         break;
+      case 'SOCIAL_REDDIT':
+        if (!foundUser.task_social_reddit) {
+          updates.task_social_reddit = true;
+          tokensToAdd = TASK_REWARDS.SOCIAL_REDDIT;
+        }
+        break;
       case 'FRIEND_INVITATION':
         updates.task_friends_invited =
           (foundUser.task_friends_invited || 0) + 1;
@@ -1546,6 +1552,18 @@ export async function completeTask(
         updates.task_friends_pro_subscribed =
           (foundUser.task_friends_pro_subscribed || 0) + 1;
         tokensToAdd = TASK_REWARDS.FRIEND_PRO_SUBSCRIPTION;
+        break;
+      case 'POST_LIKES_10':
+        if (!foundUser.task_post_likes_10) {
+          updates.task_post_likes_10 = true;
+          tokensToAdd = TASK_REWARDS.POST_LIKES_10;
+        }
+        break;
+      case 'ALL_TASKS_COMPLETED':
+        if (!foundUser.task_all_completed) {
+          updates.task_all_completed = true;
+          tokensToAdd = TASK_REWARDS.ALL_TASKS_COMPLETED;
+        }
         break;
     }
 
@@ -1570,6 +1588,22 @@ export async function completeTask(
         newBalance: updatedUser?.balance,
         tokensEarned: updatedUser?.task_tokens_earned,
       });
+
+      // After completing any task (except the completion bonus itself), check if all tasks are completed
+      if (taskType !== 'ALL_TASKS_COMPLETED') {
+        try {
+          console.log(
+            '[completeTask] Checking if all tasks are now completed...',
+          );
+          await checkAllTasksCompleted(userId);
+        } catch (error) {
+          console.error(
+            '[completeTask] Error checking all tasks completion:',
+            error,
+          );
+          // Don't fail the task completion if the check fails
+        }
+      }
 
       return updatedUser;
     }
@@ -1804,5 +1838,142 @@ export async function checkFriendProSubscription(
       message: error instanceof Error ? error.message : String(error),
       subscribedUserId,
     });
+  }
+}
+
+export async function checkPostLikes10(chatId: string): Promise<void> {
+  try {
+    console.log('[checkPostLikes10] Starting check for chatId:', chatId);
+
+    // Get the chat and its owner
+    const [foundChat] = await db
+      .select({
+        id: chat.id,
+        userId: chat.userId,
+      })
+      .from(chat)
+      .where(eq(chat.id, chatId))
+      .limit(1);
+
+    if (!foundChat) {
+      console.log('[checkPostLikes10] Chat not found');
+      return;
+    }
+
+    console.log('[checkPostLikes10] Found chat:', {
+      chatId: foundChat.id,
+      userId: foundChat.userId,
+    });
+
+    // Get the user to check if they've already completed this task
+    const [chatOwner] = await db
+      .select({
+        id: user.id,
+        task_post_likes_10: user.task_post_likes_10,
+      })
+      .from(user)
+      .where(eq(user.id, foundChat.userId))
+      .limit(1);
+
+    if (!chatOwner) {
+      console.log('[checkPostLikes10] Chat owner not found');
+      return;
+    }
+
+    // Only check if user hasn't completed this task yet - performance optimization
+    if (chatOwner.task_post_likes_10) {
+      console.log(
+        '[checkPostLikes10] User already completed POST_LIKES_10 task',
+      );
+      return;
+    }
+
+    // Count the upvotes for this specific chat
+    const [{ upvotes }] = await db
+      .select({ upvotes: count(vote.messageId) })
+      .from(vote)
+      .where(and(eq(vote.chatId, chatId), eq(vote.isUpvoted, true)));
+
+    const upvoteCount = Number(upvotes) || 0;
+    console.log('[checkPostLikes10] Current upvotes:', upvoteCount);
+
+    // If the post has reached 10 likes, award the task
+    if (upvoteCount >= 10) {
+      console.log('[checkPostLikes10] Post reached 10 likes, awarding task');
+      await completeTask(foundChat.userId, 'POST_LIKES_10');
+      console.log(
+        `Post likes reward: ${TASK_REWARDS.POST_LIKES_10} tokens awarded to user ${foundChat.userId} for post ${chatId} reaching 10 likes`,
+      );
+    }
+  } catch (error) {
+    console.error(
+      '[checkPostLikes10] Error checking post likes reward:',
+      error,
+    );
+  }
+}
+
+export async function checkAllTasksCompleted(userId: string): Promise<void> {
+  try {
+    console.log('[checkAllTasksCompleted] Starting check for userId:', userId);
+
+    const [foundUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1);
+
+    if (!foundUser) {
+      console.log('[checkAllTasksCompleted] User not found');
+      return;
+    }
+
+    // If already completed the all tasks bonus, no need to check again
+    if (foundUser.task_all_completed) {
+      console.log('[checkAllTasksCompleted] All tasks bonus already awarded');
+      return;
+    }
+
+    // Check if all main tasks are completed
+    const allMainTasksCompleted =
+      foundUser.task_email_verified &&
+      foundUser.task_profile_completed &&
+      foundUser.task_first_chat &&
+      foundUser.task_first_share &&
+      foundUser.task_social_twitter &&
+      foundUser.task_social_facebook &&
+      foundUser.task_social_vk &&
+      foundUser.task_social_telegram &&
+      foundUser.task_social_reddit &&
+      foundUser.task_post_likes_10;
+
+    console.log('[checkAllTasksCompleted] Main tasks status:', {
+      email: foundUser.task_email_verified,
+      profile: foundUser.task_profile_completed,
+      firstChat: foundUser.task_first_chat,
+      firstShare: foundUser.task_first_share,
+      twitter: foundUser.task_social_twitter,
+      facebook: foundUser.task_social_facebook,
+      vk: foundUser.task_social_vk,
+      telegram: foundUser.task_social_telegram,
+      reddit: foundUser.task_social_reddit,
+      postLikes: foundUser.task_post_likes_10,
+      allCompleted: allMainTasksCompleted,
+    });
+
+    if (allMainTasksCompleted) {
+      console.log(
+        '[checkAllTasksCompleted] All main tasks completed! Awarding completion bonus',
+      );
+      await completeTask(userId, 'ALL_TASKS_COMPLETED');
+      console.log(
+        `All tasks completion bonus: ${TASK_REWARDS.ALL_TASKS_COMPLETED} tokens awarded to user ${userId} for completing all tasks`,
+      );
+    }
+  } catch (error) {
+    console.error(
+      '[checkAllTasksCompleted] Error checking all tasks completion:',
+      error,
+    );
   }
 }

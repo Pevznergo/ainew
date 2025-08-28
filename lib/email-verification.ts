@@ -24,11 +24,14 @@ export const TASK_REWARDS = {
   SOCIAL_FACEBOOK: 300,
   SOCIAL_VK: 300,
   SOCIAL_TELEGRAM: 300,
+  SOCIAL_REDDIT: 300, // Reddit review task
   FRIEND_INVITATION: 200, // per friend
   FRIEND_PRO_SUBSCRIPTION: 1000, // per friend who subscribes to PRO
+  POST_LIKES_10: 300, // when user's post gets 10 likes
+  ALL_TASKS_COMPLETED: 10000, // completion bonus for finishing all tasks
 } as const;
 
-export const MAX_TOTAL_TASK_TOKENS = 30800;
+export const MAX_TOTAL_TASK_TOKENS = 41400;
 
 export type TaskType = keyof typeof TASK_REWARDS;
 
@@ -83,6 +86,11 @@ export function calculateTaskProgress(user: any): {
     completedTasks++;
   }
 
+  if (user.task_social_reddit) {
+    totalTokens += TASK_REWARDS.SOCIAL_REDDIT;
+    completedTasks++;
+  }
+
   // Friend invitations
   const friendTokens =
     (user.task_friends_invited || 0) * TASK_REWARDS.FRIEND_INVITATION;
@@ -93,6 +101,18 @@ export function calculateTaskProgress(user: any): {
     (user.task_friends_pro_subscribed || 0) *
     TASK_REWARDS.FRIEND_PRO_SUBSCRIPTION;
   totalTokens += friendProTokens;
+
+  // Post gets 10 likes
+  if (user.task_post_likes_10) {
+    totalTokens += TASK_REWARDS.POST_LIKES_10;
+    completedTasks++;
+  }
+
+  // All tasks completed bonus
+  if (user.task_all_completed) {
+    totalTokens += TASK_REWARDS.ALL_TASKS_COMPLETED;
+    completedTasks++;
+  }
 
   const progressPercentage = Math.min(
     (totalTokens / MAX_TOTAL_TASK_TOKENS) * 100,

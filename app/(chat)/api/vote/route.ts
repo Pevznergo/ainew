@@ -1,5 +1,10 @@
 import { auth } from '@/app/(auth)/auth';
-import { db, getChatById, voteMessage } from '@/lib/db/queries';
+import {
+  db,
+  getChatById,
+  voteMessage,
+  checkPostLikes10,
+} from '@/lib/db/queries';
 import { vote } from '@/lib/db/schema';
 import { and, count, eq } from 'drizzle-orm';
 import { ChatSDKError } from '@/lib/errors';
@@ -75,6 +80,14 @@ export async function PATCH(request: Request) {
     userId: session.user.id,
     type: type,
   });
+
+  // Check if this vote brings the post to 10 likes for the POST_LIKES_10 task
+  try {
+    await checkPostLikes10(chatId);
+  } catch (error) {
+    console.error('Error processing post likes reward:', error);
+    // Don't fail the vote if task checking fails
+  }
 
   return new Response('Message voted', { status: 200 });
 }
