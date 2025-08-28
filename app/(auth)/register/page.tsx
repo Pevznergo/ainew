@@ -37,7 +37,7 @@ export default function Page() {
     setTimeout(() => {
       window.location.href = '/subscriptions';
     }, 100);
-  }, [router]);
+  }, []);
 
   // Prefill invite code from localStorage or cookies
   useEffect(() => {

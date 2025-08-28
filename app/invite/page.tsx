@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/components/toast';
 
 type Invite = {
@@ -178,7 +178,7 @@ export default function InvitePage() {
   }, [session, status]);
 
   // Load task progress
-  const loadTaskProgress = async () => {
+  const loadTaskProgress = useCallback(async () => {
     if (!session?.user) return;
     try {
       const res = await fetch('/api/tasks/progress');
@@ -189,13 +189,13 @@ export default function InvitePage() {
     } catch (e) {
       console.error('Failed to load task progress:', e);
     }
-  };
+  }, [session?.user]);
 
   useEffect(() => {
     if (status === 'authenticated') {
       loadTaskProgress();
     }
-  }, [session, status]);
+  }, [session, status, loadTaskProgress]);
 
   // Check for email verification success and refresh data
   useEffect(() => {
@@ -215,7 +215,7 @@ export default function InvitePage() {
       // Clean up URL parameter
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [status]);
+  }, [status, loadTaskProgress]);
 
   // Refresh data when user returns to the page (e.g., after email verification)
   useEffect(() => {
@@ -227,7 +227,7 @@ export default function InvitePage() {
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [status]);
+  }, [status, loadTaskProgress]);
 
   const handleResendVerification = async () => {
     setResendingEmail(true);

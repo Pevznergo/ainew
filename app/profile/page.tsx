@@ -669,7 +669,7 @@ export default function ProfilePage() {
                   <div className="mt-2 text-sm text-neutral-300">{bioMsg}</div>
                 )}
               </div>
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <AlertDialog
                   data-component="ProfileBioAlertDialog"
                   open={bioModalOpen}

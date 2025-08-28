@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { checkFirstChat, getUserById } from '@/lib/db/queries';
 import { auth } from '@/app/(auth)/auth';
 
