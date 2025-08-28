@@ -1,7 +1,11 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { YooCheckout } from '@a2seven/yoo-checkout';
-import { db, payReferralBonus } from '@/lib/db/queries';
+import {
+  db,
+  payReferralBonus,
+  checkFriendProSubscription,
+} from '@/lib/db/queries';
 import { user } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 
@@ -63,6 +67,17 @@ export async function POST(request: NextRequest) {
 
           // Начисляем реферальный бонус
           await payReferralBonus(userId);
+
+          // Check for friend PRO subscription reward - award tokens to referrer if this user was referred
+          try {
+            await checkFriendProSubscription(userId);
+          } catch (error) {
+            console.error(
+              'Error processing friend PRO subscription reward:',
+              error,
+            );
+            // Don't fail the subscription activation if friend reward check fails
+          }
 
           console.log(`PRO subscription activated for user ${userId}`);
         }

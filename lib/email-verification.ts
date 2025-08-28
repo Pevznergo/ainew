@@ -25,9 +25,10 @@ export const TASK_REWARDS = {
   SOCIAL_VK: 300,
   SOCIAL_TELEGRAM: 300,
   FRIEND_INVITATION: 200, // per friend
+  FRIEND_PRO_SUBSCRIPTION: 1000, // per friend who subscribes to PRO
 } as const;
 
-export const MAX_TOTAL_TASK_TOKENS = 46800;
+export const MAX_TOTAL_TASK_TOKENS = 30800;
 
 export type TaskType = keyof typeof TASK_REWARDS;
 
@@ -86,6 +87,12 @@ export function calculateTaskProgress(user: any): {
   const friendTokens =
     (user.task_friends_invited || 0) * TASK_REWARDS.FRIEND_INVITATION;
   totalTokens += friendTokens;
+
+  // Friend PRO subscriptions
+  const friendProTokens =
+    (user.task_friends_pro_subscribed || 0) *
+    TASK_REWARDS.FRIEND_PRO_SUBSCRIPTION;
+  totalTokens += friendProTokens;
 
   const progressPercentage = Math.min(
     (totalTokens / MAX_TOTAL_TASK_TOKENS) * 100,

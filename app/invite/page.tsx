@@ -31,6 +31,7 @@ type UserTaskData = {
   task_social_vk: boolean;
   task_social_telegram: boolean;
   task_friends_invited: number;
+  task_friends_pro_subscribed: number;
   task_tokens_earned: number;
   nickname: string | null;
   bio: string | null;
@@ -438,7 +439,7 @@ export default function InvitePage() {
                   Выполняйте задания и получайте токены.
                 </h2>
                 <p className="text-neutral-300 text-lg">
-                  Максимум — 46 800 токенов!
+                  Максимум — 30 800 токенов!
                 </p>
               </div>
 
@@ -448,7 +449,7 @@ export default function InvitePage() {
                   <span className="text-neutral-300 text-sm">Прогресс</span>
                   <div className="flex items-center gap-3">
                     <span className="text-neutral-300 text-sm">
-                      {taskProgress?.totalTokens || 0} / 46 800 токенов
+                      {taskProgress?.totalTokens || 0} / 30 800 токенов
                     </span>
                     <button
                       type="button"
@@ -996,7 +997,34 @@ export default function InvitePage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/5 p-6 relative">
+                <div
+                  className={`rounded-2xl border p-6 relative ${
+                    (userData?.task_friends_pro_subscribed || 0) >= 16
+                      ? 'border-green-500/30 bg-green-500/5'
+                      : 'border-yellow-500/30 bg-yellow-500/5'
+                  }`}
+                >
+                  <div className="absolute top-4 right-4">
+                    {(userData?.task_friends_pro_subscribed || 0) >= 16 ? (
+                      <div className="size-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg
+                          className="size-4 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="size-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">10</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="mb-3">
                     <h3 className="font-semibold text-white mb-2 flex items-center">
                       <svg
@@ -1006,36 +1034,48 @@ export default function InvitePage() {
                       >
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                       </svg>
-                      Друг купил Про
+                      Друзья с ПРО подпиской
                     </h3>
                     <p className="text-neutral-400 text-sm mb-3">
-                      За каждого друга с Про (до 16)
+                      {(userData?.task_friends_pro_subscribed || 0) >= 16
+                        ? 'Задание выполнено! Все 16 друзей оформили ПРО.'
+                        : `Прогресс: ${userData?.task_friends_pro_subscribed || 0}/16 друзей с ПРО`}
                     </p>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(
-                            referralLink || '',
-                          );
-                          toast({
-                            type: 'success',
-                            description: 'Ссылка скопирована',
-                          });
-                        } catch (_) {
-                          console.error('Failed to copy referral link');
-                        }
-                      }}
-                      className="text-xs bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 px-3 py-1.5 rounded-lg border border-yellow-500/30 transition-colors"
-                    >
-                      Скопировать ссылку
-                    </button>
+                    {(userData?.task_friends_pro_subscribed || 0) < 16 && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(
+                              referralLink || '',
+                            );
+                            toast({
+                              type: 'success',
+                              description: 'Ссылка скопирована',
+                            });
+                          } catch (_) {
+                            console.error('Failed to copy referral link');
+                          }
+                        }}
+                        className="text-xs bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 px-3 py-1.5 rounded-lg border border-yellow-500/30 transition-colors"
+                      >
+                        Скопировать ссылку
+                      </button>
+                    )}
                   </div>
-                  <div className="text-yellow-400 font-bold text-lg">
-                    +2 000 токенов
+                  <div
+                    className={`font-bold text-lg ${
+                      (userData?.task_friends_pro_subscribed || 0) >= 16
+                        ? 'text-green-400'
+                        : 'text-yellow-400'
+                    }`}
+                  >
+                    +1000 токенов за каждого
                   </div>
                   <div className="text-xs text-neutral-500 mt-1">
-                    Максимум: 32 000 токенов
+                    {(userData?.task_friends_pro_subscribed || 0) >= 16
+                      ? `Получено: ${(userData?.task_friends_pro_subscribed || 0) * 1000} токенов`
+                      : `Максимум: 16 000 токенов (${userData?.task_friends_pro_subscribed || 0} × 1000 получено)`}
                   </div>
                 </div>
               </div>
@@ -1072,10 +1112,10 @@ export default function InvitePage() {
                   Максимальная награда за все задания:
                 </div>
                 <div className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-                  46 800 токенов
+                  30 800 токенов
                 </div>
                 <div className="text-neutral-500 text-sm mt-1">
-                  ≈ 9 360 рублей
+                  ≈ 6 160 рублей
                 </div>
               </div>
             </div>

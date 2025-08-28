@@ -63,7 +63,7 @@ export function createWelcomeEmailTemplate({
             </h3>
             
             <p style="color: #d1d5db; text-align: center; margin-bottom: 30px;">
-              Максимум — <strong style="color: #06b6d4;">46 800 токенов</strong>!
+              Максимум — <strong style="color: #06b6d4;">30 800 токенов</strong>!
             </p>
 
             <!-- Task List -->

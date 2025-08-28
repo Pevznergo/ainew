@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         task_social_vk: user.task_social_vk,
         task_social_telegram: user.task_social_telegram,
         task_friends_invited: user.task_friends_invited,
+        task_friends_pro_subscribed: user.task_friends_pro_subscribed,
         task_tokens_earned: user.task_tokens_earned,
         nickname: user.nickname,
         bio: user.bio,

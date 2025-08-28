@@ -41,6 +41,9 @@ export const user = pgTable('User', {
   task_social_vk: boolean('task_social_vk').default(false),
   task_social_telegram: boolean('task_social_telegram').default(false),
   task_friends_invited: integer('task_friends_invited').default(0),
+  task_friends_pro_subscribed: integer('task_friends_pro_subscribed').default(
+    0,
+  ),
 
   // Task completion timestamps
   task_email_verified_at: timestamp('task_email_verified_at'),

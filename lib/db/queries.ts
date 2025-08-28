@@ -313,10 +313,22 @@ export async function saveChat({
   // Check for first chat completion and award tokens if appropriate
   // This is performance-optimized: only checks if user hasn't completed the task yet
   try {
+    console.log(
+      '[saveChat] Attempting to check first chat for userId:',
+      userId,
+    );
     await checkFirstChat(userId);
+    console.log('[saveChat] Successfully checked first chat');
   } catch (error) {
-    console.error('Error checking first chat completion:', error);
-    // Don't fail the chat save if task checking fails
+    console.error('[saveChat] Error checking first chat completion:', error);
+    console.error('[saveChat] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      userId,
+      chatId: id,
+    });
+    // Don't fail the chat save if task checking fails - ensure chat creation succeeds
+    // The user can get their first chat tokens later if needed
   }
 
   return result[0];
@@ -1443,19 +1455,34 @@ export async function completeTask(
   additionalData?: any,
 ): Promise<User | null> {
   try {
+    console.log('[completeTask] Starting task completion:', {
+      userId,
+      taskType,
+    });
+
     const [foundUser] = await db
       .select()
       .from(user)
       .where(eq(user.id, userId))
       .limit(1);
 
+    console.log('[completeTask] Found user:', {
+      exists: !!foundUser,
+      taskType,
+      userId: foundUser?.id,
+      balance: foundUser?.balance,
+    });
+
     if (!foundUser) {
+      console.log('[completeTask] User not found, returning null');
       return null;
     }
 
     const updates: any = {};
     const now = new Date();
     let tokensToAdd = 0;
+
+    console.log('[completeTask] Processing task type:', taskType);
 
     switch (taskType) {
       case 'EMAIL_VERIFICATION':
@@ -1515,12 +1542,22 @@ export async function completeTask(
           (foundUser.task_friends_invited || 0) + 1;
         tokensToAdd = TASK_REWARDS.FRIEND_INVITATION;
         break;
+      case 'FRIEND_PRO_SUBSCRIPTION':
+        updates.task_friends_pro_subscribed =
+          (foundUser.task_friends_pro_subscribed || 0) + 1;
+        tokensToAdd = TASK_REWARDS.FRIEND_PRO_SUBSCRIPTION;
+        break;
     }
+
+    console.log('[completeTask] Updates to apply:', { updates, tokensToAdd });
 
     if (Object.keys(updates).length > 0) {
       updates.task_tokens_earned =
         (foundUser.task_tokens_earned || 0) + tokensToAdd;
       updates.balance = (foundUser.balance || 0) + tokensToAdd;
+
+      console.log('[completeTask] Final updates:', updates);
+      console.log('[completeTask] Attempting database update...');
 
       const [updatedUser] = await db
         .update(user)
@@ -1528,11 +1565,26 @@ export async function completeTask(
         .where(eq(user.id, userId))
         .returning();
 
+      console.log('[completeTask] Database update successful:', {
+        updatedUserId: updatedUser?.id,
+        newBalance: updatedUser?.balance,
+        tokensEarned: updatedUser?.task_tokens_earned,
+      });
+
       return updatedUser;
     }
 
+    console.log('[completeTask] No updates needed, returning existing user');
     return foundUser;
   } catch (error) {
+    console.error('[completeTask] Error completing task:', error);
+    console.error('[completeTask] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId,
+      taskType,
+    });
     throw new ChatSDKError('bad_request:database');
   }
 }
@@ -1560,21 +1612,45 @@ export async function checkProfileCompletion(userId: string): Promise<void> {
 
 export async function checkFirstChat(userId: string): Promise<void> {
   try {
+    console.log('[checkFirstChat] Starting check for userId:', userId);
+
     const [foundUser] = await db
       .select()
       .from(user)
       .where(eq(user.id, userId))
       .limit(1);
 
+    console.log('[checkFirstChat] Found user:', {
+      exists: !!foundUser,
+      taskFirstChat: foundUser?.task_first_chat,
+      userId: foundUser?.id,
+    });
+
     // Only check if user hasn't completed first chat task yet - performance optimization
     if (!foundUser || foundUser.task_first_chat) {
+      console.log(
+        '[checkFirstChat] Skipping - user not found or task already completed',
+      );
       return;
     }
 
+    console.log('[checkFirstChat] Attempting to complete FIRST_CHAT task');
     // User hasn't completed first chat task, so complete it now
     await completeTask(userId, 'FIRST_CHAT');
+    console.log('[checkFirstChat] Successfully completed FIRST_CHAT task');
   } catch (error) {
-    console.error('Error checking first chat completion:', error);
+    console.error(
+      '[checkFirstChat] Error checking first chat completion:',
+      error,
+    );
+    console.error('[checkFirstChat] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    // Re-throw the error to see if it's causing the 502
+    // CHANGED: Don't re-throw to prevent 502 errors
+    // throw error;
   }
 }
 
@@ -1645,5 +1721,88 @@ export async function checkFriendInvitation(
     );
   } catch (error) {
     console.error('Error checking friend invitation reward:', error);
+  }
+}
+
+export async function checkFriendProSubscription(
+  subscribedUserId: string,
+): Promise<void> {
+  try {
+    console.log(
+      '[checkFriendProSubscription] Starting check for userId:',
+      subscribedUserId,
+    );
+
+    // Get the subscribed user to check if they were referred
+    const [subscribedUser] = await db
+      .select({
+        id: user.id,
+        referred_by: user.referred_by,
+      })
+      .from(user)
+      .where(eq(user.id, subscribedUserId))
+      .limit(1);
+
+    console.log('[checkFriendProSubscription] Found subscribed user:', {
+      id: subscribedUser?.id,
+      referredBy: subscribedUser?.referred_by,
+    });
+
+    // If user wasn't referred, no friend PRO subscription reward to give
+    if (!subscribedUser?.referred_by) {
+      console.log(
+        '[checkFriendProSubscription] User was not referred, no reward',
+      );
+      return;
+    }
+
+    // Get the referrer's current friend PRO subscription count
+    const [referrer] = await db
+      .select({
+        id: user.id,
+        task_friends_pro_subscribed: user.task_friends_pro_subscribed,
+      })
+      .from(user)
+      .where(eq(user.id, subscribedUser.referred_by))
+      .limit(1);
+
+    console.log('[checkFriendProSubscription] Found referrer:', {
+      id: referrer?.id,
+      currentProCount: referrer?.task_friends_pro_subscribed,
+    });
+
+    if (!referrer) {
+      console.log('[checkFriendProSubscription] Referrer not found');
+      return;
+    }
+
+    // Check if referrer has already reached the max (16 friends)
+    const currentCount = referrer.task_friends_pro_subscribed || 0;
+    if (currentCount >= 16) {
+      console.log(
+        '[checkFriendProSubscription] Referrer already at max PRO subscriptions (16)',
+      );
+      return; // Already at max, no more rewards
+    }
+
+    console.log(
+      '[checkFriendProSubscription] Awarding PRO subscription reward',
+    );
+    // Award tokens to the referrer for this friend PRO subscription
+    await completeTask(subscribedUser.referred_by, 'FRIEND_PRO_SUBSCRIPTION');
+
+    console.log(
+      `Friend PRO subscription reward: ${TASK_REWARDS.FRIEND_PRO_SUBSCRIPTION} tokens awarded to user ${subscribedUser.referred_by} for friend ${subscribedUserId} PRO subscription. New count: ${currentCount + 1}/16`,
+    );
+  } catch (error) {
+    console.error(
+      '[checkFriendProSubscription] Error checking friend PRO subscription reward:',
+      error,
+    );
+    console.error('[checkFriendProSubscription] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      subscribedUserId,
+    });
   }
 }
