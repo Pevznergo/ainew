@@ -25,6 +25,7 @@ import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
+import { TokenBalance } from './token-balance';
 
 interface Props {
   chatId: string;
@@ -112,7 +113,9 @@ function PureMultimodalInput({
 
     if (typeof sendMessage !== 'function') {
       console.error('sendMessage is not a function', sendMessage);
-      toast.error('Невозможно отправить сообщение. Пожалуйста, обновите страницу.');
+      toast.error(
+        'Невозможно отправить сообщение. Пожалуйста, обновите страницу.',
+      );
       return;
     }
 
@@ -319,8 +322,10 @@ function PureMultimodalInput({
         }}
       />
 
-      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start">
+      <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start items-center gap-2">
         <AttachmentsButton fileInputRef={fileInputRef} status={status} />
+        {/* Token Balance Display - positioned next to attachment button */}
+        <TokenBalance variant="mini" />
       </div>
 
       <div className="absolute bottom-0 right-0 p-2 w-fit flex flex-row justify-end">

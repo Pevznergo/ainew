@@ -92,7 +92,7 @@ function PureChatHeader({
         />
       )}
 
-      <div className="ml-auto order-4 md:order-3 flex flex-col items-end">
+      <div className="ml-auto order-4 md:order-3 flex flex-col items-end gap-2">
         <div className="w-auto md:w-[250px]">
           {session.user && <SidebarUserNav session={session} />}
         </div>
