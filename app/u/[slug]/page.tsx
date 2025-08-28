@@ -288,15 +288,41 @@ export default async function UserChannelPage({
     .limit(LIMIT);
 
   // Combine and sort all user activity (original posts + reposts)
-  const allUserActivity = [
+  const allUserActivity: Array<{
+    id: string;
+    createdAt: Date;
+    title: string;
+    userId: string;
+    visibility: string;
+    hashtags?: string[] | null;
+    isRepost: boolean;
+    repostedBy: string | null;
+    originalChatId?: string;
+    originalAuthorId?: string;
+  }> = [
     ...userChats.map((chat) => ({
-      ...chat,
+      id: chat.id,
+      createdAt: chat.createdAt,
+      title: chat.title,
+      userId: chat.userId,
+      visibility: chat.visibility,
+      hashtags: chat.hashtags,
       isRepost: false as const,
       repostedBy: null as string | null,
+      originalChatId: undefined,
+      originalAuthorId: undefined,
     })),
     ...userReposts.map((item) => ({
-      ...item,
+      id: item.id,
+      createdAt: item.createdAt,
+      title: item.title,
+      userId: item.userId,
+      visibility: item.visibility,
+      hashtags: item.hashtags,
       isRepost: true as const,
+      repostedBy: item.repostedBy,
+      originalChatId: item.originalChatId,
+      originalAuthorId: item.originalAuthorId,
     })),
   ];
   allUserActivity.sort(
@@ -437,9 +463,7 @@ export default async function UserChannelPage({
   const hasMore = userActivity.length === LIMIT;
   const lastCreatedAt = userActivity[userActivity.length - 1]?.createdAt;
   const initialNextBefore =
-    hasMore && lastCreatedAt
-      ? new Date(lastCreatedAt as any).toISOString()
-      : null;
+    hasMore && lastCreatedAt ? new Date(lastCreatedAt).toISOString() : null;
 
   // Simple stats for header
   const postsCount = filteredChats.length;
