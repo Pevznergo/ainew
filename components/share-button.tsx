@@ -3,11 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { getReferralCode, updateChatVisibility } from '@/app/(chat)/actions';
+import { ShareModal } from './share-modal';
 import { cn } from '@/lib/utils';
 
 export function ShareButton({ chatId }: { chatId: string }) {
-  const [isCopied, setIsCopied] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string>('');
 
   useEffect(() => {
     async function fetchReferralCode() {
@@ -26,35 +29,47 @@ export function ShareButton({ chatId }: { chatId: string }) {
       console.error('Referral code not available');
       return;
     }
-    const shareUrl = `${window.location.origin}/chat/${chatId}?ref=${referralCode}`;
+
+    setIsLoading(true);
     try {
-      // 1) First, persist visibility to DB
-      const updated = await updateChatVisibility({ chatId, visibility: 'public' });
+      // First, persist visibility to DB
+      const updated = await updateChatVisibility({
+        chatId,
+        visibility: 'public',
+      });
       if (!updated || !Array.isArray(updated) || updated.length === 0) {
         throw new Error('Chat visibility update returned no rows');
       }
-      // 2) Then copy the link
-      await navigator.clipboard.writeText(shareUrl);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+
+      // Generate share URL
+      const url = `${window.location.origin}/chat/${chatId}?ref=${referralCode}`;
+      setShareUrl(url);
+
+      // Open modal
+      setIsModalOpen(true);
     } catch (err) {
-      console.error('Failed to copy text or update visibility: ', err);
+      console.error('Failed to prepare share:', err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Button
-      variant="outline"
-      onClick={handleShare}
-      disabled={!referralCode}
-      className={cn(
-        'transition-colors duration-300 ease-in-out',
-        {
-          'bg-green-500 text-white hover:bg-green-600': isCopied,
-        }
-      )}
-    >
-      {isCopied ? 'Скопировано' : 'Поделиться'}
-    </Button>
+    <>
+      <Button
+        variant="outline"
+        onClick={handleShare}
+        disabled={!referralCode || isLoading}
+        className="transition-colors duration-300 ease-in-out"
+      >
+        {isLoading ? 'Подготовка...' : 'Поделиться'}
+      </Button>
+
+      <ShareModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        shareUrl={shareUrl}
+      />
+    </>
   );
 }
